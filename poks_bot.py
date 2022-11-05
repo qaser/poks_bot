@@ -7,6 +7,7 @@ from config.bot_config import bot, dp
 from config.mongo_config import groups
 from config.telegram_config import MY_TELEGRAM_ID
 from handlers.service import register_handlers_service
+from handlers.emergency_stop import register_handlers_emergency
 from texts.initial import INITIAL_TEXT, NEW_GROUP_TEXT
 
 
@@ -66,5 +67,6 @@ async def delete_service_message(message: types.Message):
 
 if __name__ == '__main__':
     register_handlers_service(dp)
+    register_handlers_emergency(dp)
     # executor.start_polling(dp, skip_updates=True, on_startup=on_startup)
     executor.start_polling(dp, skip_updates=True)
