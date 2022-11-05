@@ -55,6 +55,11 @@ async def station_choose(message: types.Message):
 
 
 async def station_confirm(message: types.Message, state: FSMContext):
+    if message.text not in KS:
+        await message.answer(
+            'Пожалуйста, выберите КС, используя список ниже.'
+        )
+        return
     await state.update_data(station=message.text)
     buffer_data = await state.get_data()
     station = buffer_data['station']
