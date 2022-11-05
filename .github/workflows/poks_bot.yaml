@@ -21,7 +21,7 @@ jobs:
           cd poks_bot/
           rm logs_bot.log
           git pull
-          pm2 restart poks_bot
+          pm2 restart poks
 
   send_message:
     runs-on: ubuntu-latest
