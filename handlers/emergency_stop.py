@@ -8,7 +8,7 @@ from config.telegram_config import CHAT_ID_GKS
 
 import utils.constants as const
 from config.bot_config import bot
-from config.mongo_config import vehicles
+from config.mongo_config import users
 
 
 class ChooseVehicle(StatesGroup):

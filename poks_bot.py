@@ -7,7 +7,7 @@ from config.bot_config import bot, dp
 from config.mongo_config import groups
 from config.telegram_config import MY_TELEGRAM_ID
 from handlers.service import register_handlers_service
-from texts.initial import INITIAL_TEXT
+from texts.initial import INITIAL_TEXT, NEW_GROUP_TEXT
 
 
 logging.basicConfig(
@@ -51,10 +51,14 @@ async def add_bot_message(message: types.Message):
                 chat_id=MY_TELEGRAM_ID,
                 text=f'Бот добавлен в новую группу: {message.chat.title}'
             )
+            await bot.send_message(
+                chat_id=message.chat.id,
+                text=NEW_GROUP_TEXT
+            )
     await bot.delete_message(message.chat.id, message.message_id)
 
 
-# удаление сервисных сообщений
+# удаление сервисного сообщения 'пользователь удалён'
 @dp.message_handler(content_types=['left_chat_member'])
 async def delete_service_message(message: types.Message):
     await bot.delete_message(message.chat.id, message.message_id)

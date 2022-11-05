@@ -8,7 +8,6 @@ from config.bot_config import bot
 from config.mongo_config import users
 from config.telegram_config import MY_TELEGRAM_ID
 from utils.constants import KS
-# from texts.initial import SERVICE_END_TEXT, SERVICE_TEXT
 
 
 class GksManager(StatesGroup):
