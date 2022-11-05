@@ -51,11 +51,10 @@ async def add_bot_message(message: types.Message):
                 chat_id=MY_TELEGRAM_ID,
                 text=f'Бот добавлен в новую группу: {message.chat.title}'
             )
-    await bot.delete_message(message.chat.id, message.message_id)
 
 
 # удаление сервисных сообщений
-@dp.message_handler(content_types=['left_chat_member'])
+@dp.message_handler(content_types=['new_chat_members', 'left_chat_member'])
 async def delete_service_message(message: types.Message):
     await bot.delete_message(message.chat.id, message.message_id)
 
