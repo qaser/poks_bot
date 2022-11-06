@@ -8,7 +8,7 @@ from config.mongo_config import groups
 from config.telegram_config import MY_TELEGRAM_ID
 from handlers.service import register_handlers_service
 from handlers.emergency_stop import register_handlers_emergency
-from texts.initial import INITIAL_TEXT, NEW_GROUP_TEXT
+from texts.initial import INITIAL_TEXT, NEW_GROUP_TEXT, HELP_TEXT
 
 
 logging.basicConfig(
@@ -26,13 +26,12 @@ async def start_handler(message: types.Message):
     await message.answer(text=INITIAL_TEXT)
 
 
-# @dp.message_handler(commands=['help'])
-# async def help_handler(message: types.Message):
-#     await bot.send_message(
-#         message.chat.id,
-#         text=f'{message.from_user.full_name}{HELP_TEXT}'
-#     )
-#     await bot.send_message(message.chat.id, text=FINAL_TEXT)
+@dp.message_handler(commands=['help'])
+async def help_handler(message: types.Message):
+    await bot.send_message(
+        message.chat.id,
+        text=f'{HELP_TEXT}'
+    )
 
 
 # обработка события - добавление бота группу
