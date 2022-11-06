@@ -113,6 +113,13 @@ async def confirmation(message: types.Message, state: FSMContext):
         chat_id=user_id,
         media=media,
     )
+    await bot.send_message(
+        chat_id=user_id,
+        text=(
+                f'{data["station"]}. Произошёл АО ГПА{data["gpa_num"]}.\n'
+                'Вам отправлены инструкции по организации рабочего чата.'
+            )
+    )
     await message.answer(
         ('Принято. Сообщение с инструкциями отправлено.\n'
          f'Адресат: {username}'),
