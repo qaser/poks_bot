@@ -111,12 +111,11 @@ async def confirmation(message: types.Message, state: FSMContext):
             )
     )
     for _, _, files in os.walk('static/tutorial/'):
-        for filename in files:
-            pic = f'static/tutorial/{filename}'
-            await bot.send_photo(
-                chat_id=user_id,
-                photo=pic,
-            )
+            for filename in files:
+                file = f'static/tutorial/{filename}'
+                with open(file, 'rb') as f:
+                    contents = f.read()
+                    await bot.send_photo(chat_id=user_id, photo=contents)
     await message.answer(
         ('Принято. Сообщение с инструкциями отправлено.\n'
          f'Адресат: {username}'),
