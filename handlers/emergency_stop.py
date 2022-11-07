@@ -111,9 +111,9 @@ async def confirmation(message: types.Message, state: FSMContext):
         )
     )
     media = types.MediaGroup()
-    for _, _, files in os.walk('static/tutorial/'):
+    for _, _, files in os.walk('static/tutorial_pdf/'):
         for filename in files:
-            file = f'static/tutorial/{filename}'
+            file = f'static/tutorial_pdf/{filename}'
             media.attach_photo(photo=types.InputFile(file))
     await bot.send_media_group(message.chat.id, media=media)
     await message.answer(
