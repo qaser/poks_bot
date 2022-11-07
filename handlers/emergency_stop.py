@@ -108,7 +108,8 @@ async def confirmation(message: types.Message, state: FSMContext):
         text=(
                 f'{data["station"]}. Произошёл АО ГПА{data["gpa_num"]}.\n'
                 'Вам отправлены инструкции по организации рабочего чата.'
-        )
+        ),
+        reply_markup=types.ReplyKeyboardRemove()
     )
     # media = types.MediaGroup()
     file_pdf = open('static/tutorial_pdf/tutorial_pdf.pdf')
