@@ -117,7 +117,7 @@ async def confirmation(message: types.Message, state: FSMContext):
     #     for filename in files:
     #         file = f'static/tutorial_pdf/{filename}'
     #         media.attach_photo(photo=types.InputFile(file))
-    await bot.send_document(message.chat_id, document=file_pdf)
+    await bot.send_document(chat_id=user_id, document=file_pdf)
     await message.answer(
         text=(
                 'Принято. Сообщение с инструкциями отправлено.\n'
