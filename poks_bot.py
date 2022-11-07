@@ -50,10 +50,10 @@ async def add_bot_message(message: types.Message):
                 chat_id=MY_TELEGRAM_ID,
                 text=f'Бот добавлен в новую группу: {message.chat.title}'
             )
-            await bot.send_message(
-                chat_id=message.chat.id,
-                text=NEW_GROUP_TEXT
-            )
+            # await bot.send_message(
+            #     chat_id=message.chat.id,
+            #     text=NEW_GROUP_TEXT
+            # )
     await bot.delete_message(message.chat.id, message.message_id)
 
 
