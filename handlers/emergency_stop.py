@@ -72,7 +72,7 @@ async def gpa_number(message: types.Message, state: FSMContext):
     station = data['station']
     gpa = data['gpa_num']
     await message.answer(
-        text=f'Вы выбрали "{station}"\nГПА {gpa}\nВсё верно?',
+        text=f'Вы выбрали "{station}"\nГПА {gpa}.\nВсё верно?',
         reply_markup=keyboard,
     )
     await Emergency.next()
@@ -106,8 +106,8 @@ async def confirmation(message: types.Message, state: FSMContext):
     await bot.send_message(
         chat_id=user_id,
         text=(
-                f'{data["station"]}. Произошёл АО ГПА{data["gpa_num"]}.\n'
-                'Вам отправлены инструкции по организации рабочего чата.'
+                f'{data["station"]}.\nДля расследования АО ГПА{data["gpa_num"]} '
+                'Вам отправлена инструкция по организации рабочего чата.'
         ),
         reply_markup=types.ReplyKeyboardRemove()
     )
