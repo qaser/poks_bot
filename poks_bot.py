@@ -6,10 +6,9 @@ from aiogram.utils import executor
 from config.bot_config import bot, dp
 from config.mongo_config import groups
 from config.telegram_config import MY_TELEGRAM_ID
-from handlers.service import register_handlers_service
 from handlers.emergency_stop import register_handlers_emergency
-from texts.initial import INITIAL_TEXT, NEW_GROUP_TEXT, HELP_TEXT
-
+from handlers.service import register_handlers_service
+from texts.initial import HELP_TEXT, INITIAL_TEXT, NEW_GROUP_TEXT
 
 logging.basicConfig(
     filename='logs_bot.log',

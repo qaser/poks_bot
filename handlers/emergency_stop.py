@@ -1,14 +1,13 @@
 import datetime as dt
 import os
 
-import pymongo
 from aiogram import Dispatcher, types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 
-from utils.constants import KS
 from config.bot_config import bot
-from config.mongo_config import users, emergency_stops
+from config.mongo_config import emergency_stops, users
+from utils.constants import KS
 
 
 async def send_exam_answers(message: types.Message):
@@ -51,8 +50,8 @@ async def station_name(message: types.Message, state: FSMContext):
     gks_manager = users.find_one({'_id': message.text})
     if gks_manager is None:
         await message.answer(
-            text=('В базе данных нет информации о начальнике ГКС с этой станции.\n'
-                  'Операция прервана.'),
+            text=('В базе данных нет информации о начальнике ГКС '
+                  'с этой станции.\nОперация прервана.'),
             reply_markup=types.ReplyKeyboardRemove()
         )
         await state.finish()

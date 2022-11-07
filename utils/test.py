@@ -1,13 +1,7 @@
-from cgitb import reset
-import datetime as dt
-import collections, operator
 import pprint
-import requests
 
 import pymongo
-from aiogram import Dispatcher, types
-from aiogram.dispatcher import FSMContext
-from aiogram.dispatcher.filters.state import State, StatesGroup
+
 # from config.telegram_config import MY_TELEGRAM_ID
 
 client = pymongo.MongoClient('localhost', 27017)
