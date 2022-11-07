@@ -16,7 +16,7 @@ logging.basicConfig(
     filemode='a',
     format='%(asctime)s - %(message)s',
     datefmt='%d.%m.%y %H:%M:%S',
-    # encoding='utf-8',
+    encoding='utf-8',
 )
 
 

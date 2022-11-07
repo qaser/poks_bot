@@ -112,7 +112,7 @@ async def confirmation(message: types.Message, state: FSMContext):
         reply_markup=types.ReplyKeyboardRemove()
     )
     # media = types.MediaGroup()
-    file_pdf = open('static/tutorial_pdf/tutorial_pdf.pdf')
+    file_pdf = open('static/tutorial_pdf/tutorial_pdf' + '.pdf', 'rb')
     # for _, _, files in os.walk('static/tutorial_pdf/'):
     #     for filename in files:
     #         file = f'static/tutorial_pdf/{filename}'
