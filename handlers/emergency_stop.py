@@ -110,12 +110,12 @@ async def confirmation(message: types.Message, state: FSMContext):
                 'Вам отправлены инструкции по организации рабочего чата.'
             )
     )
+    media = types.MediaGroup()
     for _, _, files in os.walk('static/tutorial/'):
-            for filename in files:
-                file = f'static/tutorial/{filename}'
-                with open(file, 'rb') as f:
-                    contents = f.read()
-                    await bot.send_photo(chat_id=user_id, photo=contents)
+        for filename in files:
+            file = f'static/tutorial/{filename}'
+            media.attach_photo(types.InputFile(file))
+    await bot.send_media_group(message.chat.id, media=media)
     await message.answer(
         ('Принято. Сообщение с инструкциями отправлено.\n'
          f'Адресат: {username}'),
