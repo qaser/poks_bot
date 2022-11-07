@@ -103,24 +103,18 @@ async def confirmation(message: types.Message, state: FSMContext):
     gks_manager = users.find_one({'_id': data['station']})
     username = gks_manager.get('username')
     user_id = gks_manager.get('user_id')
-    # await bot.send_message(
-    #     chat_id=user_id,
-    #     text=(
-    #             f'{data["station"]}. Произошёл АО ГПА{data["gpa_num"]}.\n'
-    #             'Вам отправлены инструкции по организации рабочего чата.'
-    #     )
-    # )
+    await bot.send_message(
+        chat_id=user_id,
+        text=(
+                f'{data["station"]}. Произошёл АО ГПА{data["gpa_num"]}.\n'
+                'Вам отправлены инструкции по организации рабочего чата.'
+        )
+    )
     media = types.MediaGroup()
     for _, _, files in os.walk('static/tutorial/'):
         for filename in files:
             file = f'static/tutorial/{filename}'
-            media.attach_photo(
-                photo=types.InputFile(file),
-                caption=(
-                    f'{data["station"]}. Произошёл АО ГПА{data["gpa_num"]}.\n'
-                    'Вам отправлены инструкции по организации рабочего чата.'
-                )
-            )
+            media.attach_photo(photo=types.InputFile(file))
     await bot.send_media_group(message.chat.id, media=media)
     await message.answer(
         text=(
