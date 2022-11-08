@@ -1,11 +1,11 @@
 import datetime as dt
-import os
 
 from aiogram import Dispatcher, types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 
 from config.bot_config import bot
+from config.pyrogram_config import app
 from config.mongo_config import admins, emergency_stops, users
 from texts.initial import MANUAL, REPORT
 from utils.constants import KS
@@ -22,6 +22,12 @@ def admin_check(id):
     if flag is None:
         return False
     return True
+
+
+async def create_group(station, gpa, user_id):
+    async with app:
+        group_name = f'{station}. АО ГПА{gpa}'
+        await app.create_supergroup(group_name)
 
 
 # команда /ao - входная точка для оповещения аварийного останова
@@ -107,16 +113,17 @@ async def confirmation(message: types.Message, state: FSMContext):
     gks_manager = users.find_one({'_id': data['station']})
     username = gks_manager.get('username')
     user_id = gks_manager.get('user_id')
-    await bot.send_message(
-        chat_id=user_id,
-        text=(
-                f'{data["station"]}.\nДля расследования АО ГПА{data["gpa_num"]} '
-                'Вам отправлена инструкция по организации рабочего чата.'
-        ),
-        reply_markup=types.ReplyKeyboardRemove()
-    )
-    file_pdf = open('static/tutorial_pdf/Инструкция' + '.pdf', 'rb')
-    await bot.send_document(chat_id=user_id, document=file_pdf)
+    await create_group(data['station'], data['gpa_num'], user_id)
+    # await bot.send_message(
+    #     chat_id=user_id,
+    #     text=(
+    #             f'{data["station"]}.\nДля расследования АО ГПА{data["gpa_num"]} '
+    #             'Вам отправлена инструкция по организации рабочего чата.'
+    #     ),
+    #     reply_markup=types.ReplyKeyboardRemove()
+    # )
+    # file_pdf = open('static/tutorial_pdf/Инструкция' + '.pdf', 'rb')
+    # await bot.send_document(chat_id=user_id, document=file_pdf)
     await message.answer(
         text=(
                 'Принято. Сообщение с инструкциями отправлено.\n'

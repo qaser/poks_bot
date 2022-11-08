@@ -1,10 +1,14 @@
-import os
+from pyrogram import Client, filters
 
-list_file = []
-for _, _, files in os.walk('static/tutorial/'):
-        for filename in files:
-            file = f'static/tutorial/{filename}'
-            list_file.append(file)
-print(list_file)
-file_pdf = open('static/tutorial_pdf/tutorial_pdf.pdf')
-print(file_pdf)
+app = Client("History grabber", api_id=14823047, api_hash="e962db8176f1c7b85eab97ac8acde1e3")
+
+async def create_group():
+    async with app:
+        await app.create_supergroup("Group Title2")
+
+def main():
+    app.run(create_group())
+
+
+if __name__ == "__main__":
+	main()
