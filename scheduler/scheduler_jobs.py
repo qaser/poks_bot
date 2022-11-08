@@ -8,17 +8,17 @@ scheduler = AsyncIOScheduler()
 
 def scheduler_jobs():
     # по будням в 18:00 отправляет заметку о сегодняшнем дне
-    # scheduler.add_job(
-    #     send_remainder,
-    #     'cron',
-    #     day_of_week='mon-sun',
-    #     hour=18,
-    #     minute=0,
-    #     timezone=TIME_ZONE
-    # )
     scheduler.add_job(
         send_remainder,
-        'interval',
-        seconds=15,
+        'cron',
+        day_of_week='mon-sun',
+        hour=18,
+        minute=0,
         timezone=TIME_ZONE
     )
+    # scheduler.add_job(
+    #     send_remainder,
+    #     'interval',
+    #     seconds=15,
+    #     timezone=TIME_ZONE
+    # )
