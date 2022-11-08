@@ -8,7 +8,7 @@ from config.mongo_config import groups
 from config.telegram_config import MY_TELEGRAM_ID
 from handlers.emergency_stop import register_handlers_emergency
 from handlers.service import register_handlers_service
-from scheduler.scheduler_jobs import scheduler_jobs
+from scheduler.scheduler_jobs import scheduler, scheduler_jobs
 from texts.initial import HELP_TEXT, INITIAL_TEXT, NEW_GROUP_TEXT
 
 logging.basicConfig(
@@ -71,7 +71,8 @@ async def on_startup(_):
 
 
 if __name__ == '__main__':
+    scheduler.start()
     register_handlers_service(dp)
     register_handlers_emergency(dp)
-    # executor.start_polling(dp, skip_updates=True, on_startup=on_startup)
-    executor.start_polling(dp, skip_updates=True)
+    executor.start_polling(dp, skip_updates=True, on_startup=on_startup)
+    # executor.start_polling(dp, skip_updates=True)
