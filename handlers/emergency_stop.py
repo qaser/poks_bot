@@ -126,7 +126,10 @@ async def confirmation(message: types.Message, state: FSMContext):
 
 #  обработка команды /manual
 async def send_manual(message: types.Message):
-    await message.answer(MANUAL)
+    await message.answer(
+        MANUAL,
+        parse_mode=types.ParseMode.HTML,
+    )
 
 
 def register_handlers_emergency(dp: Dispatcher):

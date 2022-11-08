@@ -16,9 +16,9 @@ def scheduler_jobs():
         minute=0,
         timezone=TIME_ZONE
     )
-    scheduler.add_job(
-        send_remainder,
-        'interval',
-        seconds=15,
-        timezone=TIME_ZONE
-    )
+    # scheduler.add_job(
+    #     send_remainder,
+    #     'interval',
+    #     seconds=15,
+    #     timezone=TIME_ZONE
+    # )
