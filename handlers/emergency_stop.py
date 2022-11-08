@@ -7,7 +7,7 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 
 from config.bot_config import bot
 from config.mongo_config import emergency_stops, users
-from texts.initial import MANUAL
+from texts.initial import MANUAL, REPORT
 from utils.constants import KS
 
 
@@ -132,9 +132,15 @@ async def send_manual(message: types.Message):
     )
 
 
+#  обработка команды /report
+async def send_report(message: types.Message):
+    await message.answer(REPORT)
+
+
 def register_handlers_emergency(dp: Dispatcher):
     dp.register_message_handler(emergency_start, commands='ao')
     dp.register_message_handler(send_manual, commands='manual')
+    dp.register_message_handler(send_report, commands='report')
     dp.register_message_handler(
         station_name,
         state=Emergency.waiting_station_name
