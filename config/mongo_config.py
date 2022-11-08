@@ -6,7 +6,7 @@ db = client['poks_bot_db']
 users = db['gks_users']
 emergency_stops = db['emergency_stops']
 groups = db['groups']
-admins - db['admins']
+admins = db['admins']
 
 
 ''' 
