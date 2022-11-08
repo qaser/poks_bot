@@ -27,7 +27,13 @@ def admin_check(id):
 async def create_group(station, gpa, user_id):
     async with app:
         group_name = f'{station}. АО ГПА {gpa}'
-        await app.create_supergroup(group_name)
+        group = await app.create_supergroup(group_name)
+        group_id = group.id
+        # link = app.get_chat_admin_invite_links(group_id, 157830392)
+        # return link
+        # await group.add_members(5783774609)
+        # await app.add_chat_members(group_id, 5783774609)
+        # await app.leave_chat(group_id)
 
 
 # команда /ao - входная точка для оповещения аварийного останова
@@ -114,6 +120,8 @@ async def confirmation(message: types.Message, state: FSMContext):
     username = gks_manager.get('username')
     user_id = gks_manager.get('user_id')
     await create_group(data['station'], data['gpa_num'], user_id)
+    # print(dir(link))
+    # await message.answer(link.invite_link)
     # await bot.send_message(
     #     chat_id=user_id,
     #     text=(
