@@ -20,5 +20,5 @@ def scheduler_jobs():
         send_remainder,
         'interval',
         seconds=15,
-        timezone=const.TIME_ZONE
+        timezone=TIME_ZONE
     )
