@@ -34,3 +34,5 @@ KS = [
     'Ягельная КС',
     'Ямбургская КС',
 ]
+
+TIMEZONE = 'Asia/Yekaterinburg'

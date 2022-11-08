@@ -45,7 +45,7 @@ async def add_bot_message(message: types.Message):
                 {
                     '_id': message.chat.id,
                     'group_name': message.chat.title,
-                    'sub_banned': '',
+                    'sub_banned': 'false',
                 }
             )
             await bot.send_message(
