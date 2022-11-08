@@ -3,7 +3,7 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 
 from config.bot_config import bot
-from config.mongo_config import users
+from config.mongo_config import groups, users
 from config.telegram_config import MY_TELEGRAM_ID
 from utils.constants import KS
 
