@@ -11,15 +11,6 @@ from texts.initial import MANUAL, REPORT
 from utils.constants import KS
 
 
-async def send_exam_answers(message: types.Message):
-    media = types.MediaGroup()
-    for _, _, files in os.walk('static/tutorial/'):
-        for filename in files:
-            file = f'static/tutorial/{filename}'
-            media.attach_photo(types.InputFile(file))
-    await bot.send_media_group(message.chat.id, media=media)
-
-
 class Emergency(StatesGroup):
     waiting_station_name = State()
     waiting_gpa_number = State()
@@ -112,7 +103,7 @@ async def confirmation(message: types.Message, state: FSMContext):
         ),
         reply_markup=types.ReplyKeyboardRemove()
     )
-    file_pdf = open('static/tutorial_pdf/инструкция' + '.pdf', 'rb')
+    file_pdf = open('static/tutorial_pdf/Инструкция' + '.pdf', 'rb')
     await bot.send_document(chat_id=user_id, document=file_pdf)
     await message.answer(
         text=(
