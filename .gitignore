@@ -45,3 +45,5 @@ media/cache/
 run.sh
 
 *.log
+
+*.session

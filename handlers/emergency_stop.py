@@ -26,7 +26,7 @@ def admin_check(id):
 
 async def create_group(station, gpa, user_id):
     async with app:
-        group_name = f'{station}. АО ГПА{gpa}'
+        group_name = f'{station}. АО ГПА {gpa}'
         await app.create_supergroup(group_name)
 
 
