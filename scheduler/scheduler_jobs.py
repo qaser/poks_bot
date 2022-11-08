@@ -14,7 +14,7 @@ def scheduler_jobs():
         day_of_week='mon-sun',
         hour=18,
         minute=0,
-        timezone=const.TIME_ZONE
+        timezone=TIME_ZONE
     )
     # scheduler.add_job(
     #     send_remainder,
