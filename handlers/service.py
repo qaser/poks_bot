@@ -3,7 +3,7 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 
 from config.bot_config import bot
-from config.mongo_config import groups, users
+from config.mongo_config import admins, groups, users
 from config.telegram_config import MY_TELEGRAM_ID
 from utils.constants import KS
 
@@ -172,6 +172,17 @@ async def start_subscribe(message: types.Message):
         )
 
 
+async set_admin(message: types.Message):
+    user = message.from_user
+    admins.insert_one(
+        {
+            'user_id': user.id,
+            'username': user.full_name
+        }
+    )
+    await message.answer('Администратор добавлен')
+
+
 
 def register_handlers_service(dp: Dispatcher):
     dp.register_message_handler(reset_handler, commands='reset', state='*')
@@ -179,6 +190,7 @@ def register_handlers_service(dp: Dispatcher):
     dp.register_message_handler(stop_subscribe, commands='unsub')
     dp.register_message_handler(start_subscribe, commands='sub')
     dp.register_message_handler(station_choose, commands='gks')
+    dp.register_message_handler(set_admin, commands='admin')
     dp.register_message_handler(
         station_confirm,
         state=GksManager.waiting_station_name

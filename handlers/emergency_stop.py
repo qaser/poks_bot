@@ -6,7 +6,7 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 
 from config.bot_config import bot
-from config.mongo_config import emergency_stops, users
+from config.mongo_config import admins, emergency_stops, users
 from texts.initial import MANUAL, REPORT
 from utils.constants import KS
 
@@ -17,19 +17,31 @@ class Emergency(StatesGroup):
     waiting_confirm = State()
 
 
+def admin_check(id):
+    flag = admins.find_one({ 'user_id': id })
+    if flag is None:
+        return False
+    return True
+
+
 # команда /ao - входная точка для оповещения аварийного останова
 async def emergency_start(message: types.Message):
-    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    for station in KS:
-        keyboard.add(station)
-    await message.answer(
-        text=(
-            'Выберите компрессорную станцию, '
-            'на которой произошёл аварийный останов'
-        ),
-        reply_markup=keyboard
-    )
-    await Emergency.waiting_station_name.set()
+    user_id = message.from_user.id
+    check = admin_check(user_id)
+    if check:
+        keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        for station in KS:
+            keyboard.add(station)
+        await message.answer(
+            text=(
+                'Выберите компрессорную станцию, '
+                'на которой произошёл аварийный останов'
+            ),
+            reply_markup=keyboard
+        )
+        await Emergency.waiting_station_name.set()
+    else:
+        await message.answer('Вам недоступна эта команда')
 
 
 async def station_name(message: types.Message, state: FSMContext):

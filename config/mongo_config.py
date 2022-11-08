@@ -6,6 +6,8 @@ db = client['poks_bot_db']
 users = db['gks_users']
 emergency_stops = db['emergency_stops']
 groups = db['groups']
+admins - db['admins']
+
 
 ''' 
 структура данных группы
@@ -23,4 +25,9 @@ groups = db['groups']
     'date': дата ввода данных об АО
     'station': название станции
     'gpa': номер ГПА
+
+структура данных администраторов
+    '_id': дефолтный первичный ключ
+    'user_id' id пользователя телеграм
+    'username': имя пользователя
 '''
