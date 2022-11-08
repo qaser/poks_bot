@@ -8,6 +8,7 @@ from config.mongo_config import groups
 from config.telegram_config import MY_TELEGRAM_ID
 from handlers.emergency_stop import register_handlers_emergency
 from handlers.service import register_handlers_service
+from scheduler.scheduler_jobs import scheduler_jobs
 from texts.initial import HELP_TEXT, INITIAL_TEXT, NEW_GROUP_TEXT
 
 logging.basicConfig(
@@ -44,6 +45,7 @@ async def add_bot_message(message: types.Message):
                 {
                     '_id': message.chat.id,
                     'group_name': message.chat.title,
+                    'sub_banned': '',
                 }
             )
             await bot.send_message(
@@ -54,6 +56,7 @@ async def add_bot_message(message: types.Message):
             #     chat_id=message.chat.id,
             #     text=NEW_GROUP_TEXT
             # )
+    # удаление сервисного сообщения 'добавлен пользователь'
     await bot.delete_message(message.chat.id, message.message_id)
 
 
@@ -61,6 +64,10 @@ async def add_bot_message(message: types.Message):
 @dp.message_handler(content_types=['left_chat_member'])
 async def delete_service_message(message: types.Message):
     await bot.delete_message(message.chat.id, message.message_id)
+
+
+async def on_startup(_):
+    scheduler_jobs()
 
 
 if __name__ == '__main__':
