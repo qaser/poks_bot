@@ -2,7 +2,7 @@ from config.bot_config import bot
 from config.mongo_config import groups
 
 
-def send_remainder():
+async def send_remainder():
     queryset = list(groups.find({'sub_banned': 'false'}))
     for group in queryset:
         await bot.send_message(
