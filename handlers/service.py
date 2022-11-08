@@ -172,7 +172,7 @@ async def start_subscribe(message: types.Message):
         )
 
 
-async set_admin(message: types.Message):
+async def set_admin(message: types.Message):
     user = message.from_user
     admins.insert_one(
         {
