@@ -57,13 +57,19 @@ async def add_bot_message(message: types.Message):
                 text=NEW_GROUP_TEXT
             )
     # удаление сервисного сообщения 'добавлен пользователь'
-    await bot.delete_message(message.chat.id, message.message_id)
+    try:
+        await bot.delete_message(message.chat.id, message.message_id)
+    except:
+        pass
 
 
 # удаление сервисного сообщения 'пользователь удалён'
 @dp.message_handler(content_types=['left_chat_member'])
 async def delete_service_message(message: types.Message):
-    await bot.delete_message(message.chat.id, message.message_id)
+    try:
+        await bot.delete_message(message.chat.id, message.message_id)
+    except:
+        pass
 
 
 async def on_startup(_):

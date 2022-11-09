@@ -5,8 +5,8 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 
 from config.bot_config import bot
-from config.pyrogram_config import app
 from config.mongo_config import admins, emergency_stops, users
+from config.pyrogram_config import app
 from texts.initial import MANUAL, REPORT
 from utils.constants import KS
 
@@ -27,7 +27,7 @@ def admin_check(id):
 async def create_group(station, gpa, user_id):
     async with app:
         group_name = f'{station}. АО ГПА {gpa}'
-        group = await app.create_supergroup(group_name)
+        group = await app.create_group(group_name, user_id)
         group_id = group.id
         # link = app.get_chat_admin_invite_links(group_id, 157830392)
         # return link
