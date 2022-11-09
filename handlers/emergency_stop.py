@@ -6,7 +6,7 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 
 from config.bot_config import bot
 from config.mongo_config import admins, emergency_stops, users
-from config.pyrogram_config import app
+# from config.pyrogram_config import app
 from texts.initial import MANUAL, REPORT
 from utils.constants import KS
 
