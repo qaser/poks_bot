@@ -119,19 +119,19 @@ async def confirmation(message: types.Message, state: FSMContext):
     gks_manager = users.find_one({'_id': data['station']})
     username = gks_manager.get('username')
     user_id = gks_manager.get('user_id')
-    await create_group(data['station'], data['gpa_num'], user_id)
+    # await create_group(data['station'], data['gpa_num'], user_id)
     # print(dir(link))
     # await message.answer(link.invite_link)
-    # await bot.send_message(
-    #     chat_id=user_id,
-    #     text=(
-    #             f'{data["station"]}.\nДля расследования АО ГПА{data["gpa_num"]} '
-    #             'Вам отправлена инструкция по организации рабочего чата.'
-    #     ),
-    #     reply_markup=types.ReplyKeyboardRemove()
-    # )
-    # file_pdf = open('static/tutorial_pdf/Инструкция' + '.pdf', 'rb')
-    # await bot.send_document(chat_id=user_id, document=file_pdf)
+    await bot.send_message(
+        chat_id=user_id,
+        text=(
+                f'{data["station"]}.\nДля расследования АО ГПА{data["gpa_num"]} '
+                'Вам отправлена инструкция по организации рабочего чата.'
+        ),
+        reply_markup=types.ReplyKeyboardRemove()
+    )
+    file_pdf = open('static/tutorial_pdf/Инструкция' + '.pdf', 'rb')
+    await bot.send_document(chat_id=user_id, document=file_pdf)
     await message.answer(
         text=(
                 'Принято. Сообщение с инструкциями отправлено.\n'
