@@ -37,18 +37,22 @@ async def count_users(message: types.Message):
 
 # обработка команды /gks - сбор данных о начальниках ГКС
 async def station_choose(message: types.Message):
-    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    for station in KS:
-        keyboard.add(station)
-    await message.answer(
-        text=(
-            'Этот опрос только для начальников ГКС (в том числе и врио)\n'
-            'Боту необходимо узнать место Вашей работы.\n'
-            'Выберите название компрессорной станции из списка ниже'
-        ),
-        reply_markup=keyboard
-    )
-    await GksManager.waiting_station_name.set()
+    # if message.chat.id == -1001856019654:
+    if message.chat.id == -819460116:
+        await message.answer('Эта команда здесь не доступна, перейдите к боту @otdel_ks_bot')
+    else:
+        keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        for station in KS:
+            keyboard.add(station)
+        await message.answer(
+            text=(
+                'Этот опрос только для начальников ГКС (в том числе и врио)\n'
+                'Боту необходимо узнать место Вашей работы.\n'
+                'Выберите название компрессорной станции из списка ниже'
+            ),
+            reply_markup=keyboard
+        )
+        await GksManager.waiting_station_name.set()
 
 
 async def station_confirm(message: types.Message, state: FSMContext):
