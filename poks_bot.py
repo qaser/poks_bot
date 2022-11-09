@@ -41,17 +41,19 @@ async def add_bot_message(message: types.Message):
     bot_id = bot_obj.id
     for chat_member in message.new_chat_members:
         if chat_member.id == bot_id:
-            groups.insert_one(
-                {
-                    '_id': message.chat.id,
-                    'group_name': message.chat.title,
-                    'sub_banned': 'false',
-                }
-            )
-            await bot.send_message(
-                chat_id=MY_TELEGRAM_ID,
-                text=f'Бот добавлен в новую группу: {message.chat.title}'
-            )
+            check = groups.find_one({'_id': message.chat.id,})
+            if check is None:
+                groups.insert_one(
+                    {
+                        '_id': message.chat.id,
+                        'group_name': message.chat.title,
+                        'sub_banned': 'false',
+                    }
+                )
+                await bot.send_message(
+                    chat_id=MY_TELEGRAM_ID,
+                    text=f'Бот добавлен в новую группу: {message.chat.title}'
+                )
             # отправка приветственного сообщения
             await bot.send_message(
                 chat_id=message.chat.id,
