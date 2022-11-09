@@ -64,7 +64,7 @@ async def add_bot_message(message: types.Message):
 
 
 # удаление сервисного сообщения 'пользователь удалён'
-@dp.message_handler(content_types=['left_chat_member'])
+@dp.message_handler(content_types=['left_chat_member', 'pinned_message'])
 async def delete_service_message(message: types.Message):
     try:
         await bot.delete_message(message.chat.id, message.message_id)
