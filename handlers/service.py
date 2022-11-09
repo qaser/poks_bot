@@ -37,8 +37,7 @@ async def count_users(message: types.Message):
 
 # обработка команды /gks - сбор данных о начальниках ГКС
 async def station_choose(message: types.Message):
-    # if message.chat.id == -1001856019654:
-    if message.chat.id == -819460116:
+    if message.chat.id == -1001856019654:
         await message.answer('Эта команда здесь не доступна, перейдите к боту @otdel_ks_bot')
     else:
         keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
@@ -185,7 +184,6 @@ async def set_admin(message: types.Message):
         }
     )
     await message.answer('Администратор добавлен')
-
 
 
 def register_handlers_service(dp: Dispatcher):
