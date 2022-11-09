@@ -7,7 +7,7 @@ scheduler = AsyncIOScheduler()
 
 
 def scheduler_jobs():
-    # по будням в 18:00 отправляет напоминание о 
+    # по будням в 18:00 отправляет напоминание о предоставлении отчёта
     scheduler.add_job(
         send_remainder,
         'cron',

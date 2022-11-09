@@ -19,7 +19,6 @@ pyaes==1.6.1
 pycodestyle==2.8.0
 pyflakes==2.4.0
 pymongo==4.2.0
-Pyrogram==2.0.59
 PySocks==1.7.1
 python-dotenv==0.20.0
 pytz==2022.1
