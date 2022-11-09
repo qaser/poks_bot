@@ -159,7 +159,10 @@ async def send_manual(message: types.Message):
 
 #  обработка команды /report
 async def send_report(message: types.Message):
-    await message.answer(REPORT)
+    if message.chat.id == -1001856019654:
+        await message.answer('Эта команда здесь не доступна, перейдите к боту @otdel_ks_bot')
+    else:
+        await message.answer(REPORT)
 
 
 def register_handlers_emergency(dp: Dispatcher):
