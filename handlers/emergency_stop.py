@@ -144,14 +144,17 @@ async def confirmation(message: types.Message, state: FSMContext):
 
 #  обработка команды /manual
 async def send_manual(message: types.Message):
-    post = await message.answer(
-        MANUAL,
-        parse_mode=types.ParseMode.HTML,
-    )
-    try:
-        await bot.pin_chat_message(message.chat.id, post.message_id)
-    except:
-        pass
+    if message.chat.id == -1001856019654:
+        await message.answer('Эта команда здесь не доступна, перейдите к боту @otdel_ks_bot')
+    else:
+        post = await message.answer(
+            MANUAL,
+            parse_mode=types.ParseMode.HTML,
+        )
+        try:
+            await bot.pin_chat_message(message.chat.id, post.message_id)
+        except:
+            pass
 
 
 #  обработка команды /report
