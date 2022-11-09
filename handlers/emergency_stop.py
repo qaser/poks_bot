@@ -100,46 +100,48 @@ async def confirmation(message: types.Message, state: FSMContext):
             'Пожалуйста, выберите ответ, используя клавиатуру ниже.'
         )
         return
-    if message.text.lower() == 'нет':
+    if message.text.lower() == 'да':
+        date = dt.datetime.today().strftime('%d.%m.%Y')
+        data = await state.get_data()
+        emergency_stops.insert_one(
+            {
+                'date': date,
+                'station': data['station'],
+                'gpa': data['gpa_num'],
+            }
+        )
+        gks_manager = users.find_one({'_id': data['station']})
+        username = gks_manager.get('username')
+        user_id = gks_manager.get('user_id')
+        # await create_group(data['station'], data['gpa_num'], user_id)
+        # print(dir(link))
+        # await message.answer(link.invite_link)
+        await bot.send_message(
+            chat_id=user_id,
+            text=(
+                    f'{data["station"]}.\nДля расследования АО ГПА{data["gpa_num"]} '
+                    'Вам отправлена инструкция по организации рабочего чата.'
+            ),
+            reply_markup=types.ReplyKeyboardRemove()
+        )
+        file_pdf = open('static/tutorial_pdf/Инструкция' + '.pdf', 'rb')
+        await bot.send_document(chat_id=user_id, document=file_pdf)
+        await message.answer(
+            text=(
+                    'Принято. Сообщение с инструкциями отправлено.\n'
+                    f'Адресат: {username}'
+            ),
+            reply_markup=types.ReplyKeyboardRemove()
+        )
+        await state.finish()
+    else:
         await message.answer(
             ('Данные не сохранены.\n'
              'Если необходимо повторить команду - нажмите /ao'),
             reply_markup=types.ReplyKeyboardRemove()
         )
         await state.reset_state()
-    date = dt.datetime.today().strftime('%d.%m.%Y')
-    data = await state.get_data()
-    emergency_stops.insert_one(
-        {
-            'date': date,
-            'station': data['station'],
-            'gpa': data['gpa_num'],
-        }
-    )
-    gks_manager = users.find_one({'_id': data['station']})
-    username = gks_manager.get('username')
-    user_id = gks_manager.get('user_id')
-    # await create_group(data['station'], data['gpa_num'], user_id)
-    # print(dir(link))
-    # await message.answer(link.invite_link)
-    await bot.send_message(
-        chat_id=user_id,
-        text=(
-                f'{data["station"]}.\nДля расследования АО ГПА{data["gpa_num"]} '
-                'Вам отправлена инструкция по организации рабочего чата.'
-        ),
-        reply_markup=types.ReplyKeyboardRemove()
-    )
-    file_pdf = open('static/tutorial_pdf/Инструкция' + '.pdf', 'rb')
-    await bot.send_document(chat_id=user_id, document=file_pdf)
-    await message.answer(
-        text=(
-                'Принято. Сообщение с инструкциями отправлено.\n'
-                f'Адресат: {username}'
-        ),
-        reply_markup=types.ReplyKeyboardRemove()
-    )
-    await state.finish()
+
 
 
 #  обработка команды /manual
