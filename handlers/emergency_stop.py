@@ -148,16 +148,10 @@ async def send_manual(message: types.Message):
         MANUAL,
         parse_mode=types.ParseMode.HTML,
     )
-    list_post = list(posts.find({}))
     try:
         await bot.pin_chat_message(message.chat.id, post.message_id)
     except:
         pass
-    for i in list_post:
-        try:
-            await bot.delete_message(message.chat.id, i.post_id)
-        except:
-            pass
 
 
 #  обработка команды /report

@@ -65,33 +65,8 @@ async def add_bot_message(message: types.Message):
         pass
 
 
-
 # удаление сервисного сообщения 'пользователь удалён'
-@dp.message_handler(content_types=['left_chat_member'])
-async def delete_bot_message(message: types.Message):
-    bot_obj = await bot.get_me()
-    bot_id = bot_obj.id
-    for chat_member in message.left_chat_member:
-        if chat_member.id == bot_id:
-            try:
-                groups.delete_one({'_id': message.chat.id,})
-                await bot.send_message(
-                    chat_id=MY_TELEGRAM_ID,
-                    text=f'Бот удалён из группы: {message.chat.title}'
-                )
-            except:
-                await bot.send_message(
-                    chat_id=MY_TELEGRAM_ID,
-                    text=f'Бот удалён из группы, но этой группы нет в БД: {message.chat.title}'
-                )
-    try:
-        await bot.delete_message(message.chat.id, message.message_id)
-    except:
-        pass
-
-
-# удаление сервисного сообщения 'пользователь удалён'
-@dp.message_handler(content_types=['pinned_message'])
+@dp.message_handler(content_types=['pinned_message', 'left_chat_member'])
 async def delete_service_pinned_message(message: types.Message):
     try:
         await bot.delete_message(message.chat.id, message.message_id)
