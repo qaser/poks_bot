@@ -53,11 +53,10 @@ async def add_bot_message(message: types.Message):
                 text=f'Бот добавлен в новую группу: {message.chat.title}'
             )
             # отправка приветственного сообщения
-            post = await bot.send_message(
+            await bot.send_message(
                 chat_id=message.chat.id,
                 text=NEW_GROUP_TEXT
             )
-            posts.insert_one({ 'post_id': post.message_id })
     # удаление сервисного сообщения 'добавлен пользователь'
     try:
         await bot.delete_message(message.chat.id, message.message_id)
