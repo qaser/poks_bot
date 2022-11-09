@@ -34,7 +34,7 @@ async def help_handler(message: types.Message):
     )
 
 
-# обработка события - добавление бота группу
+# обработка события - добавление бота в группу
 @dp.message_handler(content_types=['new_chat_members'])
 async def add_bot_message(message: types.Message):
     bot_obj = await bot.get_me()
@@ -52,10 +52,12 @@ async def add_bot_message(message: types.Message):
                 chat_id=MY_TELEGRAM_ID,
                 text=f'Бот добавлен в новую группу: {message.chat.title}'
             )
-            await bot.send_message(
+            # отправка приветственного сообщения
+            post = await bot.send_message(
                 chat_id=message.chat.id,
                 text=NEW_GROUP_TEXT
             )
+            posts.insert_one({ 'post_id': post.message_id })
     # удаление сервисного сообщения 'добавлен пользователь'
     try:
         await bot.delete_message(message.chat.id, message.message_id)
