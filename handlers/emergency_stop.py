@@ -144,10 +144,11 @@ async def confirmation(message: types.Message, state: FSMContext):
 
 #  обработка команды /manual
 async def send_manual(message: types.Message):
-    await message.answer(
+    mess = await message.answer(
         MANUAL,
         parse_mode=types.ParseMode.HTML,
     )
+    await bot.pin_chat_message(message.chat.id, mess.id)
 
 
 #  обработка команды /report
