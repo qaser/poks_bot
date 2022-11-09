@@ -84,55 +84,56 @@ async def user_save(message: types.Message, state: FSMContext):
             'Пожалуйста, отправьте "Да" или "Нет"'
         )
         return
-    if message.text.lower() == 'нет':
+    if message.text.lower() == 'да':
+        buffer_data = await state.get_data()
+        station = buffer_data['station']
+        user = message.from_user
+        station_check = users.find_one({'_id': station})
+        if station_check is not None:
+            users.update_one(
+                {'_id': station},
+                {
+                    '$set':
+                    {
+                        'user_id': user.id,
+                        'username': user.full_name
+                    }
+                },
+                upsert=False
+            )
+            await message.answer(
+                'Данные отправлены и сохранены.',
+                reply_markup=types.ReplyKeyboardRemove()
+            )
+            await state.finish()
+            await bot.send_message(
+                chat_id=MY_TELEGRAM_ID,
+                text=f'Обновлён начальник ГКС: {station}, {user.full_name}'
+            )
+        else:
+            users.insert_one(
+                {
+                    '_id': station,
+                    'user_id': user.id,
+                    'username': user.full_name
+                }
+            )
+            await message.answer(
+                'Данные отправлены и сохранены.',
+                reply_markup=types.ReplyKeyboardRemove()
+            )
+            await state.finish()
+            await bot.send_message(
+                chat_id=MY_TELEGRAM_ID,
+                text=f'Добавлен начальник ГКС: {station}, {user.full_name}'
+            )
+    else:
         await message.answer(
             ('Данные не сохранены.\n'
              'Если необходимо отправить новые данные - нажмите /gks'),
             reply_markup=types.ReplyKeyboardRemove()
         )
         await state.reset_state()
-    buffer_data = await state.get_data()
-    station = buffer_data['station']
-    user = message.from_user
-    station_check = users.find_one({'_id': station})
-    if station_check is not None:
-        users.update_one(
-            {'_id': station},
-            {
-                '$set':
-                {
-                    'user_id': user.id,
-                    'username': user.full_name
-                }
-            },
-            upsert=False
-        )
-        await message.answer(
-            'Данные отправлены и сохранены.',
-            reply_markup=types.ReplyKeyboardRemove()
-        )
-        await state.finish()
-        await bot.send_message(
-            chat_id=MY_TELEGRAM_ID,
-            text=f'Обновлён начальник ГКС: {station}, {user.full_name}'
-        )
-    else:
-        users.insert_one(
-            {
-                '_id': station,
-                'user_id': user.id,
-                'username': user.full_name
-            }
-        )
-        await message.answer(
-            'Данные отправлены и сохранены.',
-            reply_markup=types.ReplyKeyboardRemove()
-        )
-        await state.finish()
-        await bot.send_message(
-            chat_id=MY_TELEGRAM_ID,
-            text=f'Добавлен начальник ГКС: {station}, {user.full_name}'
-        )
 
 
 # запрет на рассылку уведомлений
