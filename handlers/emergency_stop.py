@@ -148,7 +148,7 @@ async def send_manual(message: types.Message):
         MANUAL,
         parse_mode=types.ParseMode.HTML,
     )
-    await bot.pin_chat_message(message.chat.id, mess.id)
+    await bot.pin_chat_message(message.chat.id, mess.message_id)
 
 
 #  обработка команды /report
