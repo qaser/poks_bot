@@ -203,11 +203,20 @@ async def set_admin(message: types.Message):
     await message.answer('Администратор добавлен')
 
 
+# обработка команды /log
+async def send_logs(message: types.Message):
+    file = f'logs_bot.log'
+    with open(file, 'rb') as f:
+        content = f.read()
+        await bot.send_document(chat_id=MY_TELEGRAM_ID, document=content)
+
+
 def register_handlers_service(dp: Dispatcher):
     dp.register_message_handler(reset_handler, commands='reset', state='*')
     dp.register_message_handler(count_users, commands='users')
     dp.register_message_handler(stop_subscribe, commands='unsub')
     dp.register_message_handler(start_subscribe, commands='sub')
+    dp.register_message_handler(send_logs, commands='log')
     dp.register_message_handler(station_choose, commands='gks')
     # dp.register_message_handler(set_admin, commands='admin')
     dp.register_message_handler(
