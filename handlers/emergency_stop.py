@@ -113,9 +113,6 @@ async def confirmation(message: types.Message, state: FSMContext):
         gks_manager = users.find_one({'_id': data['station']})
         username = gks_manager.get('username')
         user_id = gks_manager.get('user_id')
-        # await create_group(data['station'], data['gpa_num'], user_id)
-        # print(dir(link))
-        # await message.answer(link.invite_link)
         await bot.send_message(
             chat_id=user_id,
             text=(
