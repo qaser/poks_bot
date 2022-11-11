@@ -42,26 +42,29 @@ async def count_users(message: types.Message):
 
 
 # обработка команды /nousers просмотр количества пользователей в БД
-# async def count_nousers(message: types.Message):
-#     user_id = message.from_user.id
-#     check = admin_check(user_id)
-#     if check:
-#         num_of_stations = len(KS)
-#         queryset = list(users.find({}))
-#         res = []  # список внесённых станций
-#         for i in queryset:
-#             stan = i.get('_id')
-#             res.append(stan)
-#         unusers_count = num_of_stations - len(queryset)
-#         final_text = ''
-#         for station in KS:
-#             if station not in res:
-#                 final_text = '{}\n{}'.format(final_text, station)
-#         await message.answer(
-#             text=f'Станции, с отсутствием данных: {final_text}'
-#         )
-#     else:
-#         await message.answer('Вам недоступна эта команда')
+async def count_nousers(message: types.Message):
+    user_id = message.from_user.id
+    check = admin_check(user_id)
+    if check:
+        num_of_stations = len(KS)
+        queryset = list(users.find({}))
+        res = []  # список внесённых станций
+        for i in queryset:
+            stan = i.get('_id')
+            res.append(stan)
+        unusers_count = num_of_stations - len(queryset)
+        final_text = ''
+        for station in KS:
+            if station not in res:
+                final_text = '{}\n{}'.format(final_text, station)
+        await message.answer(
+            text=f'Станции, с отсутствием данных: {final_text}'
+        )
+        await message.answer(
+            text=f'Осталось {unusers_count}'
+        )
+    else:
+        await message.answer('Вам недоступна эта команда')
 
 
 # обработка команды /gks - сбор данных о начальниках ГКС
@@ -237,7 +240,7 @@ async def send_logs(message: types.Message):
 def register_handlers_service(dp: Dispatcher):
     dp.register_message_handler(reset_handler, commands='reset', state='*')
     dp.register_message_handler(count_users, commands='users')
-    # dp.register_message_handler(count_nousers, commands='nousers')
+    dp.register_message_handler(count_nousers, commands='nousers')
     dp.register_message_handler(stop_subscribe, commands='unsub')
     dp.register_message_handler(start_subscribe, commands='sub')
     dp.register_message_handler(send_logs, commands='log')
