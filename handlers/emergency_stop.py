@@ -24,18 +24,6 @@ def admin_check(id):
     return True
 
 
-async def create_group(station, gpa, user_id):
-    async with app:
-        group_name = f'{station}. АО ГПА {gpa}'
-        group = await app.create_group(group_name, user_id)
-        group_id = group.id
-        # link = app.get_chat_admin_invite_links(group_id, 157830392)
-        # return link
-        # await group.add_members(5783774609)
-        # await app.add_chat_members(group_id, 5783774609)
-        # await app.leave_chat(group_id)
-
-
 # команда /ao - входная точка для оповещения аварийного останова
 async def emergency_start(message: types.Message):
     user_id = message.from_user.id
@@ -142,18 +130,18 @@ async def confirmation(message: types.Message, state: FSMContext):
 
 
 #  обработка команды /manual
-async def send_manual(message: types.Message):
-    if message.chat.id == -1001856019654:
-        await message.answer('Эта команда здесь не доступна, перейдите к боту @otdel_ks_bot')
-    else:
-        post = await message.answer(
-            MANUAL,
-            parse_mode=types.ParseMode.HTML,
-        )
-        try:
-            await bot.pin_chat_message(message.chat.id, post.message_id)
-        except:
-            pass
+# async def send_manual(message: types.Message):
+#     if message.chat.id == -1001856019654:
+#         await message.answer('Эта команда здесь не доступна, перейдите к боту @otdel_ks_bot')
+#     else:
+#         post = await message.answer(
+#             MANUAL,
+#             parse_mode=types.ParseMode.HTML,
+#         )
+#         try:
+#             await bot.pin_chat_message(message.chat.id, post.message_id)
+#         except:
+#             pass
 
 
 #  обработка команды /report
@@ -166,7 +154,7 @@ async def send_report(message: types.Message):
 
 def register_handlers_emergency(dp: Dispatcher):
     dp.register_message_handler(emergency_start, commands='ao')
-    dp.register_message_handler(send_manual, commands='manual')
+    # dp.register_message_handler(send_manual, commands='manual')
     dp.register_message_handler(send_report, commands='report')
     dp.register_message_handler(
         station_name,

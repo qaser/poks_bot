@@ -59,6 +59,14 @@ async def add_bot_message(message: types.Message):
                 chat_id=message.chat.id,
                 text=NEW_GROUP_TEXT
             )
+            post = await message.answer(
+                MANUAL,
+                parse_mode=types.ParseMode.HTML,
+            )
+            try:
+                await bot.pin_chat_message(message.chat.id, post.message_id)
+            except:
+                pass
     # удаление сервисного сообщения 'добавлен пользователь'
     try:
         await bot.delete_message(message.chat.id, message.message_id)
