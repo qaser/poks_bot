@@ -9,7 +9,7 @@ from config.telegram_config import MY_TELEGRAM_ID
 from handlers.emergency_stop import register_handlers_emergency
 from handlers.service import register_handlers_service
 from scheduler.scheduler_jobs import scheduler, scheduler_jobs
-from texts.initial import HELP_TEXT, INITIAL_TEXT, NEW_GROUP_TEXT
+from texts.initial import HELP_TEXT, INITIAL_TEXT, MANUAL, NEW_GROUP_TEXT
 
 logging.basicConfig(
     filename='logs_bot.log',
