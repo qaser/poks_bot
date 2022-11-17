@@ -24,47 +24,49 @@ async def reset_handler(message: types.Message, state: FSMContext):
 
 
 # обработка команды /users просмотр количества пользователей в БД
+@admin_check
 async def count_users(message: types.Message):
-    user_id = message.from_user.id
-    check = admin_check(user_id)
-    if check:
-        queryset = list(users.find({}))
-        users_count = len(queryset)
-        final_text = ''
-        for user in queryset:
-            username = '{}, {}'.format(user['_id'], user['username'])
-            final_text = '{}\n\n{}'.format(username, final_text)
-        await message.answer(
-            text=f'Количество пользователей в БД: {users_count}\n\n{final_text}'
-        )
-    else:
-        await message.answer('Вам недоступна эта команда')
+    # user_id = message.from_user.id
+    # check = admin_check(user_id)
+    # if check:
+    queryset = list(users.find({}))
+    users_count = len(queryset)
+    final_text = ''
+    for user in queryset:
+        username = '{}, {}'.format(user['_id'], user['username'])
+        final_text = '{}\n\n{}'.format(username, final_text)
+    await message.answer(
+        text=f'Количество пользователей в БД: {users_count}\n\n{final_text}'
+    )
+    # else:
+    #     await message.answer('Вам недоступна эта команда')
 
 
 # обработка команды /nousers просмотр количества пользователей в БД
+@admin_check
 async def count_nousers(message: types.Message):
-    user_id = message.from_user.id
-    check = admin_check(user_id)
-    if check:
-        num_of_stations = len(KS)
-        queryset = list(users.find({}))
-        res = []  # список внесённых станций
-        for i in queryset:
-            stan = i.get('_id')
-            res.append(stan)
-        unusers_count = num_of_stations - len(queryset)
-        final_text = ''
-        for station in KS:
-            if station not in res:
-                final_text = '{}\n{}'.format(final_text, station)
-        await message.answer(
-            text=f'Станции, с отсутствием данных: {final_text}'
-        )
-        await message.answer(
-            text=f'Осталось {unusers_count}'
-        )
-    else:
-        await message.answer('Вам недоступна эта команда')
+    # user_id = message.from_user.id
+    # check = admin_check(user_id)
+    # if check:
+    num_of_stations = len(KS)
+    queryset = list(users.find({}))
+    res = []  # список внесённых станций
+    for i in queryset:
+        stan = i.get('_id')
+        res.append(stan)
+    unusers_count = num_of_stations - len(queryset)
+    final_text = ''
+    for station in KS:
+        if station not in res:
+            final_text = '{}\n{}'.format(final_text, station)
+    await message.answer(
+        text=f'Станции, с отсутствием данных: {final_text}'
+    )
+    await message.answer(
+        text=f'Осталось {unusers_count}'
+    )
+    # else:
+    #     await message.answer('Вам недоступна эта команда')
 
 
 # обработка команды /gks - сбор данных о начальниках ГКС
@@ -163,59 +165,61 @@ async def user_save(message: types.Message, state: FSMContext):
 
 
 # запрет на рассылку уведомлений
+@admin_check
 async def stop_subscribe(message: types.Message):
-    user_id = message.from_user.id
-    check = admin_check(user_id)
-    if check:
-        group_id = message.chat.id
-        group_check = groups.find_one({'_id': group_id})
-        if group_check is not None:
-            groups.update_one(
-                {'_id': group_id},
+    # user_id = message.from_user.id
+    # check = admin_check(user_id)
+    # if check:
+    group_id = message.chat.id
+    group_check = groups.find_one({'_id': group_id})
+    if group_check is not None:
+        groups.update_one(
+            {'_id': group_id},
+            {
+                '$set':
                 {
-                    '$set':
-                    {
-                        'sub_banned': 'true',
-                    }
-                },
-                upsert=False
-            )
-            await message.answer('Напоминания для этой группы отключены')
-        else:
-            await message.answer(
-                'Информации об этой группе не найдено.\n'
-                'Удалите бота из группы, а затем снова добавьте'
-            )
+                    'sub_banned': 'true',
+                }
+            },
+            upsert=False
+        )
+        await message.answer('Напоминания для этой группы отключены')
     else:
-        await message.answer('Вам недоступна эта команда')
+        await message.answer(
+            'Информации об этой группе не найдено.\n'
+            'Удалите бота из группы, а затем снова добавьте'
+        )
+    # else:
+    #     await message.answer('Вам недоступна эта команда')
 
 
 # включение рассылки уведомлений
+@admin_check
 async def start_subscribe(message: types.Message):
-    user_id = message.from_user.id
-    check = admin_check(user_id)
-    if check:
-        group_id = message.chat.id
-        group_check = groups.find_one({'_id': group_id})
-        if group_check is not None:
-            groups.update_one(
-                {'_id': group_id},
+    # user_id = message.from_user.id
+    # check = admin_check(user_id)
+    # if check:
+    group_id = message.chat.id
+    group_check = groups.find_one({'_id': group_id})
+    if group_check is not None:
+        groups.update_one(
+            {'_id': group_id},
+            {
+                '$set':
                 {
-                    '$set':
-                    {
-                        'sub_banned': 'false',
-                    }
-                },
-                upsert=False
-            )
-            await message.answer('Напоминания для этой группы включены')
-        else:
-            await message.answer(
-                'Информации об этой группе не найдено.\n'
-                'Удалите бота из группы, а затем снова добавьте'
-            )
+                    'sub_banned': 'false',
+                }
+            },
+            upsert=False
+        )
+        await message.answer('Напоминания для этой группы включены')
     else:
-        await message.answer('Вам недоступна эта команда')
+        await message.answer(
+            'Информации об этой группе не найдено.\n'
+            'Удалите бота из группы, а затем снова добавьте'
+        )
+    # else:
+    #     await message.answer('Вам недоступна эта команда')
 
 
 async def set_admin(message: types.Message):

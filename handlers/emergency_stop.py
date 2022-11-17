@@ -1,4 +1,6 @@
 import datetime as dt
+import functools
+import inspect
 
 from aiogram import Dispatcher, types
 from aiogram.dispatcher import FSMContext
@@ -6,7 +8,6 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 
 from config.bot_config import bot
 from config.mongo_config import admins, emergency_stops, users
-# from config.pyrogram_config import app
 from texts.initial import MANUAL, REPORT
 from utils.constants import KS
 
@@ -17,31 +18,44 @@ class Emergency(StatesGroup):
     waiting_confirm = State()
 
 
-def admin_check(id):
-    flag = admins.find_one({ 'user_id': id })
-    if flag is None:
-        return False
-    return True
+def admin_check(f):
+    @functools.wraps(f)
+    async def wrapped_func(*args, **kwargs):
+        func_args = inspect.getcallargs(f, *args, **kwargs)
+        user_id = func_args['message'].from_user.id
+        if admins.find_one({'user_id': user_id}) is None:
+            await bot.send_message(user_id, 'Вам не доступна эта команда')
+        else:
+            return await f(*args, **kwargs)
+    return wrapped_func
+
+
+# def admin_check(id):
+#     flag = admins.find_one({ 'user_id': id })
+#     if flag is None:
+#         return False
+#     return True
 
 
 # команда /ao - входная точка для оповещения аварийного останова
+@admin_check
 async def emergency_start(message: types.Message):
-    user_id = message.from_user.id
-    check = admin_check(user_id)
-    if check:
-        keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
-        for station in KS:
-            keyboard.add(station)
-        await message.answer(
-            text=(
-                'Выберите компрессорную станцию, '
-                'на которой произошёл аварийный останов'
-            ),
-            reply_markup=keyboard
-        )
-        await Emergency.waiting_station_name.set()
-    else:
-        await message.answer('Вам недоступна эта команда')
+    # user_id = message.from_user.id
+    # check = admin_check(user_id)
+    # if check:
+    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    for station in KS:
+        keyboard.add(station)
+    await message.answer(
+        text=(
+            'Выберите компрессорную станцию, '
+            'на которой произошёл аварийный останов'
+        ),
+        reply_markup=keyboard
+    )
+    await Emergency.waiting_station_name.set()
+    # else:
+    #     await message.answer('Вам недоступна эта команда')
 
 
 async def station_name(message: types.Message, state: FSMContext):
