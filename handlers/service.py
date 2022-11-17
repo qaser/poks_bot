@@ -26,9 +26,6 @@ async def reset_handler(message: types.Message, state: FSMContext):
 # обработка команды /users просмотр количества пользователей в БД
 @admin_check
 async def count_users(message: types.Message):
-    # user_id = message.from_user.id
-    # check = admin_check(user_id)
-    # if check:
     queryset = list(users.find({}))
     users_count = len(queryset)
     final_text = ''
@@ -38,16 +35,11 @@ async def count_users(message: types.Message):
     await message.answer(
         text=f'Количество пользователей в БД: {users_count}\n\n{final_text}'
     )
-    # else:
-    #     await message.answer('Вам недоступна эта команда')
 
 
 # обработка команды /nousers просмотр количества пользователей в БД
 @admin_check
 async def count_nousers(message: types.Message):
-    # user_id = message.from_user.id
-    # check = admin_check(user_id)
-    # if check:
     num_of_stations = len(KS)
     queryset = list(users.find({}))
     res = []  # список внесённых станций
@@ -65,8 +57,6 @@ async def count_nousers(message: types.Message):
     await message.answer(
         text=f'Осталось {unusers_count}'
     )
-    # else:
-    #     await message.answer('Вам недоступна эта команда')
 
 
 # обработка команды /gks - сбор данных о начальниках ГКС
@@ -167,9 +157,6 @@ async def user_save(message: types.Message, state: FSMContext):
 # запрет на рассылку уведомлений
 @admin_check
 async def stop_subscribe(message: types.Message):
-    # user_id = message.from_user.id
-    # check = admin_check(user_id)
-    # if check:
     group_id = message.chat.id
     group_check = groups.find_one({'_id': group_id})
     if group_check is not None:
@@ -189,16 +176,11 @@ async def stop_subscribe(message: types.Message):
             'Информации об этой группе не найдено.\n'
             'Удалите бота из группы, а затем снова добавьте'
         )
-    # else:
-    #     await message.answer('Вам недоступна эта команда')
 
 
 # включение рассылки уведомлений
 @admin_check
 async def start_subscribe(message: types.Message):
-    # user_id = message.from_user.id
-    # check = admin_check(user_id)
-    # if check:
     group_id = message.chat.id
     group_check = groups.find_one({'_id': group_id})
     if group_check is not None:
@@ -218,8 +200,6 @@ async def start_subscribe(message: types.Message):
             'Информации об этой группе не найдено.\n'
             'Удалите бота из группы, а затем снова добавьте'
         )
-    # else:
-    #     await message.answer('Вам недоступна эта команда')
 
 
 async def set_admin(message: types.Message):
@@ -234,6 +214,7 @@ async def set_admin(message: types.Message):
 
 
 # обработка команды /log
+@admin_check
 async def send_logs(message: types.Message):
     file = f'logs_bot.log'
     with open(file, 'rb') as f:

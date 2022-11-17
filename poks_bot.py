@@ -6,7 +6,7 @@ from aiogram.utils import executor
 from config.bot_config import bot, dp
 from config.mongo_config import groups
 from config.telegram_config import MY_TELEGRAM_ID
-from handlers.emergency_stop import register_handlers_emergency
+from handlers.emergency_stop import admin_check, register_handlers_emergency
 from handlers.service import register_handlers_service
 from scheduler.scheduler_jobs import scheduler, scheduler_jobs
 from texts.initial import HELP_TEXT, INITIAL_TEXT, MANUAL, NEW_GROUP_TEXT
@@ -26,6 +26,7 @@ async def start_handler(message: types.Message):
     await message.answer(text=INITIAL_TEXT)
 
 
+@admin_check
 @dp.message_handler(commands=['help'])
 async def help_handler(message: types.Message):
     await bot.send_message(

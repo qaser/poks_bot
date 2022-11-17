@@ -30,19 +30,9 @@ def admin_check(f):
     return wrapped_func
 
 
-# def admin_check(id):
-#     flag = admins.find_one({ 'user_id': id })
-#     if flag is None:
-#         return False
-#     return True
-
-
 # команда /ao - входная точка для оповещения аварийного останова
 @admin_check
 async def emergency_start(message: types.Message):
-    # user_id = message.from_user.id
-    # check = admin_check(user_id)
-    # if check:
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
     for station in KS:
         keyboard.add(station)
@@ -54,8 +44,6 @@ async def emergency_start(message: types.Message):
         reply_markup=keyboard
     )
     await Emergency.waiting_station_name.set()
-    # else:
-    #     await message.answer('Вам недоступна эта команда')
 
 
 async def station_name(message: types.Message, state: FSMContext):
