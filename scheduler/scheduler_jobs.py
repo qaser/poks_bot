@@ -13,7 +13,7 @@ def scheduler_jobs():
         'cron',
         day_of_week='mon-sun',
         hour=18,
-        minute=0,
+        minute=45,
         timezone=TIME_ZONE
     )
     # scheduler.add_job(
