@@ -8,6 +8,7 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 
 from config.bot_config import bot
 from config.mongo_config import admins, emergency_stops, users
+from config.telegram_config import MY_TELEGRAM_ID
 from texts.initial import MANUAL, REPORT
 from utils.constants import KS
 
@@ -22,9 +23,19 @@ def admin_check(f):
     @functools.wraps(f)
     async def wrapped_func(*args, **kwargs):
         func_args = inspect.getcallargs(f, *args, **kwargs)
-        user_id = func_args['message'].from_user.id
-        if admins.find_one({'user_id': user_id}) is None:
-            await bot.send_message(user_id, 'Вам не доступна эта команда')
+        post = func_args['message']
+        if admins.find_one({'user_id': post.from_user.id}) is None:
+            try:
+                await bot.send_message(
+                    post.from_user.id,
+                    'Вам не доступна эта команда'
+                )
+                await bot.send_message(
+                    MY_TELEGRAM_ID,
+                    f'Пользователь {post.from_user.full_name} ввёл {post.text}'
+                )
+            except:
+                pass
         else:
             return await f(*args, **kwargs)
     return wrapped_func
