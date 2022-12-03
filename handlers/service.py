@@ -17,6 +17,7 @@ class GksManager(StatesGroup):
 # обработка команды /reset - сброс клавиатуры и состояния
 async def reset_handler(message: types.Message, state: FSMContext):
     await state.finish()
+    await state.reset_state()
     await message.answer(
         text='Сброс настроек бота выполнен, текущее действие отменено.',
         reply_markup=types.ReplyKeyboardRemove(),

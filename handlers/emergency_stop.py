@@ -11,6 +11,7 @@ from config.mongo_config import admins, emergency_stops, users
 from config.telegram_config import MY_TELEGRAM_ID
 from texts.initial import MANUAL, REPORT
 from utils.constants import KS
+from aiogram.utils.exceptions import CantInitiateConversation
 
 
 class Emergency(StatesGroup):
@@ -114,24 +115,32 @@ async def confirmation(message: types.Message, state: FSMContext):
         gks_manager = users.find_one({'_id': data['station']})
         username = gks_manager.get('username')
         user_id = gks_manager.get('user_id')
-        await bot.send_message(
-            chat_id=user_id,
-            text=(
-                    f'{data["station"]}.\nДля расследования АО ГПА{data["gpa_num"]} '
-                    'Вам отправлена инструкция по организации рабочего чата.'
-            ),
-            reply_markup=types.ReplyKeyboardRemove()
-        )
-        file_pdf = open('static/tutorial_pdf/Инструкция' + '.pdf', 'rb')
-        await bot.send_document(chat_id=user_id, document=file_pdf)
-        await message.answer(
-            text=(
-                    'Принято. Сообщение с инструкциями отправлено.\n'
-                    f'Адресат: {username}'
-            ),
-            reply_markup=types.ReplyKeyboardRemove()
-        )
-        await state.finish()
+        try:
+            await bot.send_message(
+                chat_id=user_id,
+                text=(
+                        f'{data["station"]}.\nДля расследования АО ГПА{data["gpa_num"]} '
+                        'Вам отправлена инструкция по организации рабочего чата.'
+                ),
+                reply_markup=types.ReplyKeyboardRemove()
+            )
+            file_pdf = open('static/tutorial_pdf/Инструкция' + '.pdf', 'rb')
+            await bot.send_document(chat_id=user_id, document=file_pdf)
+            await message.answer(
+                text=(
+                        'Принято. Сообщение с инструкциями отправлено.\n'
+                        f'Адресат: {username}'
+                ),
+                reply_markup=types.ReplyKeyboardRemove()
+            )
+            await state.reset_state()
+        except CantInitiateConversation:
+            await message.answer(
+                text=(f'Бот не может отправить сообщение пользователю "{username}".\n'
+                       'Вероятно пользователь заблокировал бота.\n'
+                       'Свяжитесь с ним, а потом повторите попытку.')
+            )
+            await state.reset_state()
     else:
         await message.answer(
             ('Данные не сохранены.\n'
