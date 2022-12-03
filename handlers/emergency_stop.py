@@ -138,7 +138,8 @@ async def confirmation(message: types.Message, state: FSMContext):
             await message.answer(
                 text=(f'Бот не может отправить сообщение пользователю "{username}".\n'
                        'Вероятно пользователь заблокировал бота.\n'
-                       'Свяжитесь с ним, а потом повторите попытку.')
+                       'Свяжитесь с ним, а потом повторите попытку.'),
+                reply_markup=types.ReplyKeyboardRemove()
             )
             await state.reset_state()
     else:
