@@ -1,6 +1,7 @@
 from aiogram import Dispatcher, types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
+from aiogram.utils import exceptions
 
 from config.bot_config import bot
 from config.mongo_config import admins, groups, users
@@ -22,6 +23,7 @@ async def reset_handler(message: types.Message, state: FSMContext):
         text='Сброс настроек бота выполнен, текущее действие отменено.',
         reply_markup=types.ReplyKeyboardRemove(),
     )
+    await bot.delete_message(message.chat.id, message.message_id)
 
 
 # обработка команды /users просмотр количества пользователей в БД
@@ -177,6 +179,7 @@ async def stop_subscribe(message: types.Message):
             'Информации об этой группе не найдено.\n'
             'Удалите бота из группы, а затем снова добавьте'
         )
+    await bot.delete_message(message.chat.id, message.message_id)
 
 
 # включение рассылки уведомлений
@@ -201,6 +204,7 @@ async def start_subscribe(message: types.Message):
             'Информации об этой группе не найдено.\n'
             'Удалите бота из группы, а затем снова добавьте'
         )
+    await bot.delete_message(message.chat.id, message.message_id)
 
 
 async def set_admin(message: types.Message):
@@ -221,6 +225,16 @@ async def send_logs(message: types.Message):
     with open(file, 'rb') as f:
         content = f.read()
         await bot.send_document(chat_id=MY_TELEGRAM_ID, document=content)
+
+
+# @dp.errors_handler(exception=exceptions.BotBlocked)
+# async def bot_blocked_error(update: types.Update):
+#     user_id = update.message.from_user.id
+#     username = users.find_one({'user_id': user_id}).get('full_name')
+#     await bot.send_message(
+#         chat_id=MY_TELEGRAM_ID,
+#         text=f'Пользователь {username} заблокировал бота'
+#     )
 
 
 def register_handlers_service(dp: Dispatcher):
