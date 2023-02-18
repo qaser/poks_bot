@@ -231,14 +231,19 @@ async def send_logs(message: types.Message):
 async def create_chat_link(message: types.Message):
     groups_id = list(groups.find({}))
     links = []
+    supergroup_links = []
     for i in groups_id:
         id = i.get('_id')
         name = i.get('group_name')
-        link = await bot.export_chat_invite_link(chat_id=id)
-        links.append((name, link))
+        try:
+            link = await bot.export_chat_invite_link(chat_id=id)
+            links.append((name, link))
+        except exceptions.MigrateToChat:
+            supergroup_links.append((id, exceptions.MigrateToChat.args))
     for t in links:
         name, link = t
         await message.answer(f'{name} - {link}')
+    await message.answer(supergroup_links)
 
 
 
