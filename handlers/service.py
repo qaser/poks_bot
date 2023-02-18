@@ -249,10 +249,10 @@ async def create_chat_link(message: types.Message):
         await message.answer(lnk)
 
 
-@dp.message_handler(content_types=ContentType.ANY)
-async def any_message(message: types.Message):
-    if message == ContentType.PHOTO:
-        await message.answer('Принято')
+# @dp.message_handler(content_types=ContentType.ANY)
+# async def any_message(message: types.Message):
+#     if message == ContentType.PHOTO:
+#         await message.answer('Принято')
 
 
 def register_handlers_service(dp: Dispatcher):
