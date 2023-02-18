@@ -3,7 +3,7 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.utils import exceptions
 
-from config.bot_config import bot
+from config.bot_config import bot, dp
 from config.mongo_config import admins, groups, users
 from config.telegram_config import MY_TELEGRAM_ID
 from handlers.emergency_stop import admin_check
@@ -227,14 +227,18 @@ async def send_logs(message: types.Message):
         await bot.send_document(chat_id=MY_TELEGRAM_ID, document=content)
 
 
-# @dp.errors_handler(exception=exceptions.BotBlocked)
-# async def bot_blocked_error(update: types.Update):
-#     user_id = update.message.from_user.id
-#     username = users.find_one({'user_id': user_id}).get('full_name')
-#     await bot.send_message(
-#         chat_id=MY_TELEGRAM_ID,
-#         text=f'Пользователь {username} заблокировал бота'
-#     )
+@dp.message_handler(commands=['link'])
+async def create_chat_link(message: types.Message):
+    groups_id = list(groups.find({}))
+    some_id = -557019788
+    link = await bot.export_chat_invite_link(chat_id=some_id)
+    await message.answer(link)
+
+    # for i in groups_id:
+    #     id = i.get('_id')
+    #     await bot.export_chat_invite_link(chat_id=id)
+
+
 
 
 def register_handlers_service(dp: Dispatcher):
