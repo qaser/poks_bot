@@ -239,10 +239,10 @@ async def create_chat_link(message: types.Message):
             link = await bot.export_chat_invite_link(chat_id=id)
             links.append((name, link))
         except exceptions.MigrateToChat:
-            supergroup_links.append((id, exceptions.MigrateToChat.with_traceback()))
+            supergroup_links.append((id, exceptions.MigrateToChat))
     for t in links:
         name, link = t
-        await message.answer(f'{name} - {link}')
+        await message.answer(f'{name}\n{link}')
     await message.answer(supergroup_links)
 
 
