@@ -239,13 +239,11 @@ async def create_chat_link(message: types.Message):
             link = await bot.export_chat_invite_link(chat_id=id)
             links.append((name, link))
         except exceptions.MigrateToChat:
-            supergroup_links.append((id, exceptions.MigrateToChat.args))
+            supergroup_links.append((id, exceptions.MigrateToChat.args[1]))
     for t in links:
         name, link = t
         await message.answer(f'{name} - {link}')
     await message.answer(supergroup_links)
-
-
 
 
 def register_handlers_service(dp: Dispatcher):
