@@ -239,7 +239,7 @@ async def create_chat_link(message: types.Message):
             link = await bot.export_chat_invite_link(chat_id=id)
             links.append((name, link))
         except exceptions.MigrateToChat:
-            supergroup_links.append((id, exceptions.MigrateToChat.__dict__['__init__']))
+            supergroup_links.append((id, exceptions.MigrateToChat.__getattribute__('chat_id')))
     for t in links:
         name, link = t
         await message.answer(f'{name}\n{link}')
