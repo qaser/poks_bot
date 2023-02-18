@@ -243,7 +243,8 @@ async def create_chat_link(message: types.Message):
     for t in links:
         name, link = t
         await message.answer(f'{name}\n{link}')
-    await message.answer(supergroup_links)
+    for lnk in supergroup_links:
+        await message.answer(lnk)
 
 
 def register_handlers_service(dp: Dispatcher):
