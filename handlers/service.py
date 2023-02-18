@@ -230,13 +230,15 @@ async def send_logs(message: types.Message):
 @dp.message_handler(commands=['link'])
 async def create_chat_link(message: types.Message):
     groups_id = list(groups.find({}))
-    some_id = -557019788
-    link = await bot.export_chat_invite_link(chat_id=some_id)
-    await message.answer(link)
-
-    # for i in groups_id:
-    #     id = i.get('_id')
-    #     await bot.export_chat_invite_link(chat_id=id)
+    links = []
+    for i in groups_id:
+        id = i.get('_id')
+        name = i.get('group_name')
+        link = await bot.export_chat_invite_link(chat_id=id)
+        links.append((name, link))
+    for t in links:
+        name, link = t
+        await message.answer(f'{name} - {link}')
 
 
 
