@@ -7,9 +7,10 @@ users = db['gks_users']
 emergency_stops = db['emergency_stops']
 groups = db['groups']
 admins = db['admins']
+archive = db['archive']
 
 
-''' 
+'''
 структура данных группы
     '_id': id telegram-группы
     'group_name': название группы

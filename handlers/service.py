@@ -2,6 +2,7 @@ from aiogram import Dispatcher, types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.utils import exceptions
+from aiogram.types.message import ContentType
 
 from config.bot_config import bot, dp
 from config.mongo_config import admins, groups, users
@@ -227,6 +228,7 @@ async def send_logs(message: types.Message):
         await bot.send_document(chat_id=MY_TELEGRAM_ID, document=content)
 
 
+@admin_check()
 @dp.message_handler(commands=['link'])
 async def create_chat_link(message: types.Message):
     groups_id = list(groups.find({}))
@@ -239,12 +241,18 @@ async def create_chat_link(message: types.Message):
             link = await bot.export_chat_invite_link(chat_id=id)
             links.append((name, link))
         except exceptions.MigrateToChat:
-            supergroup_links.append((id, dir(exceptions.MigrateToChat.args)))
+            supergroup_links.append((id, exceptions.MigrateToChat.args))
     for t in links:
         name, link = t
         await message.answer(f'{name}\n{link}')
     for lnk in supergroup_links:
         await message.answer(lnk)
+
+
+@dp.message_handler(content_types=ContentType.ANY)
+async def any_message(message: types.Message):
+    if message == ContentType.PHOTO:
+        await message.answer('Принято')
 
 
 def register_handlers_service(dp: Dispatcher):
