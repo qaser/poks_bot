@@ -5,7 +5,7 @@ from aiogram.utils import exceptions
 from aiogram.types.message import ContentType
 
 from config.bot_config import bot, dp
-from config.mongo_config import admins, groups, users
+from config.mongo_config import admins, groups, users, archive
 from config.telegram_config import MY_TELEGRAM_ID
 from handlers.emergency_stop import admin_check
 from utils.constants import KS
@@ -248,10 +248,34 @@ async def create_chat_link(message: types.Message):
         await message.answer(lnk)
 
 
-# @dp.message_handler(content_types=ContentType.ANY)
-# async def any_message(message: types.Message):
-#     if message == ContentType.PHOTO:
-#         await message.answer('Принято')
+async def archive_messages(message: types.Message):
+    chat = message.chat.id
+    if message.photo:
+        await bot.send_photo(
+            MY_TELEGRAM_ID,
+            photo=message.photo[-1].file_id
+        )
+    if message.document:
+        await bot.send_document(
+            MY_TELEGRAM_ID,
+            document=getattr(message, 'document').file_id
+        )
+    if message.text:
+        data = archive.find_one({'_id': chat})
+        if data is None:
+            archive.insert_one({'_id': chat, 'messages': [message.text]})
+        else:
+            data.get('messages').append(message.text)
+        archive.update_one(
+            {'_id': chat},
+            {
+                '$set':
+                {
+                    'messages': data.get('messages'),
+                }
+            },
+            upsert=False
+        )
 
 
 def register_handlers_service(dp: Dispatcher):
@@ -271,3 +295,4 @@ def register_handlers_service(dp: Dispatcher):
         user_save,
         state=GksManager.waiting_station_confirm
     )
+    dp.register_message_handler(archive_messages, content_types=ContentType.ANY)
