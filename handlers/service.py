@@ -265,17 +265,17 @@ async def archive_messages(message: types.Message):
         if data is None:
             archive.insert_one({'_id': chat, 'messages': [message.text]})
         else:
-            data.get('messages', []).append(message.text)
-        archive.update_one(
-            {'_id': chat},
-            {
-                '$set':
+            data.get('messages').append(message.text)
+            archive.update_one(
+                {'_id': chat},
                 {
-                    'messages': data.get('messages'),
-                }
-            },
-            upsert=False
-        )
+                    '$set':
+                    {
+                        'messages': data.get('messages'),
+                    }
+                },
+                upsert=False
+            )
 
 
 def register_handlers_service(dp: Dispatcher):
