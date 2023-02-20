@@ -265,7 +265,7 @@ async def archive_messages(message: types.Message):
         if data is None:
             archive.insert_one({'_id': chat, 'messages': [message.text]})
         else:
-            data.get('messages').append(message.text)
+            data.get('messages', []).append(message.text)
         archive.update_one(
             {'_id': chat},
             {
