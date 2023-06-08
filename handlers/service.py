@@ -2,9 +2,10 @@ from aiogram import Dispatcher, types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.utils import exceptions
+from aiogram.types.message import ContentType
 
-from config.bot_config import bot
-from config.mongo_config import admins, groups, users
+from config.bot_config import bot, dp
+from config.mongo_config import admins, groups, users, archive
 from config.telegram_config import MY_TELEGRAM_ID
 from handlers.emergency_stop import admin_check
 from utils.constants import KS
@@ -227,14 +228,54 @@ async def send_logs(message: types.Message):
         await bot.send_document(chat_id=MY_TELEGRAM_ID, document=content)
 
 
-# @dp.errors_handler(exception=exceptions.BotBlocked)
-# async def bot_blocked_error(update: types.Update):
-#     user_id = update.message.from_user.id
-#     username = users.find_one({'user_id': user_id}).get('full_name')
-#     await bot.send_message(
-#         chat_id=MY_TELEGRAM_ID,
-#         text=f'Пользователь {username} заблокировал бота'
-#     )
+@dp.message_handler(commands=['link'])
+async def create_chat_link(message: types.Message):
+    groups_id = list(groups.find({}))
+    links = []
+    supergroup_links = []
+    for i in groups_id:
+        id = i.get('_id')
+        name = i.get('group_name')
+        try:
+            link = await bot.export_chat_invite_link(chat_id=id)
+            links.append((name, link))
+        except exceptions.MigrateToChat:
+            supergroup_links.append((id, exceptions.MigrateToChat.args))
+    for t in links:
+        name, link = t
+        await message.answer(f'{name}\n{link}')
+    for lnk in supergroup_links:
+        await message.answer(lnk)
+
+
+async def archive_messages(message: types.Message):
+    chat = message.chat.id
+    if message.photo:
+        await bot.send_photo(
+            MY_TELEGRAM_ID,
+            photo=message.photo[-1].file_id
+        )
+    if message.document:
+        await bot.send_document(
+            MY_TELEGRAM_ID,
+            document=getattr(message, 'document').file_id
+        )
+    if message.text:
+        data = archive.find_one({'_id': chat})
+        if data is None:
+            archive.insert_one({'_id': chat, 'messages': [message.text]})
+        else:
+            data.get('messages').append(message.text)
+            archive.update_one(
+                {'_id': chat},
+                {
+                    '$set':
+                    {
+                        'messages': data.get('messages'),
+                    }
+                },
+                upsert=False
+            )
 
 
 def register_handlers_service(dp: Dispatcher):
@@ -254,3 +295,4 @@ def register_handlers_service(dp: Dispatcher):
         user_save,
         state=GksManager.waiting_station_confirm
     )
+    dp.register_message_handler(archive_messages, content_types=ContentType.ANY)
