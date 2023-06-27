@@ -228,24 +228,30 @@ async def send_logs(message: types.Message):
         await bot.send_document(chat_id=MY_TELEGRAM_ID, document=content)
 
 
+# @dp.message_handler(commands=['link'])
+# async def create_chat_link(message: types.Message):
+#     groups_id = list(groups.find({}))
+#     links = []
+#     supergroup_links = []
+#     for i in groups_id:
+#         id = i.get('_id')
+#         name = i.get('group_name')
+#         try:
+#             link = await bot.export_chat_invite_link(chat_id=id)
+#             links.append((name, link))
+#         except exceptions.MigrateToChat:
+#             supergroup_links.append((id, exceptions.MigrateToChat.args))
+#     for t in links:
+#         name, link = t
+#         await message.answer(f'{name}\n{link}')
+#     for lnk in supergroup_links:
+#         await message.answer(lnk)
+
+
 @dp.message_handler(commands=['link'])
 async def create_chat_link(message: types.Message):
-    groups_id = list(groups.find({}))
-    links = []
-    supergroup_links = []
-    for i in groups_id:
-        id = i.get('_id')
-        name = i.get('group_name')
-        try:
-            link = await bot.export_chat_invite_link(chat_id=id)
-            links.append((name, link))
-        except exceptions.MigrateToChat:
-            supergroup_links.append((id, exceptions.MigrateToChat.args))
-    for t in links:
-        name, link = t
-        await message.answer(f'{name}\n{link}')
-    for lnk in supergroup_links:
-        await message.answer(lnk)
+    link = await bot.export_chat_invite_link(chat_id=-948759661)
+    await message.answer(link)
 
 
 async def archive_messages(message: types.Message):
