@@ -263,12 +263,14 @@ async def archive_messages(message: types.Message):
     if message.photo:
         await bot.send_photo(
             MY_TELEGRAM_ID,
-            photo=message.photo[-1].file_id
+            photo=message.photo[-1].file_id,
+            caption=message.chat.full_name
         )
     if message.document:
         await bot.send_document(
             MY_TELEGRAM_ID,
-            document=getattr(message, 'document').file_id
+            document=getattr(message, 'document').file_id,
+            caption=message.chat.full_name
         )
     if message.text:
         data = archive.find_one({'_id': chat})
