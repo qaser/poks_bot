@@ -252,7 +252,7 @@ async def create_chat_link(message: types.Message):
 
 @dp.message_handler(commands=['test'])
 async def test_chat(message: types.Message):
-    g_id = groups.find_one({'_group_name': 'КС Пуровская, СОГ, ТНМ 1203 ст. №16, АО, 25.06.2023'}).get('_id')
+    g_id = groups.find_one({'group_name': 'КС Пуровская, СОГ, ТНМ 1203 ст. №16, АО, 25.06.2023'}).get('_id')
     mes = await bot.send_message(chat_id=g_id, text='Тестовое сообщение')
     time.sleep(10)
     await mes.delete()
