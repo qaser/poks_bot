@@ -1,11 +1,13 @@
+import time
+
 from aiogram import Dispatcher, types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
-from aiogram.utils import exceptions
 from aiogram.types.message import ContentType
+from aiogram.utils import exceptions
 
 from config.bot_config import bot, dp
-from config.mongo_config import admins, groups, users, archive
+from config.mongo_config import admins, archive, groups, users
 from config.telegram_config import MY_TELEGRAM_ID
 from handlers.emergency_stop import admin_check
 from utils.constants import KS
@@ -228,30 +230,32 @@ async def send_logs(message: types.Message):
         await bot.send_document(chat_id=MY_TELEGRAM_ID, document=content)
 
 
-# @dp.message_handler(commands=['link'])
-# async def create_chat_link(message: types.Message):
-#     groups_id = list(groups.find({}))
-#     links = []
-#     supergroup_links = []
-#     for i in groups_id:
-#         id = i.get('_id')
-#         name = i.get('group_name')
-#         try:
-#             link = await bot.export_chat_invite_link(chat_id=id)
-#             links.append((name, link))
-#         except exceptions.MigrateToChat:
-#             supergroup_links.append((id, exceptions.MigrateToChat.args))
-#     for t in links:
-#         name, link = t
-#         await message.answer(f'{name}\n{link}')
-#     for lnk in supergroup_links:
-#         await message.answer(lnk)
-
-
 @dp.message_handler(commands=['link'])
 async def create_chat_link(message: types.Message):
-    link = await bot.export_chat_invite_link(chat_id=-1001964373986)
-    await message.answer(link)
+    groups_id = list(groups.find({}))
+    links = []
+    supergroup_links = []
+    for i in groups_id:
+        id = i.get('_id')
+        name = i.get('group_name')
+        try:
+            link = await bot.export_chat_invite_link(chat_id=id)
+            links.append((name, link))
+        except exceptions.MigrateToChat:
+            supergroup_links.append((id, exceptions.MigrateToChat.args))
+    for t in links:
+        name, link = t
+        await message.answer(f'{name}\n{link}')
+    for lnk in supergroup_links:
+        await message.answer(lnk)
+
+
+@dp.message_handler(commands=['test'])
+async def test_chat(message: types.Message):
+    g_id = groups.find_one({'_group_name': 'КС Пуровская, СОГ, ТНМ 1203 ст. №16, АО, 25.06.2023'}).get('_id')
+    mes = await bot.send_message(chat_id=g_id, text='Тестовое сообщение')
+    time.sleep(10)
+    await mes.delete()
 
 
 async def archive_messages(message: types.Message):
