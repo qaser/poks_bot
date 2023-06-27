@@ -250,7 +250,7 @@ async def send_logs(message: types.Message):
 
 @dp.message_handler(commands=['link'])
 async def create_chat_link(message: types.Message):
-    link = await bot.export_chat_invite_link(chat_id=-948759661)
+    link = await bot.export_chat_invite_link(chat_id=-1001964373986)
     await message.answer(link)
 
 
