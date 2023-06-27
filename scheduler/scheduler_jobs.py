@@ -16,9 +16,9 @@ def scheduler_jobs():
         minute=0,
         timezone=TIME_ZONE
     )
-    scheduler.add_job(
-        check_mailbox,
-        'interval',
-        minutes=1,
-        timezone=TIME_ZONE
-    )
+    # scheduler.add_job(
+    #     check_mailbox,
+    #     'interval',
+    #     minutes=1,
+    #     timezone=TIME_ZONE
+    # )
