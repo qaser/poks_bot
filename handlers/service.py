@@ -298,7 +298,7 @@ def register_handlers_service(dp: Dispatcher):
     dp.register_message_handler(start_subscribe, commands='sub')
     dp.register_message_handler(send_logs, commands='log')
     # dp.register_message_handler(station_choose, commands='gks')
-    # dp.register_message_handler(set_admin, commands='admin')
+    dp.register_message_handler(set_admin, commands='admin')
     dp.register_message_handler(
         station_confirm,
         state=GksManager.waiting_station_name
