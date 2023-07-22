@@ -30,16 +30,16 @@ def cancel_kb():
     return keyboard
 
 
-def send_kb(dir):
+def send_kb(dir, msg_id):
     keyboard = InlineKeyboardMarkup()
     keyboard.row(
         InlineKeyboardButton(
             text=f'{const.UNDONE_EMOJI} Нет',
-            callback_data='petition_cancel_none'
+            callback_data=f'ask_cancel_none_{msg_id}'
         ),
         InlineKeyboardButton(
             text=f'{const.DONE_EMOJI} Да',
-            callback_data=f'petition_send_{dir}'
+            callback_data=f'ask_send_{dir}_{msg_id}'
         )
     )
     return keyboard

@@ -6,8 +6,10 @@ from aiogram.utils import executor
 from config.bot_config import bot, dp
 from config.mongo_config import groups
 from config.telegram_config import MY_TELEGRAM_ID
+from handlers.admin import register_handlers_admin
 from handlers.emergency_stop import admin_check, register_handlers_emergency
-from handlers.petition import register_handlers_rpo
+from handlers.petition import register_handlers_petition
+from handlers.registration import register_handlers_registration
 from handlers.service import register_handlers_service
 from scheduler.scheduler_jobs import scheduler, scheduler_jobs
 from texts.initial import HELP_TEXT, INITIAL_TEXT, MANUAL, NEW_GROUP_TEXT
@@ -100,7 +102,9 @@ async def on_startup(_):
 
 if __name__ == '__main__':
     scheduler.start()
-    register_handlers_rpo(dp)
+    register_handlers_petition(dp)
     register_handlers_emergency(dp)
     register_handlers_service(dp)
+    register_handlers_registration(dp)
+    register_handlers_admin(dp)
     executor.start_polling(dp, skip_updates=True, on_startup=on_startup)

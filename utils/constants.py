@@ -1,4 +1,5 @@
 import emoji
+from datetime import timezone, timedelta
 
 
 GREEN_EMOJI = emoji.emojize(':green_circle:')
@@ -49,6 +50,10 @@ KS = [
 
 TIME_ZONE = 'Asia/Yekaterinburg'
 
+timezone_offset = +5.0
+TZINFO = timezone(timedelta(hours=timezone_offset))
+
+# не делать коды  с нижним подчеркиванием!!!!
 DIRECTIONS_CODES = {
     'avia': 'ГПА с авиа.приводом',
     'boat': 'ГПА с судовым приводом',
@@ -59,4 +64,11 @@ DIRECTIONS_CODES = {
     'ppr': 'ППР КЦ',
     'rpo': 'РПО',
     'other': 'Общие вопросы',
+}
+
+# не делать коды  с нижним подчеркиванием!!!
+PROF_USERS = {
+    'glav': 'Главный инженер',
+    'nachgks': 'Начальник ГКС',
+    'znachgks': 'Заместитель начальника ГКС',
 }

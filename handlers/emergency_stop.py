@@ -65,14 +65,6 @@ async def station_name(message: types.Message, state: FSMContext):
             'Я не работаю с другими объектами кроме тех, что в списке.'
         )
         return
-    gks_manager = users.find_one({'_id': message.text})
-    if gks_manager is None:
-        await message.answer(
-            text=('В базе данных нет информации о начальнике ГКС '
-                  'с этой станции.\nОперация прервана.'),
-            reply_markup=types.ReplyKeyboardRemove()
-        )
-        await state.finish()
     else:
         await state.update_data(station=message.text)
         await message.answer(
@@ -112,43 +104,62 @@ async def confirmation(message: types.Message, state: FSMContext):
                 'gpa': data['gpa_num'],
             }
         )
-        gks_manager = users.find_one({'_id': data['station']})
-        username = gks_manager.get('username')
-        user_id = gks_manager.get('user_id')
+        nach_gks = users.find_one({'ks': data['station'], 'prof': 'nachgks'})
+        username = nach_gks.get('username')
+        user_id = nach_gks.get('user_id')
+        msg_text = (f'{data["station"]}.\nДля расследования АО ГПА{data["gpa_num"]} '
+                    'Вам отправлена инструкция по организации рабочего чата.')
+        file_pdf = open('static/tutorial_pdf/Инструкция' + '.pdf', 'rb')
         try:
-            await bot.send_message(
-                chat_id=user_id,
-                text=(
-                        f'{data["station"]}.\nДля расследования АО ГПА{data["gpa_num"]} '
-                        'Вам отправлена инструкция по организации рабочего чата.'
-                ),
-                reply_markup=types.ReplyKeyboardRemove()
-            )
-            file_pdf = open('static/tutorial_pdf/Инструкция' + '.pdf', 'rb')
+            await bot.send_message(chat_id=user_id, text=msg_text)
             await bot.send_document(chat_id=user_id, document=file_pdf)
             await message.answer(
-                text=(
-                        'Принято. Сообщение с инструкциями отправлено.\n'
-                        f'Адресат: {username}'
-                ),
+                text=f'Принято. Сообщение с инструкциями отправлено.\nАдресат: {username}',
                 reply_markup=types.ReplyKeyboardRemove()
             )
-            await state.reset_state()
+            await state.finish()
         except CantInitiateConversation:
-            await message.answer(
-                text=(f'Бот не может отправить сообщение пользователю "{username}".\n'
-                       'Вероятно пользователь заблокировал бота.\n'
-                       'Свяжитесь с ним, а потом повторите попытку.'),
-                reply_markup=types.ReplyKeyboardRemove()
-            )
-            await state.reset_state()
+            zamnach_gks = users.find_one({'ks': data['station'], 'prof': 'znachgks'})
+            if zamnach_gks is None:
+                await message.answer(
+                    text=(f'Бот не может отправить сообщение пользователю "{username}".\n'
+                        'Вероятно пользователь заблокировал бота.\n'
+                        'Информация о заместителе отсутствует в БД.\n'
+                        'Свяжитесь с пользователем, а потом повторите попытку.'),
+                    reply_markup=types.ReplyKeyboardRemove()
+                )
+            else:
+                await message.answer(
+                    text=(f'Бот не может отправить сообщение пользователю "{username}".\n'
+                        'Вероятно пользователь заблокировал бота.\n'
+                        'Пытаюсь отправить его заместителю...'),
+                    reply_markup=types.ReplyKeyboardRemove()
+                )
+                try:
+                    username = zamnach_gks.get('username')
+                    user_id = zamnach_gks.get('user_id')
+                    await bot.send_message(chat_id=user_id, text=msg_text)
+                    await bot.send_document(chat_id=user_id, document=file_pdf)
+                    await message.answer(
+                        text=('Принято. Сообщение с инструкциями отправлено.\nАдресат: {username}'),
+                        reply_markup=types.ReplyKeyboardRemove()
+                    )
+                    await state.finish()
+                except CantInitiateConversation:
+                    await message.answer(
+                        text=(f'Бот не может отправить сообщение пользователю "{username}".\n'
+                            'Вероятно пользователь заблокировал бота.\n'
+                            'Свяжитесь с пользователем, а потом повторите попытку.'),
+                        reply_markup=types.ReplyKeyboardRemove()
+                    )
+                    await state.finish()
     else:
         await message.answer(
             ('Данные не сохранены.\n'
              'Если необходимо повторить команду - нажмите /ao'),
             reply_markup=types.ReplyKeyboardRemove()
         )
-        await state.reset_state()
+        await state.finish()
 
 
 

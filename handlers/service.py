@@ -210,17 +210,6 @@ async def start_subscribe(message: types.Message):
     await bot.delete_message(message.chat.id, message.message_id)
 
 
-async def set_admin(message: types.Message):
-    user = message.from_user
-    admins.insert_one(
-        {
-            'user_id': user.id,
-            'username': user.full_name
-        }
-    )
-    await message.answer('Администратор добавлен')
-
-
 # обработка команды /log
 @admin_check
 async def send_logs(message: types.Message):
@@ -230,32 +219,32 @@ async def send_logs(message: types.Message):
         await bot.send_document(chat_id=MY_TELEGRAM_ID, document=content)
 
 
-@dp.message_handler(commands=['link'])
-async def create_chat_link(message: types.Message):
-    groups_id = list(groups.find({}))
-    links = []
-    supergroup_links = []
-    for i in groups_id:
-        id = i.get('_id')
-        name = i.get('group_name')
-        try:
-            link = await bot.export_chat_invite_link(chat_id=id)
-            links.append((name, link))
-        except exceptions.MigrateToChat:
-            supergroup_links.append((id, exceptions.MigrateToChat.args))
-    for t in links:
-        name, link = t
-        await message.answer(f'{name}\n{link}')
-    for lnk in supergroup_links:
-        await message.answer(lnk)
+# @dp.message_handler(commands=['link'])
+# async def create_chat_link(message: types.Message):
+#     groups_id = list(groups.find({}))
+#     links = []
+#     supergroup_links = []
+#     for i in groups_id:
+#         id = i.get('_id')
+#         name = i.get('group_name')
+#         try:
+#             link = await bot.export_chat_invite_link(chat_id=id)
+#             links.append((name, link))
+#         except exceptions.MigrateToChat:
+#             supergroup_links.append((id, exceptions.MigrateToChat.args))
+#     for t in links:
+#         name, link = t
+#         await message.answer(f'{name}\n{link}')
+#     for lnk in supergroup_links:
+#         await message.answer(lnk)
 
 
-@dp.message_handler(commands=['test'])
-async def test_chat(message: types.Message):
-    g_id = groups.find_one({'group_name': 'КС Пуровская, СОГ, ТНМ 1203 ст. №16, АО, 25.06.2023'}).get('_id')
-    mes = await bot.send_message(chat_id=g_id, text='Тестовое сообщение')
-    time.sleep(10)
-    await mes.delete()
+# @dp.message_handler(commands=['test'])
+# async def test_chat(message: types.Message):
+#     g_id = groups.find_one({'group_name': 'КС Пуровская, СОГ, ТНМ 1203 ст. №16, АО, 25.06.2023'}).get('_id')
+#     mes = await bot.send_message(chat_id=g_id, text='Тестовое сообщение')
+#     time.sleep(10)
+#     await mes.delete()
 
 
 async def archive_messages(message: types.Message):
@@ -297,8 +286,8 @@ def register_handlers_service(dp: Dispatcher):
     dp.register_message_handler(stop_subscribe, commands='unsub')
     dp.register_message_handler(start_subscribe, commands='sub')
     dp.register_message_handler(send_logs, commands='log')
-    # dp.register_message_handler(station_choose, commands='gks')
-    dp.register_message_handler(set_admin, commands='admin')
+    dp.register_message_handler(station_choose, commands='gks')
+    # dp.register_message_handler(set_admin, commands='admin')
     dp.register_message_handler(
         station_confirm,
         state=GksManager.waiting_station_name
