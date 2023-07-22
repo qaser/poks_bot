@@ -1,3 +1,15 @@
+import emoji
+
+
+GREEN_EMOJI = emoji.emojize(':green_circle:')
+RED_EMOJI = emoji.emojize(':red_circle:')
+BACK_EMOJI = emoji.emojize(':left_arrow:')
+EXIT_EMOJI = emoji.emojize(':eject_button:')
+DONE_EMOJI = emoji.emojize(':check_mark_button:')
+UNDONE_EMOJI = emoji.emojize(':cross_mark:')
+DOC_EMOJI = emoji.emojize(':clipboard:')
+DELETE_EMOJI = emoji.emojize(':wastebasket:')
+
 KS = [
     'Бобровская КС',
     'Верхнеказымская КС',
@@ -36,3 +48,15 @@ KS = [
 ]  #  всего 34 шт.
 
 TIME_ZONE = 'Asia/Yekaterinburg'
+
+DIRECTIONS_CODES = {
+    'avia': 'ГПА с авиа.приводом',
+    'boat': 'ГПА с судовым приводом',
+    'station': 'ГПА со стационарным приводом',
+    'vtd': 'ВТД',
+    'krtt': 'КРТТ, ЗИС',
+    'dooks': 'ДООКС',
+    'ppr': 'ППР КЦ',
+    'rpo': 'РПО',
+    'other': 'Общие вопросы',
+}
