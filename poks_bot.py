@@ -10,9 +10,11 @@ from handlers.admin import register_handlers_admin
 from handlers.emergency_stop import admin_check, register_handlers_emergency
 from handlers.petition import register_handlers_petition
 from handlers.registration import register_handlers_registration
+from handlers.review import register_handlers_review
 from handlers.service import register_handlers_service
 from scheduler.scheduler_jobs import scheduler, scheduler_jobs
 from texts.initial import HELP_TEXT, INITIAL_TEXT, MANUAL, NEW_GROUP_TEXT
+from utils.create_summary_docx import create_docx_file
 
 logging.basicConfig(
     filename='logs_bot.log',
@@ -36,6 +38,12 @@ async def help_handler(message: types.Message):
         message.chat.id,
         text=f'{HELP_TEXT}'
     )
+
+
+# @admin_check
+@dp.message_handler(commands=['doc'])
+async def doc_handler(message: types.Message):
+    create_docx_file()
 
 
 # обработка события - добавление бота в группу
@@ -103,6 +111,7 @@ async def on_startup(_):
 if __name__ == '__main__':
     scheduler.start()
     register_handlers_petition(dp)
+    register_handlers_review(dp)
     register_handlers_emergency(dp)
     register_handlers_service(dp)
     register_handlers_registration(dp)

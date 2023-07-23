@@ -155,5 +155,5 @@ async def get_letters(imap):
                     )
                 letter_text = get_letter_text(msg)
                 attachments = get_attachments(msg)
-                message_text = f'Дата: {msg_dateg}\nОт: {msg_from}\nТема: {msg_subj}\n\n{letter_text}'
+                message_text = f'Дата: {msg_date}\nОт: {msg_from}\nТема: {msg_subj}\n\n{letter_text}'
                 await bot.send_message(chat_id=-1001978176295, text=message_text)

@@ -1,10 +1,11 @@
 from config.bot_config import bot
 from config.mongo_config import groups
 from texts.initial import REMAINDER
-from handlers.mail import get_letters
+from utils.send_email import send_email
+from utils.get_mail import get_letters
 import imaplib
 
-from config.mail_config import MAIL_LOGIN, MAIL_PASS, MAIL_SERVER
+from config.mail_config import MAIL_LOGIN, MAIL_PASS, IMAP_MAIL_SERVER
 
 
 async def send_remainder():
@@ -20,10 +21,14 @@ async def send_remainder():
             pass
 
 
+async def send_report():
+    await send_email()
+
+
 async def check_mailbox():
     mail_pass = MAIL_PASS
     username = MAIL_LOGIN
-    imap_server = MAIL_SERVER
+    imap_server = IMAP_MAIL_SERVER
     imap = imaplib.IMAP4_SSL(imap_server)
     status, res = imap.login(username, mail_pass)
     if status == 'OK' and imap:

@@ -7,7 +7,7 @@ def directions_kb():
         keyboard.row(
             InlineKeyboardButton(
                 text=dir_name,
-                callback_data=f'dir_{dir_code}'
+                callback_data=f'pet_{dir_code}'
             )
         )
     keyboard.add(

@@ -17,6 +17,7 @@ class Admin(StatesGroup):
 async def dir_choose(message: types.Message, state: FSMContext):
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
     keyboard.add(f'{const.DONE_EMOJI} Завершить выбор')
+    # keyboard.add(f'{const.DONE_EMOJI} Без выбора направления')
     for dir in const.DIRECTIONS_CODES.values():
         keyboard.add(dir)
     await message.answer(
@@ -39,7 +40,7 @@ async def create_dir_list(message: types.Message, state: FSMContext):
                 'Пожалуйста, выберите направление, используя список ниже.'
             )
             return
-        if message.text in dir_names:
+        else:
             for d_code, d_name in const.DIRECTIONS_CODES.items():
                 if d_name == message.text:
                     dir_code = d_code

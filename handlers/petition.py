@@ -8,11 +8,11 @@ from bson.objectid import ObjectId
 
 from config.bot_config import bot, dp
 from config.mongo_config import admins, users, petitions, buffer
-from config.telegram_config import MY_TELEGRAM_ID
 from utils.constants import KS
 from aiogram.utils.exceptions import CantInitiateConversation
 import keyboards.for_petition as kb
 import utils.constants as const
+from utils.send_email import send_email
 
 
 class Petition(StatesGroup):
@@ -23,12 +23,12 @@ class Petition(StatesGroup):
 async def direction_select(message: types.Message):
     await message.answer(
         text='Выберите направление деятельности для решения проблемного вопроса',
-        reply_markup=kb.directions_kb(),  # коллбэк с приставкой "dir"
+        reply_markup=kb.directions_kb(),  # коллбэк с приставкой "pet"
     )
     await message.delete()
 
 
-@dp.callback_query_handler(Text(startswith='dir_'))
+@dp.callback_query_handler(Text(startswith='pet_'))
 async def ask_problem(call: types.CallbackQuery, state: FSMContext):
     _, dir = call.data.split('_')
     dir_name = const.DIRECTIONS_CODES.get(dir)
@@ -36,7 +36,7 @@ async def ask_problem(call: types.CallbackQuery, state: FSMContext):
         text=(
             f'Вы выбрали направление <b>"{dir_name}"</b>\n\n'
             'Введите текст Вашего запроса/предложения/проблемы.\n\n'
-            'Сообщение будет отправлено специалисту по выбранному Вами направлению.\n\n'
+            'Сообщение будет отправлено специалисту по выбранному Вами направлению.'
             # 'Если Вы передумали, то нажмите кнопку <b>Отмена</b>'
         ),
         # reply_markup=kb.cancel_kb(),
@@ -64,7 +64,7 @@ async def ask_confirmation(message: types.Message, state: FSMContext):
 
 
 @dp.callback_query_handler(Text(startswith='ask_'))
-async def send_petition(call: types.CallbackQuery, state: FSMContext):
+async def save_petition(call: types.CallbackQuery, state: FSMContext):
     _, action, dir, msg_id = call.data.split('_')
     msg = buffer.find_one({'_id': ObjectId(msg_id)})
     if action == 'cancel':
@@ -74,6 +74,19 @@ async def send_petition(call: types.CallbackQuery, state: FSMContext):
     else:
         dir_name = const.DIRECTIONS_CODES.get(dir)
         user_id = call.message.chat.id
+        date = dt.datetime.now(tz=const.TZINFO).strftime('%d.%m.%Y %H:%M')
+        ks = users.find_one({'user_id': user_id}).get('ks')
+        msg_text = msg.get('text')
+        for adm in list(admins.find({})):
+            dirs = adm.get('directions')
+            if dir in dirs:
+                try:
+                    await bot.send_message(
+                        chat_id=adm.get('user_id'),
+                        text=f'Получена новая запись от {ks}:\n\n{msg_text}'
+                    )
+                except CantInitiateConversation:
+                    continue
         await call.message.edit_text(
             text=(
                 f'Ваш запрос отправлен специалисту по направлению <b>"{dir_name}"</b>\n'
@@ -81,13 +94,11 @@ async def send_petition(call: types.CallbackQuery, state: FSMContext):
             ),
             parse_mode=types.ParseMode.HTML
         )
-        date = dt.datetime.now(tz=const.TZINFO).strftime('%d.%m.%Y %H:%M')
-        ks = users.find_one({'user_id': user_id}).get('_id')
         petitions.insert_one(
             {
                 'date': date,
                 'user_id': user_id,
-                'text': msg.get('text'),
+                'text': msg_text,
                 'direction': dir,
                 'ks': ks,
                 'done': 'false'
@@ -101,6 +112,11 @@ async def send_petition(call: types.CallbackQuery, state: FSMContext):
 async def ask_cancel(call: types.CallbackQuery, state: FSMContext):
     await state.finish()
     await call.message.delete()
+
+
+@dp.message_handler(commands=['mail'])
+async def ask_cancel(message):
+    await send_email()
 
 
 def register_handlers_petition(dp: Dispatcher):
