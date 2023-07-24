@@ -67,3 +67,19 @@ def get_drop_messages_kb(drop_id):
         )
     )
     return keyboard
+
+
+def status_kb(pet_id, status_code):
+    keyboard = InlineKeyboardMarkup(row_width=2)
+    btns = []
+    for status in const.PETITION_STATUS.keys():
+        if status == status_code or status == 'create':
+            continue
+        _, btn_name, status_emoji = const.PETITION_STATUS[status]
+        btn = InlineKeyboardButton(
+            text=f'{status_emoji} {btn_name}',
+            callback_data=f'status_{pet_id}_{status}_{status_code}'
+        )
+        btns.append(btn)
+    keyboard.add(*btns)
+    return keyboard

@@ -3,7 +3,7 @@ from aiogram.dispatcher.filters import Text
 from bson.objectid import ObjectId
 
 from config.bot_config import bot, dp
-from config.mongo_config import admins, petitions, buffer
+from config.mongo_config import admins, petitions, buffer, users
 from utils.constants import KS
 import keyboards.for_review as kb
 import utils.constants as const
@@ -34,7 +34,7 @@ async def choose_ks(call: types.CallbackQuery):
     qs = list(petitions.find({'direction': dir_code}))
     if len(qs) != 0:
         pipeline = [
-            {'$match': {'done': 'false', 'direction': dir_code}},
+            {'$match': {'status': {'$in': ['create', 'inwork']}, 'direction': dir_code}},
             {'$group': {'_id': '$ks', 'count': {'$sum': 1}}},
         ]
         queryset = list(petitions.aggregate(pipeline))
@@ -56,16 +56,27 @@ async def show_petitions(call: types.CallbackQuery):
     msg_ids = []  # для хранения id сообщений, чтобы их потом удалить
     ks = const.KS[int(ks_index)]
     dir_name = const.DIRECTIONS_CODES[dir_code]
-    queryset = list(petitions.find({'ks': ks, 'direction': dir_code, 'done': 'false'}))
+    queryset = list(petitions.find(
+        {'ks': ks, 'direction': dir_code, 'status': {'$in': ['create', 'inwork']}}
+    ))
     len_queryset = len(queryset)
     await call.message.delete()
     for pet in queryset:
-        name = pet.get('ks')
+        ks_name = pet.get('ks')
         date = pet.get('date')
         text = pet.get('text')
+        pet_id = pet.get('_id')
+        status_code = pet.get('status')
+        status, _, status_emoji = const.PETITION_STATUS[status_code]
+        user_id = pet.get('user_id')
+        username = users.find_one({'user_id': user_id}).get('username')
         msg = await call.message.answer(
-            text=f'<b>{name}</b>\n{date}\n\n<i>{text}</i>',
-            parse_mode=types.ParseMode.HTML
+            text=(f'Станция: <b>{ks_name}</b>\n'
+                  f'Дата: <b>{date}</b>\n'
+                  f'Автор: <b>{username}</b>\n'
+                  f'Статус: {status_emoji} <b>{status}</b>\n\n<i>{text}</i>'),
+            parse_mode=types.ParseMode.HTML,
+            reply_markup=kb.status_kb(pet_id, status_code)
         )
         msg_ids.append(msg.message_id)
     drop_id = buffer.insert_one({'messages_id': msg_ids}).inserted_id

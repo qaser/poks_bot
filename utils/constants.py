@@ -2,14 +2,18 @@ import emoji
 from datetime import timezone, timedelta
 
 
-GREEN_EMOJI = emoji.emojize(':green_circle:')
-RED_EMOJI = emoji.emojize(':red_circle:')
+FINISH_EMOJI = emoji.emojize(':green_circle:')
+CREATE_EMOJI = emoji.emojize(':white_circle:')
+DELETE_EMOJI = emoji.emojize(':black_circle:')
+INWORK_EMOJI = emoji.emojize(':yellow_circle:')
+REWORK_EMOJI = emoji.emojize(':red_circle:')
+
 BACK_EMOJI = emoji.emojize(':left_arrow:')
 EXIT_EMOJI = emoji.emojize(':eject_button:')
 DONE_EMOJI = emoji.emojize(':check_mark_button:')
 UNDONE_EMOJI = emoji.emojize(':cross_mark:')
 DOC_EMOJI = emoji.emojize(':clipboard:')
-DELETE_EMOJI = emoji.emojize(':wastebasket:')
+WASTE_EMOJI = emoji.emojize(':wastebasket:')
 
 KS = [
     'Бобровская КС',
@@ -55,9 +59,9 @@ TZINFO = timezone(timedelta(hours=timezone_offset))
 
 # не делать коды  с нижним подчеркиванием!!!!
 DIRECTIONS_CODES = {
-    'avia': 'ГПА с авиа.приводом',
+    'avia': 'ГПА с авиа. приводом',
     'boat': 'ГПА с судовым приводом',
-    'station': 'ГПА со стационарным приводом',
+    'station': 'ГПА со стац. приводом',
     'vtd': 'ВТД',
     'krtt': 'КРТТ, ЗИС',
     'dooks': 'ДООКС',
@@ -82,3 +86,11 @@ PROF_USERS = {
 MAIL_SUBJECT = 'Информация о запросах/предложениях/проблемах, полученных телеграм-ботом'
 
 MAIL_TEXT = 'Во вложении находится файл с информацией, собранной ботом за неделю'
+
+PETITION_STATUS = {
+    'create': ['Создано', 'Создать', CREATE_EMOJI],
+    'inwork': ['В работе', 'В работу', INWORK_EMOJI],
+    'rework': ['На доработке', 'На доработку', REWORK_EMOJI],
+    'delete': ['В архиве (удалено)', 'Удалить', DELETE_EMOJI],
+    'finish': ['Завершено', 'Завершить', FINISH_EMOJI],
+}

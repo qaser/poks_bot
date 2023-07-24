@@ -75,15 +75,32 @@ async def save_petition(call: types.CallbackQuery, state: FSMContext):
         dir_name = const.DIRECTIONS_CODES.get(dir)
         user_id = call.message.chat.id
         date = dt.datetime.now(tz=const.TZINFO).strftime('%d.%m.%Y %H:%M')
-        ks = users.find_one({'user_id': user_id}).get('ks')
+        user = users.find_one({'user_id': user_id})
+        ks = user.get('ks')
+        username = user.get('username')
         msg_text = msg.get('text')
+        pet_id= petitions.insert_one(
+            {
+                'date': date,
+                'user_id': user_id,
+                'text': msg_text,
+                'direction': dir,
+                'ks': ks,
+                'status': 'create'
+            }
+        ).inserted_id
         for adm in list(admins.find({})):
             dirs = adm.get('directions')
             if dir in dirs:
                 try:
                     await bot.send_message(
                         chat_id=adm.get('user_id'),
-                        text=f'Получена новая запись от {ks}:\n\n{msg_text}'
+                        text=(f'Получена новая запись от <b>{ks}</b>\n'
+                              f'Дата: <b>{date}</b>\n'
+                              f'Автор: <b>{username}</b>\n'
+                              f'Статус: {const.CREATE_EMOJI} <b>Создано</b>\n\n{msg_text}'),
+                        parse_mode=types.ParseMode.HTML,
+                        reply_markup=kb.status_kb(pet_id, 'create')
                     )
                 except CantInitiateConversation:
                     continue
@@ -92,20 +109,43 @@ async def save_petition(call: types.CallbackQuery, state: FSMContext):
                 f'Ваш запрос отправлен специалисту по направлению <b>"{dir_name}"</b>\n'
                 'Чтобы сделать новый запрос нажмите /ask'
             ),
-            parse_mode=types.ParseMode.HTML
-        )
-        petitions.insert_one(
-            {
-                'date': date,
-                'user_id': user_id,
-                'text': msg_text,
-                'direction': dir,
-                'ks': ks,
-                'done': 'false'
-            }
+            parse_mode=types.ParseMode.HTML,
         )
     buffer.delete_one({'_id': ObjectId(msg_id)})
     await state.finish()
+
+
+@dp.callback_query_handler(Text(startswith='status'))
+async def change_status(call: types.CallbackQuery):
+    _, pet_id, new_status, current_status = call.data.split('_')
+    pet = petitions.find_one({'_id': ObjectId(pet_id)})
+    msg_text = pet.get('text')
+    ks = pet.get('ks')
+    date = pet.get('date')
+    user_id = pet.get('user_id')
+    username = users.find_one({'user_id': user_id}).get('username')
+    # проверка на изменение статуса другим пользователем
+    if pet.get('status') != current_status:
+        status, _, status_emoji = const.PETITION_STATUS[pet.get('status')]
+        warning_text = '<i>Статус этой записи уже был изменен другим специалистом</i>\n\n'
+    else:
+        petitions.update_one(
+            {'_id': ObjectId(pet_id)},
+            {'$set': {'status': new_status}}
+        )
+        pet = petitions.find_one({'_id': ObjectId(pet_id)})
+        status, _, status_emoji = const.PETITION_STATUS[pet.get('status')]
+        warning_text = ''
+    await bot.edit_message_text(
+        chat_id=call.message.chat.id,
+        message_id=call.message.message_id,
+        text=(f'{warning_text}Запись от <b>{ks}</b>\n'
+              f'Дата: <b>{date}</b>\n'
+              f'Автор: <b>{username}</b>\n'
+              f'Статус: {status_emoji} <b>{status}</b>\n\n{msg_text}'),
+        parse_mode=types.ParseMode.HTML,
+
+    )
 
 
 @dp.callback_query_handler(Text(startswith='cancel'))
