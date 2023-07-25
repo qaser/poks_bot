@@ -17,7 +17,6 @@ class Admin(StatesGroup):
 async def dir_choose(message: types.Message, state: FSMContext):
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
     keyboard.add(f'{const.DONE_EMOJI} Завершить выбор')
-    # keyboard.add(f'{const.DONE_EMOJI} Без выбора направления')
     for dir in const.DIRECTIONS_CODES.values():
         keyboard.add(dir)
     await message.answer(

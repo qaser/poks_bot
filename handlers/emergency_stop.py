@@ -1,15 +1,11 @@
 import datetime as dt
-import functools
-import inspect
 
 from aiogram import Dispatcher, types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 
 from config.bot_config import bot
-from config.mongo_config import admins, emergency_stops, users
-from config.telegram_config import MY_TELEGRAM_ID
-from texts.initial import MANUAL, REPORT
+from config.mongo_config import emergency_stops, users
 from utils.constants import KS
 from aiogram.utils.exceptions import CantInitiateConversation
 from utils.decorators import admin_check
@@ -34,6 +30,7 @@ async def emergency_start(message: types.Message):
         ),
         reply_markup=keyboard
     )
+    await message.delete()
     await Emergency.waiting_station_name.set()
 
 
