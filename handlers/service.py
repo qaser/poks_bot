@@ -17,7 +17,7 @@ async def reset_handler(message: types.Message, state: FSMContext):
     await state.finish()
     await state.reset_state()
     await message.answer(
-        text='Сброс настроек бота выполнен, текущее действие отменено.',
+        text='Текущее действие отменено',
         reply_markup=types.ReplyKeyboardRemove(),
     )
     await bot.delete_message(message.chat.id, message.message_id)
