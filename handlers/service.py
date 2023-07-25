@@ -165,15 +165,14 @@ async def archive_messages(message: types.Message):
 # обработка команды /check
 @admin_check
 async def check_admins(message: types.Message):
+    await message.delete()
     queryset = list(admins.find({}))
     res_text = ''
     dir_list = []
-
     for adm in queryset:
         name = adm.get('username')
         directions = adm.get('directions')
         dir_text = ''
-
         for dir in directions:
             if dir not in dir_list:
                 dir_list.append(dir)
@@ -184,7 +183,7 @@ async def check_admins(message: types.Message):
             if code not in dir_list:
                 dirs_not_used.append(name)
         if len(dirs_not_used) == 0:
-            summary = 'На все направления назначены специалисты'
+            summary = '<u>На все направления назначены специалисты</u>'
         else:
             res = ''
             for i in dirs_not_used:
