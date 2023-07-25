@@ -167,17 +167,19 @@ async def archive_messages(message: types.Message):
 async def check_admins(message: types.Message):
     queryset = list(admins.find({}))
     res_text = ''
+    dir_list = []
+    dirs_not_used = []
     for adm in queryset:
         name = adm.get('username')
         directions = adm.get('directions')
         dir_text = ''
-        dir_list = []
+
         for dir in directions:
             if dir not in dir_list:
                 dir_list.append(dir)
             dir_text = f'{dir_text}    {const.DIRECTIONS_CODES[dir]}\n'
         res_text = f'{res_text}\n<b>{name}:</b>\n{dir_text}'
-        dirs_not_used = []
+
         for code, name in const.DIRECTIONS_CODES.items():
             if code not in dir_list:
                 dirs_not_used.append(name)
@@ -189,7 +191,7 @@ async def check_admins(message: types.Message):
                 res = f'{res}{i}\n'
             summary = f'<u>Направления без отслеживания:</u>\n{res}'
     await message.answer(
-        text=f'{res_text}\n\n{summary}',
+        text=f'{res_text}\n{summary}',
         parse_mode=types.ParseMode.HTML
     )
 
