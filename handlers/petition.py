@@ -19,7 +19,7 @@ class Petition(StatesGroup):
     waiting_petition_text = State()
 
 
-# точка входа командой /ask
+# точка входа командой /task
 async def direction_select(message: types.Message):
     await message.answer(
         text='Выберите направление деятельности для решения проблемного вопроса',
@@ -69,7 +69,7 @@ async def save_petition(call: types.CallbackQuery, state: FSMContext):
     msg = buffer.find_one({'_id': ObjectId(msg_id)})
     if action == 'cancel':
         await call.message.edit_text(
-            text='Действие отменено.\nЧтобы сделать новый запрос нажмите /ask'
+            text='Действие отменено.\nЧтобы сделать новый запрос нажмите /task'
         )
     else:
         dir_name = const.DIRECTIONS_CODES.get(dir)
@@ -107,7 +107,7 @@ async def save_petition(call: types.CallbackQuery, state: FSMContext):
         await call.message.edit_text(
             text=(
                 f'Ваш запрос отправлен специалисту по направлению <b>"{dir_name}"</b>\n'
-                'Чтобы сделать новый запрос нажмите /ask'
+                'Чтобы сделать новый запрос нажмите /task'
             ),
             parse_mode=types.ParseMode.HTML,
         )
@@ -168,7 +168,11 @@ async def ask_cancel(message):
 
 
 def register_handlers_petition(dp: Dispatcher):
-    dp.register_message_handler(direction_select, commands='ask')
+    dp.register_message_handler(
+        direction_select,
+        commands='task',
+        chat_type=types.ChatType.PRIVATE
+    )
     dp.register_message_handler(
         ask_confirmation,
         state=Petition.waiting_petition_text

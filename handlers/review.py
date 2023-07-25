@@ -111,4 +111,8 @@ async def menu_back(call: types.CallbackQuery):
 
 
 def register_handlers_review(dp: Dispatcher):
-    dp.register_message_handler(choose_direction, commands='review')
+    dp.register_message_handler(
+        choose_direction,
+        commands='review',
+        chat_type=types.ChatType.PRIVATE
+    )

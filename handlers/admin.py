@@ -13,7 +13,7 @@ class Admin(StatesGroup):
     waiting_confirm = State()
 
 
-@dp.message_handler(commands=['admin'])
+@dp.message_handler(commands=['admin'], chat_type=types.ChatType.PRIVATE)
 async def dir_choose(message: types.Message, state: FSMContext):
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
     keyboard.add(f'{const.DONE_EMOJI} Завершить выбор')
@@ -28,6 +28,7 @@ async def dir_choose(message: types.Message, state: FSMContext):
         ),
         reply_markup=keyboard,
     )
+    await message.delete()
     await state.update_data(dirs=[])
     await Admin.waiting_directions.set()
 

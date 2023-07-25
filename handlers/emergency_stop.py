@@ -12,34 +12,13 @@ from config.telegram_config import MY_TELEGRAM_ID
 from texts.initial import MANUAL, REPORT
 from utils.constants import KS
 from aiogram.utils.exceptions import CantInitiateConversation
+from utils.decorators import admin_check
 
 
 class Emergency(StatesGroup):
     waiting_station_name = State()
     waiting_gpa_number = State()
     waiting_confirm = State()
-
-
-def admin_check(f):
-    @functools.wraps(f)
-    async def wrapped_func(*args, **kwargs):
-        func_args = inspect.getcallargs(f, *args, **kwargs)
-        post = func_args['message']
-        if admins.find_one({'user_id': post.from_user.id}) is None:
-            try:
-                await bot.send_message(
-                    post.from_user.id,
-                    'Вам не доступна эта команда'
-                )
-                await bot.send_message(
-                    MY_TELEGRAM_ID,
-                    f'Пользователь {post.from_user.full_name} ввёл {post.text}'
-                )
-            except:
-                pass
-        else:
-            return await f(*args, **kwargs)
-    return wrapped_func
 
 
 # команда /ao - входная точка для оповещения аварийного останова
@@ -162,34 +141,12 @@ async def confirmation(message: types.Message, state: FSMContext):
         await state.finish()
 
 
-
-#  обработка команды /manual
-# async def send_manual(message: types.Message):
-#     if message.chat.id == -1001856019654:
-#         await message.answer('Эта команда здесь не доступна, перейдите к боту @otdel_ks_bot')
-#     else:
-#         post = await message.answer(
-#             MANUAL,
-#             parse_mode=types.ParseMode.HTML,
-#         )
-#         try:
-#             await bot.pin_chat_message(message.chat.id, post.message_id)
-#         except:
-#             pass
-
-
-#  обработка команды /report
-async def send_report(message: types.Message):
-    if message.chat.id == -1001856019654:
-        await message.answer('Эта команда здесь не доступна, перейдите к боту @otdel_ks_bot')
-    else:
-        await message.answer(REPORT)
-
-
 def register_handlers_emergency(dp: Dispatcher):
-    dp.register_message_handler(emergency_start, commands='ao')
-    # dp.register_message_handler(send_manual, commands='manual')
-    dp.register_message_handler(send_report, commands='report')
+    dp.register_message_handler(
+        emergency_start,
+        commands='ao',
+        chat_type=types.ChatType.PRIVATE
+    )
     dp.register_message_handler(
         station_name,
         state=Emergency.waiting_station_name

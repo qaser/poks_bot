@@ -9,6 +9,7 @@ from config.mongo_config import archive, groups, users, admins
 from config.telegram_config import MY_TELEGRAM_ID
 from handlers.emergency_stop import admin_check
 import utils.constants as const
+from utils.decorators import superuser_check
 
 
 # обработка команды /reset - сброс клавиатуры и состояния
@@ -99,7 +100,7 @@ async def start_subscribe(message: types.Message):
 
 
 # обработка команды /log
-@admin_check
+@superuser_check
 async def send_logs(message: types.Message):
     file = f'logs_bot.log'
     with open(file, 'rb') as f:
@@ -125,14 +126,6 @@ async def send_logs(message: types.Message):
 #         await message.answer(f'{name}\n{link}')
 #     for lnk in supergroup_links:
 #         await message.answer(lnk)
-
-
-# @dp.message_handler(commands=['test'])
-# async def test_chat(message: types.Message):
-#     g_id = groups.find_one({'group_name': 'КС Пуровская, СОГ, ТНМ 1203 ст. №16, АО, 25.06.2023'}).get('_id')
-#     mes = await bot.send_message(chat_id=g_id, text='Тестовое сообщение')
-#     time.sleep(10)
-#     await mes.delete()
 
 
 async def archive_messages(message: types.Message):
@@ -195,7 +188,6 @@ async def check_admins(message: types.Message):
     )
 
 
-
 def register_handlers_service(dp: Dispatcher):
     dp.register_message_handler(reset_handler, commands='reset', state='*')
     # dp.register_message_handler(count_users, commands='users')
@@ -203,5 +195,9 @@ def register_handlers_service(dp: Dispatcher):
     dp.register_message_handler(stop_subscribe, commands='unsub')
     dp.register_message_handler(start_subscribe, commands='sub')
     dp.register_message_handler(send_logs, commands='log')
-    dp.register_message_handler(check_admins, commands='check')
+    dp.register_message_handler(
+        check_admins,
+        commands='check',
+        chat_type=types.ChatType.PRIVATE
+    )
     dp.register_message_handler(archive_messages, content_types=ContentType.ANY)
