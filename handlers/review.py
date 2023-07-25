@@ -7,9 +7,11 @@ from config.mongo_config import admins, petitions, buffer, users
 from utils.constants import KS
 import keyboards.for_review as kb
 import utils.constants as const
+from utils.decorators import admin_check
 
 
 # обработка команды /review
+@admin_check
 async def choose_direction(message: types.Message):
     await message.delete()
     user_id = message.chat.id
