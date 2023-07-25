@@ -115,7 +115,7 @@ async def save_petition(call: types.CallbackQuery, state: FSMContext):
     await state.finish()
 
 
-@dp.callback_query_handler(Text(startswith='status'))
+@dp.callback_query_handler(Text(startswith='status_'))
 async def change_status(call: types.CallbackQuery):
     _, pet_id, new_status, current_status = call.data.split('_')
     pet = petitions.find_one({'_id': ObjectId(pet_id)})
@@ -126,7 +126,7 @@ async def change_status(call: types.CallbackQuery):
     username = users.find_one({'user_id': user_id}).get('username')
     # проверка на изменение статуса другим пользователем
     if pet.get('status') != current_status:
-        status, _, status_emoji = const.PETITION_STATUS[pet.get('status')]
+        status, status_code, status_emoji = const.PETITION_STATUS[pet.get('status')]
         warning_text = '<i>Статус этой записи уже был изменен другим специалистом</i>\n\n'
     else:
         petitions.update_one(
@@ -134,8 +134,16 @@ async def change_status(call: types.CallbackQuery):
             {'$set': {'status': new_status}}
         )
         pet = petitions.find_one({'_id': ObjectId(pet_id)})
-        status, _, status_emoji = const.PETITION_STATUS[pet.get('status')]
+        status, status_code, status_emoji = const.PETITION_STATUS[pet.get('status')]
         warning_text = ''
+        try:
+            await bot.send_message(
+                chat_id=user_id,
+                text=(f'Статус Вашей записи изменён.\n\n'
+                    f'"{msg_text}"\n\nНовый статус: {status_emoji} {status}'),
+            )
+        except CantInitiateConversation:
+            pass
     await bot.edit_message_text(
         chat_id=call.message.chat.id,
         message_id=call.message.message_id,
@@ -144,7 +152,7 @@ async def change_status(call: types.CallbackQuery):
               f'Автор: <b>{username}</b>\n'
               f'Статус: {status_emoji} <b>{status}</b>\n\n{msg_text}'),
         parse_mode=types.ParseMode.HTML,
-
+        # reply_markup=kb.status_kb(pet_id, status_code)
     )
 
 
