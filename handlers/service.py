@@ -170,11 +170,28 @@ async def check_admins(message: types.Message):
     for adm in queryset:
         name = adm.get('username')
         directions = adm.get('directions')
-        dir_text= ''
+        dir_text = ''
+        dir_list = []
         for dir in directions:
+            if dir not in dir_list:
+                dir_list.append(dir)
             dir_text = f'{dir_text}    {const.DIRECTIONS_CODES[dir]}\n'
         res_text = f'{res_text}\n<b>{name}:</b>\n{dir_text}'
-    await message.answer(text=res_text, parse_mode=types.ParseMode.HTML)
+        dirs_not_used = []
+        for code, name in const.DIRECTIONS_CODES.items():
+            if code not in dir_list:
+                dirs_not_used.append(name)
+        if len(dirs_not_used) == 0:
+            summary = 'На все направления назначены специалисты'
+        else:
+            res = ''
+            for i in dirs_not_used:
+                res = f'{res}{i}\n'
+            summary = f'<u>Направления без отслеживания:</u>\n{res}'
+    await message.answer(
+        text=f'{res_text}\n\n{summary}',
+        parse_mode=types.ParseMode.HTML
+    )
 
 
 
