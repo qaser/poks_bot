@@ -173,7 +173,7 @@ async def check_admins(message: types.Message):
         dir_text= ''
         for dir in directions:
             dir_text = f'{dir_text}    {const.DIRECTIONS_CODES[dir]}\n'
-        res_text = f'<b>{name}:</b>\n{dir_text}'
+        res_text = f'{res_text}\n<b>{name}:</b>\n{dir_text}'
     await message.answer(text=res_text, parse_mode=types.ParseMode.HTML)
 
 
