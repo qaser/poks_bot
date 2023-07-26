@@ -15,6 +15,7 @@ from handlers.service import register_handlers_service
 from scheduler.scheduler_jobs import scheduler, scheduler_jobs
 from texts.initial import HELP_TEXT, INITIAL_TEXT, MANUAL, NEW_GROUP_TEXT
 from utils.create_summary_docx import create_docx_file
+from utils.send_email import send_email
 
 logging.basicConfig(
     filename='logs_bot.log',
@@ -41,9 +42,14 @@ async def help_handler(message: types.Message):
 
 
 # @admin_check
-@dp.message_handler(commands=['doc'])
-async def doc_handler(message: types.Message):
-    create_docx_file()
+# @dp.message_handler(commands=['doc'])
+# async def doc_handler(message: types.Message):
+#     create_docx_file()
+
+
+# @dp.message_handler(commands=['mail'])
+# async def ask_cancel(message):
+#     await send_report()
 
 
 # обработка события - добавление бота в группу

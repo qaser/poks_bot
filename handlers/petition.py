@@ -162,11 +162,6 @@ async def ask_cancel(call: types.CallbackQuery, state: FSMContext):
     await call.message.delete()
 
 
-@dp.message_handler(commands=['mail'])
-async def ask_cancel(message):
-    await send_email()
-
-
 def register_handlers_petition(dp: Dispatcher):
     dp.register_message_handler(
         direction_select,

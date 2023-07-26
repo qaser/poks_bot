@@ -94,3 +94,11 @@ PETITION_STATUS = {
     'delete': ['В архиве (удалено)', 'Удалить', DELETE_EMOJI],
     'finish': ['Завершено', 'Завершить', FINISH_EMOJI],
 }
+
+PETITION_COLOR = {
+    'create': 'FFFFFF',
+    'inwork': 'E1CC4F',
+    'rework': 'ce8c88',
+    'delete': '88bace',
+    'finish': 'A0D6B4',
+}

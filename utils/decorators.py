@@ -40,3 +40,17 @@ def superuser_check(f):
         else:
             return await f(*args, **kwargs)
     return wrapped_func
+
+
+def run_before(lastfunc, *args1, **kwargs1):
+    def run(func):
+        def wrapped_func(*args, **kwargs):
+            try:
+                result = func(*args, **kwargs)
+            except:
+                result = None
+            finally:
+                lastfunc(*args1, **kwargs1)
+                return result
+        return wrapped_func
+    return run

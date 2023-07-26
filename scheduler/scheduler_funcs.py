@@ -4,6 +4,8 @@ from texts.initial import REMAINDER
 from utils.send_email import send_email
 from utils.get_mail import get_letters
 import imaplib
+from utils.create_summary_docx import create_docx_file
+from utils.decorators import run_before
 
 from config.mail_config import MAIL_LOGIN, MAIL_PASS, IMAP_MAIL_SERVER
 
@@ -19,10 +21,6 @@ async def send_remainder():
             )
         except:
             pass
-
-
-async def send_report():
-    await send_email()
 
 
 async def check_mailbox():
