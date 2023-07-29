@@ -4,7 +4,7 @@ from aiogram import Dispatcher, types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 
-from config.bot_config import bot
+from config.bot_config import bot, dp
 from config.mongo_config import emergency_stops, users
 from utils.constants import KS
 from aiogram.utils.exceptions import CantInitiateConversation
@@ -19,6 +19,7 @@ class Emergency(StatesGroup):
 
 # команда /ao - входная точка для оповещения аварийного останова
 @admin_check
+@dp.message_handler(commands=['ao'])
 async def emergency_start(message: types.Message):
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
     for station in KS:
@@ -139,10 +140,10 @@ async def confirmation(message: types.Message, state: FSMContext):
 
 
 def register_handlers_emergency(dp: Dispatcher):
-    dp.register_message_handler(
-        emergency_start,
-        commands='ao'
-    )
+    # dp.register_message_handler(
+    #     emergency_start,
+    #     commands='ao'
+    # )
     dp.register_message_handler(
         station_name,
         state=Emergency.waiting_station_name
