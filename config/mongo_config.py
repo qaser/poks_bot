@@ -11,6 +11,7 @@ archive = db['archive']
 petitions = db['petitions']
 buffer = db['buffer']
 users = db['users']
+bugs = db['bugs']
 
 
 '''

@@ -7,6 +7,7 @@ from config.bot_config import bot, dp
 from config.mongo_config import groups
 from config.telegram_config import MY_TELEGRAM_ID
 from handlers.admin import register_handlers_admin
+from handlers.bugs import register_handlers_bugs
 from handlers.emergency_stop import admin_check, register_handlers_emergency
 from handlers.petition import register_handlers_petition
 from handlers.registration import register_handlers_registration
@@ -14,8 +15,7 @@ from handlers.review import register_handlers_review
 from handlers.service import register_handlers_service
 from scheduler.scheduler_jobs import scheduler, scheduler_jobs
 from texts.initial import HELP_TEXT, INITIAL_TEXT, MANUAL, NEW_GROUP_TEXT
-from utils.create_summary_docx import create_docx_file
-from utils.send_email import send_email
+
 
 logging.basicConfig(
     filename='logs_bot.log',
@@ -116,6 +116,7 @@ async def on_startup(_):
 
 if __name__ == '__main__':
     scheduler.start()
+    register_handlers_bugs(dp)
     register_handlers_petition(dp)
     register_handlers_review(dp)
     register_handlers_emergency(dp)

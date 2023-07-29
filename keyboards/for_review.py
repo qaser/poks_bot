@@ -2,8 +2,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 import utils.constants as const
 
 
-def directions_kb(dir_list, job):
-    callword = 'dir' if job == 'admin' else 'udir'
+def directions_kb(dir_list):
     keyboard = InlineKeyboardMarkup()
     for dir in dir_list:
         dir_code, count = dir
@@ -11,7 +10,28 @@ def directions_kb(dir_list, job):
         keyboard.row(
             InlineKeyboardButton(
                 text=f'{dir_name} ({count})',
-                callback_data=f'{callword}_{dir_code}'
+                callback_data=f'dir_{dir_code}'
+            )
+        )
+    keyboard.add(
+        InlineKeyboardButton(
+            text=f'{const.UNDONE_EMOJI} Отмена',
+            callback_data='cancel'
+        )
+    )
+    return keyboard
+
+
+def user_directions_kb(dir_list, ks):
+    keyboard = InlineKeyboardMarkup()
+    ks_id = const.KS.index(ks)
+    for dir in dir_list:
+        dir_code, count = dir
+        dir_name = const.DIRECTIONS_CODES.get(dir_code)
+        keyboard.row(
+            InlineKeyboardButton(
+                text=f'{dir_name} ({count})',
+                callback_data=f'udir_{dir_code}_{ks_id}'
             )
         )
     keyboard.add(
@@ -38,6 +58,25 @@ def ks_kb(ks_list, dir_code, level):
             text=f'{const.BACK_EMOJI} Назад',
             callback_data=f'back_{level}_{dir_code}'
         ),
+        InlineKeyboardButton(
+            text=f'{const.UNDONE_EMOJI} Выход',
+            callback_data='cancel'
+        )
+    )
+    return keyboard
+
+
+def ks_user_kb(ks_list):
+    keyboard = InlineKeyboardMarkup()
+    for ks_id in ks_list:
+        name = const.KS[ks_id]
+        keyboard.row(
+            InlineKeyboardButton(
+                text=name,
+                callback_data=f'userks_{ks_id}'
+            )
+        )
+    keyboard.add(
         InlineKeyboardButton(
             text=f'{const.UNDONE_EMOJI} Выход',
             callback_data='cancel'

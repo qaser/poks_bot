@@ -8,18 +8,20 @@ from utils.constants import KS
 import keyboards.for_review as kb
 import utils.constants as const
 from utils.decorators import admin_check, registration_check
+from aiogram.utils.exceptions import MessageCantBeEdited
 
 
 # обработка команды /review
-# @registration_check
+@registration_check
 async def user_or_admin(message: types.Message):
     if message.chat.type == 'private':
-        await message.delete()
+        # await message.delete()
         user_id = message.chat.id
         is_admin = admins.find_one({'user_id': user_id})
         if is_admin is None:
             await user_route(message)
         else:
+            await message.delete()
             await choose_direction(message)
     else:
         await message.delete()
@@ -30,16 +32,24 @@ async def user_route(message: types.Message):
     ks_users = list(users.find({'user_id': user_id}))
     if len(ks_users) == 1:
         ks = ks_users[0].get('ks')
-        await choose_user_direction(message, ks)
+        await user_choose_direction(message, ks)
     else:
+        await message.delete()
         ks_list = [KS.index(i['ks']) for i in ks_users]
         await message.answer(
             text='Выберите компрессорную станцию для просмотра:',
-            reply_markup=kb,
+            reply_markup=kb.ks_user_kb(ks_list),
         )
 
 
-async def choose_user_direction(message: types.Message, ks):
+@dp.callback_query_handler(Text(startswith='userks_'))
+async def user_choose_ks(call: types.CallbackQuery):
+    _, ks_index = call.data.split('_')
+    ks = const.KS[int(ks_index)]
+    await user_choose_direction(call.message,  ks)
+
+
+async def user_choose_direction(message: types.Message, ks):
     pipeline = [
         {'$match': {'ks': ks, 'status': {'$in': ['create', 'rework', 'inwork']}}},
         {'$group': {'_id': '$direction', 'count': {'$sum': 1}}},
@@ -47,23 +57,30 @@ async def choose_user_direction(message: types.Message, ks):
     queryset = list(petitions.aggregate(pipeline))
     dir_list = [(i['_id'], i['count']) for i in queryset]
     if len(dir_list) == 0:
-        await message.answer(
+        await message.edit_text(
             text='Записи отсутствуют',
         )
     else:
-        await message.answer(
-            text='Выберите направление для просмотра:',
-            reply_markup=kb.directions_kb(dir_list, 'user'),
-        )
+        try:
+            await message.edit_text(
+                text='Выберите направление для просмотра:',
+                reply_markup=kb.user_directions_kb(dir_list, ks),
+            )
+        except MessageCantBeEdited:
+            await message.delete()
+            await message.answer(
+                text='Выберите направление для просмотра:',
+                reply_markup=kb.user_directions_kb(dir_list, ks),
+            )
 
 
 @dp.callback_query_handler(Text(startswith='udir_'))
 async def show_user_petitions(call: types.CallbackQuery):
-    _, dir_code = call.data.split('_')
+    _, dir_code, ks_id = call.data.split('_')
     msg_ids = []  # для хранения id сообщений, чтобы их потом удалить
     user_id = call.message.chat.id
     user = users.find_one({'user_id': user_id})
-    ks = user.get('ks')
+    ks = const.KS[int(ks_id)]
     dir_name = const.DIRECTIONS_CODES[dir_code]
     qs = list(petitions.find({
         'direction': dir_code,
@@ -122,7 +139,7 @@ async def choose_direction(message: types.Message):
         else:
             await message.answer(
                 text='Выберите направление для просмотра:',
-                reply_markup=kb.directions_kb(dir_list, 'admin'),
+                reply_markup=kb.directions_kb(dir_list),
             )
     else:
         await message.answer(
