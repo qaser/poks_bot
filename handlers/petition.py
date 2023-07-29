@@ -25,6 +25,7 @@ class EditPetition(StatesGroup):
 
 
 # точка входа командой /task
+@dp.message_handler(commands=['task'])
 async def direction_select(message: types.Message):
     if message.chat.type == 'private':
         await message.answer(
@@ -255,10 +256,10 @@ async def ask_cancel(call: types.CallbackQuery, state: FSMContext):
 
 
 def register_handlers_petition(dp: Dispatcher):
-    dp.register_message_handler(
-        direction_select,
-        commands='task'
-    )
+    # dp.register_message_handler(
+    #     direction_select,
+    #     commands='task'
+    # )
     dp.register_message_handler(
         ask_confirmation,
         state=Petition.waiting_petition_text

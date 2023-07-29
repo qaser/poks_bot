@@ -117,9 +117,9 @@ async def on_startup(_):
 if __name__ == '__main__':
     scheduler.start()
     register_handlers_service(dp)
+    register_handlers_review(dp)
     register_handlers_bugs(dp)
     register_handlers_petition(dp)
-    register_handlers_review(dp)
     register_handlers_emergency(dp)
     register_handlers_registration(dp)
     register_handlers_admin(dp)
