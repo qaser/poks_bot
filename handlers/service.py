@@ -195,8 +195,5 @@ def register_handlers_service(dp: Dispatcher):
     dp.register_message_handler(stop_subscribe, commands='unsub')
     dp.register_message_handler(start_subscribe, commands='sub')
     dp.register_message_handler(send_logs, commands='log')
-    dp.register_message_handler(
-        check_admins,
-        commands='check'
-    )
+    dp.register_message_handler(check_admins, commands='check')
     dp.register_message_handler(archive_messages, content_types=ContentType.ANY)

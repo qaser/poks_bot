@@ -1,18 +1,16 @@
 import datetime as dt
 
 from aiogram import Dispatcher, types
-from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from bson.objectid import ObjectId
+from aiogram.dispatcher import filters
 
 from config.bot_config import bot, dp
 from config.mongo_config import admins, users, petitions, buffer
-from utils.constants import KS
 from aiogram.utils.exceptions import CantInitiateConversation
 import keyboards.for_petition as kb
 import utils.constants as const
-from utils.send_email import send_email
 
 
 class Petition(StatesGroup):
@@ -26,18 +24,39 @@ class EditPetition(StatesGroup):
 
 # точка входа командой /task
 @dp.message_handler(commands=['task'])
-async def direction_select(message: types.Message):
+async def check_users(message: types.Message):
     if message.chat.type == 'private':
-        await message.answer(
-            text='Выберите направление деятельности для решения проблемного вопроса',
-            reply_markup=kb.directions_kb(),  # коллбэк с приставкой "pet"
-        )
-        await message.delete()
-    else:
-        await message.delete()
+        user_id = message.chat.id
+        queryset = list(users.find({'user_id': user_id}))
+        if len(queryset) == 0:
+            await message.answer('Вам не доступна эта команда')
+        elif len(queryset) == 1:
+            await direction_select(message)
+        else:
+            ks_list = [const.KS.index(u['ks']) for u in list(queryset)]
+            await message.answer(
+                text='Вы являетесь руководителем нескольких КС, выберите одну из списка:',
+                reply_markup=kb.ks_user_kb(ks_list)
+            )
 
 
-@dp.callback_query_handler(Text(startswith='pet_'))
+@dp.callback_query_handler(filters.Text(startswith='task-ks_'))
+async def mark_ks(call: types.CallbackQuery, state: FSMContext):
+    _, ks_id = call.data.split('_')
+    ks = const.KS[int(ks_id)]
+    await state.update_data({'ks': ks, 'many_ks': 'true'})
+    await direction_select(call.message)
+
+
+async def direction_select(message: types.Message):
+    await message.answer(
+        text='Выберите направление деятельности для решения проблемного вопроса',
+        reply_markup=kb.directions_kb(),  # коллбэк с приставкой "pet"
+    )
+    await message.delete()
+
+
+@dp.callback_query_handler(filters.Text(startswith='pet_'))
 async def ask_problem(call: types.CallbackQuery, state: FSMContext):
     _, dir = call.data.split('_')
     dir_name = const.DIRECTIONS_CODES.get(dir)
@@ -51,8 +70,7 @@ async def ask_problem(call: types.CallbackQuery, state: FSMContext):
         # reply_markup=kb.cancel_kb(),
         parse_mode=types.ParseMode.HTML
     )
-
-    await state.set_data({'dir': dir, 'msg_id': call.message.message_id})
+    await state.update_data({'dir': dir, 'msg_id': call.message.message_id})
     await Petition.waiting_petition_text.set()
 
 
@@ -61,7 +79,12 @@ async def ask_confirmation(message: types.Message, state: FSMContext):
     data = await state.get_data()
     dir = data['dir']
     msg = data['msg_id']
-    msg_id = buffer.insert_one({'text': message.text}).inserted_id
+    if 'many_ks' in data.keys():
+        ks = data['ks']
+        many_ks = data['many_ks']
+        msg_id = buffer.insert_one({'text': message.text, 'ks': ks, 'many_ks': many_ks}).inserted_id
+    else:
+        msg_id = buffer.insert_one({'text': message.text}).inserted_id
     await state.finish()
     await message.answer(
         text=f'Вы ввели следующий запрос:\n\n<i>"{message.text}"</i>\n\nОтправить?',
@@ -72,7 +95,7 @@ async def ask_confirmation(message: types.Message, state: FSMContext):
     # await message.delete()
 
 
-@dp.callback_query_handler(Text(startswith='ask_'))
+@dp.callback_query_handler(filters.Text(startswith='ask_'))
 async def save_petition(call: types.CallbackQuery, state: FSMContext):
     _, action, dir, msg_id = call.data.split('_')
     msg = buffer.find_one({'_id': ObjectId(msg_id)})
@@ -85,7 +108,7 @@ async def save_petition(call: types.CallbackQuery, state: FSMContext):
         user_id = call.message.chat.id
         date = dt.datetime.now(tz=const.TZINFO).strftime('%d.%m.%Y %H:%M')
         user = users.find_one({'user_id': user_id})
-        ks = user.get('ks')
+        ks = msg['ks'] if 'many_ks' in msg.keys() else user.get('ks')
         username = user.get('username')
         msg_text = msg.get('text')
         pet_id= petitions.insert_one(
@@ -124,7 +147,7 @@ async def save_petition(call: types.CallbackQuery, state: FSMContext):
     await state.finish()
 
 
-@dp.callback_query_handler(Text(startswith='status_'))
+@dp.callback_query_handler(filters.Text(startswith='status_'))
 async def change_status(call: types.CallbackQuery):
     _, pet_id, new_status, current_status = call.data.split('_')
     pet = petitions.find_one({'_id': ObjectId(pet_id)})
@@ -145,42 +168,42 @@ async def change_status(call: types.CallbackQuery):
         pet = petitions.find_one({'_id': ObjectId(pet_id)})
         status, _, status_emoji = const.PETITION_STATUS[pet.get('status')]
         warning_text = ''
-        # if call.message.chat.id != user_id:
-        try:
-            if new_status == 'rework':
-                await bot.send_message(
-                    chat_id=user_id,
-                    text=(f'Статус Вашей записи изменён.\n\n'
-                        f'"{msg_text}"\n\nНовый статус: {status_emoji} {status}\n\n'
-                        'Возможно специалисту ПОпоЭКС не понятен Ваш запрос.\n'
-                        'Вы можете изменить текст или удалить запись в архив'),
-                        reply_markup=kb.edit_kb(pet_id)
-                )
-            elif new_status == 'create':
-                dir = pet.get('direction')
-                for adm in list(admins.find({})):
-                    dirs = adm.get('directions')
-                    if dir in dirs:
-                        try:
-                            await bot.send_message(
-                                chat_id=adm.get('user_id'),
-                                text=(f'Получена новая запись от <b>{ks}</b>\n'
-                                    f'Дата: <b>{date}</b>\n'
-                                    f'Автор: <b>{username}</b>\n'
-                                    f'Статус: {const.CREATE_EMOJI} <b>Создано</b>\n\n{msg_text}'),
-                                parse_mode=types.ParseMode.HTML,
-                                reply_markup=kb.status_kb(pet_id, 'create')
-                            )
-                        except CantInitiateConversation:
-                            continue
-            else:
-                await bot.send_message(
-                    chat_id=user_id,
-                    text=(f'Статус Вашей записи изменён.\n\n'
-                          f'"{msg_text}"\n\nНовый статус: {status_emoji} {status}')
-                )
-        except CantInitiateConversation:
-            pass  # тут нужно отправить другому юзеру той же станции
+        if call.message.chat.id != user_id:
+            try:
+                if new_status == 'rework':
+                    await bot.send_message(
+                        chat_id=user_id,
+                        text=(f'Статус Вашей записи изменён.\n\n'
+                            f'"{msg_text}"\n\nНовый статус: {status_emoji} {status}\n\n'
+                            'Возможно специалисту ПОпоЭКС не понятен Ваш запрос.\n'
+                            'Вы можете изменить текст или удалить запись в архив'),
+                            reply_markup=kb.edit_kb(pet_id)
+                    )
+                elif new_status == 'create':
+                    dir = pet.get('direction')
+                    for adm in list(admins.find({})):
+                        dirs = adm.get('directions')
+                        if dir in dirs:
+                            try:
+                                await bot.send_message(
+                                    chat_id=adm.get('user_id'),
+                                    text=(f'Получена новая запись от <b>{ks}</b>\n'
+                                        f'Дата: <b>{date}</b>\n'
+                                        f'Автор: <b>{username}</b>\n'
+                                        f'Статус: {const.CREATE_EMOJI} <b>Создано</b>\n\n{msg_text}'),
+                                    parse_mode=types.ParseMode.HTML,
+                                    reply_markup=kb.status_kb(pet_id, 'create')
+                                )
+                            except CantInitiateConversation:
+                                continue
+                else:
+                    await bot.send_message(
+                        chat_id=user_id,
+                        text=(f'Статус Вашей записи изменён.\n\n'
+                            f'"{msg_text}"\n\nНовый статус: {status_emoji} {status}')
+                    )
+            except CantInitiateConversation:
+                pass  # тут нужно отправить другому юзеру той же станции
     if new_status == 'create':
         await call.message.edit_text('Отправлено')
     else:
@@ -197,7 +220,7 @@ async def change_status(call: types.CallbackQuery):
 
 
 
-@dp.callback_query_handler(Text(startswith='edit_'))
+@dp.callback_query_handler(filters.Text(startswith='edit_'))
 async def edit_petition(call: types.CallbackQuery, state: FSMContext):
     _, pet_id = call.data.split('_')
     await state.update_data(pet_id=pet_id)
@@ -249,7 +272,7 @@ async def save_edit_petition(message: types.Message, state: FSMContext):
         await state.finish()
 
 
-@dp.callback_query_handler(Text(startswith='cancel'))
+@dp.callback_query_handler(filters.Text(startswith='cancel'))
 async def ask_cancel(call: types.CallbackQuery, state: FSMContext):
     await state.finish()
     await call.message.delete()

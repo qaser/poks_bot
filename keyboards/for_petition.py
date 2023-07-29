@@ -83,6 +83,25 @@ def edit_send_kb(pet_id):
     keyboard.add(btn)
     return keyboard
 
+
+def ks_user_kb(ks_list):
+    keyboard = InlineKeyboardMarkup()
+    for ks_id in ks_list:
+        name = const.KS[ks_id]
+        keyboard.row(
+            InlineKeyboardButton(
+                text=name,
+                callback_data=f'task-ks_{ks_id}'
+            )
+        )
+    keyboard.add(
+        InlineKeyboardButton(
+            text=f'{const.UNDONE_EMOJI} Выход',
+            callback_data='cancel'
+        )
+    )
+    return keyboard
+
 # def status_kb(pet_id, status_code):
 #     keyboard = InlineKeyboardMarkup(row_width=2)
 #     btns = []
