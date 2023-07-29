@@ -141,8 +141,7 @@ async def confirmation(message: types.Message, state: FSMContext):
 def register_handlers_emergency(dp: Dispatcher):
     dp.register_message_handler(
         emergency_start,
-        commands='ao',
-        chat_type=types.ChatType.PRIVATE
+        commands='ao'
     )
     dp.register_message_handler(
         station_name,

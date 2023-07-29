@@ -15,20 +15,23 @@ class Registration(StatesGroup):
 
 
 # обработка команды /registration
-@dp.message_handler(commands=['registration'], chat_type=types.ChatType.PRIVATE)
+@dp.message_handler(commands=['registration'])
 async def station_choose(message: types.Message):
-    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    for station in KS:
-        keyboard.add(station)
-    await message.answer(
-        text=(
-            'Боту необходимо узнать место Вашей работы.\n'
-            'Выберите название компрессорной станции из списка ниже'
-        ),
-        reply_markup=keyboard
-    )
-    await message.delete()
-    await Registration.waiting_station.set()
+    if message.chat.type == 'private':
+        keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        for station in KS:
+            keyboard.add(station)
+        await message.answer(
+            text=(
+                'Боту необходимо узнать место Вашей работы.\n'
+                'Выберите название компрессорной станции из списка ниже'
+            ),
+            reply_markup=keyboard
+        )
+        await message.delete()
+        await Registration.waiting_station.set()
+    else:
+        await message.delete()
 
 
 async def prof_choose(message: types.Message, state: FSMContext):

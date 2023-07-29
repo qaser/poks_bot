@@ -6,6 +6,7 @@ from config.bot_config import dp, bot
 from config.mongo_config import admins
 from config.telegram_config import MY_TELEGRAM_ID
 import utils.constants as const
+from aiogram.dispatcher import filters
 
 
 class Admin(StatesGroup):
@@ -13,23 +14,26 @@ class Admin(StatesGroup):
     waiting_confirm = State()
 
 
-@dp.message_handler(commands=['admin'], chat_type=types.ChatType.PRIVATE)
+@dp.message_handler(commands=['admin'])
 async def dir_choose(message: types.Message, state: FSMContext):
-    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    keyboard.add(f'{const.DONE_EMOJI} Завершить выбор')
-    for dir in const.DIRECTIONS_CODES.values():
-        keyboard.add(dir)
-    await message.answer(
-        text=(
-            'Выберите направления. Возможен множественный выбор.\n'
-            'По завершению нажмите "Завершить выбор"\n\n'
-            'Если Вы проходите повторную регистрацию, то вводите все необходимые направления'
-        ),
-        reply_markup=keyboard,
-    )
-    await message.delete()
-    await state.update_data(dirs=[])
-    await Admin.waiting_directions.set()
+    if message.chat.type == 'private':
+        keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        keyboard.add(f'{const.DONE_EMOJI} Завершить выбор')
+        for dir in const.DIRECTIONS_CODES.values():
+            keyboard.add(dir)
+        await message.answer(
+            text=(
+                'Выберите направления. Возможен множественный выбор.\n'
+                'По завершению нажмите "Завершить выбор"\n\n'
+                'Если Вы проходите повторную регистрацию, то вводите все необходимые направления'
+            ),
+            reply_markup=keyboard,
+        )
+        await message.delete()
+        await state.update_data(dirs=[])
+        await Admin.waiting_directions.set()
+    else:
+        await message.delete()
 
 
 async def create_dir_list(message: types.Message, state: FSMContext):

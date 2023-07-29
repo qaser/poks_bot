@@ -14,6 +14,7 @@ DONE_EMOJI = emoji.emojize(':check_mark_button:')
 UNDONE_EMOJI = emoji.emojize(':cross_mark:')
 DOC_EMOJI = emoji.emojize(':clipboard:')
 WASTE_EMOJI = emoji.emojize(':wastebasket:')
+EDIT_EMOJI = emoji.emojize(':pencil:')
 
 KS = [
     'Бобровская КС',

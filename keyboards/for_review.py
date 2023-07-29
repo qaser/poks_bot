@@ -2,13 +2,16 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 import utils.constants as const
 
 
-def directions_kb(dirs):
+def directions_kb(dir_list, job):
+    callword = 'dir' if job == 'admin' else 'udir'
     keyboard = InlineKeyboardMarkup()
-    for dir_code in dirs:
+    for dir in dir_list:
+        dir_code, count = dir
+        dir_name = const.DIRECTIONS_CODES.get(dir_code)
         keyboard.row(
             InlineKeyboardButton(
-                text=const.DIRECTIONS_CODES.get(dir_code),
-                callback_data=f'dir_{dir_code}'
+                text=f'{dir_name} ({count})',
+                callback_data=f'{callword}_{dir_code}'
             )
         )
     keyboard.add(
@@ -69,17 +72,37 @@ def get_drop_messages_kb(drop_id):
     return keyboard
 
 
-def status_kb(pet_id, status_code):
+def status_kb(pet_id, status_code, job):
     keyboard = InlineKeyboardMarkup(row_width=2)
     btns = []
-    for status in const.PETITION_STATUS.keys():
-        if status == status_code or status == 'create':
-            continue
-        _, btn_name, status_emoji = const.PETITION_STATUS[status]
-        btn = InlineKeyboardButton(
-            text=f'{status_emoji} {btn_name}',
-            callback_data=f'status_{pet_id}_{status}_{status_code}'
-        )
-        btns.append(btn)
-    keyboard.add(*btns)
-    return keyboard
+    if job == 'admin':
+        for status in const.PETITION_STATUS.keys():
+            if status == status_code or status == 'create':
+                continue
+            _, btn_name, status_emoji = const.PETITION_STATUS[status]
+            btn = InlineKeyboardButton(
+                text=f'{status_emoji} {btn_name}',
+                callback_data=f'status_{pet_id}_{status}_{status_code}'
+            )
+            btns.append(btn)
+        keyboard.add(*btns)
+        return keyboard
+    else:
+        for status in const.PETITION_STATUS.keys():
+            if status == status_code or status in ['create', 'rework', 'inwork']:
+                continue
+            _, btn_name, status_emoji = const.PETITION_STATUS[status]
+            btn = InlineKeyboardButton(
+                text=f'{status_emoji} {btn_name}',
+                callback_data=f'status_{pet_id}_{status}_{status_code}'
+            )
+            btns.append(btn)
+        keyboard.add(*btns)
+        if status_code == 'rework':
+            keyboard.add(
+                InlineKeyboardButton(
+                    text=f'{const.EDIT_EMOJI} Редактировать запись',
+                    callback_data=f'edit_{pet_id}_{status}_{status_code}'
+                )
+            )
+        return keyboard

@@ -21,11 +21,14 @@ class Petition(StatesGroup):
 
 # точка входа командой /task
 async def direction_select(message: types.Message):
-    await message.answer(
-        text='Выберите направление деятельности для решения проблемного вопроса',
-        reply_markup=kb.directions_kb(),  # коллбэк с приставкой "pet"
-    )
-    await message.delete()
+    if message.chat.type == 'private':
+        await message.answer(
+            text='Выберите направление деятельности для решения проблемного вопроса',
+            reply_markup=kb.directions_kb(),  # коллбэк с приставкой "pet"
+        )
+        await message.delete()
+    else:
+        await message.delete()
 
 
 @dp.callback_query_handler(Text(startswith='pet_'))
@@ -126,7 +129,7 @@ async def change_status(call: types.CallbackQuery):
     username = users.find_one({'user_id': user_id}).get('username')
     # проверка на изменение статуса другим пользователем
     if pet.get('status') != current_status:
-        status, status_code, status_emoji = const.PETITION_STATUS[pet.get('status')]
+        status, _, status_emoji = const.PETITION_STATUS[pet.get('status')]
         warning_text = '<i>Статус этой записи уже был изменен другим специалистом</i>\n\n'
     else:
         petitions.update_one(
@@ -134,16 +137,17 @@ async def change_status(call: types.CallbackQuery):
             {'$set': {'status': new_status}}
         )
         pet = petitions.find_one({'_id': ObjectId(pet_id)})
-        status, status_code, status_emoji = const.PETITION_STATUS[pet.get('status')]
+        status, _, status_emoji = const.PETITION_STATUS[pet.get('status')]
         warning_text = ''
-        try:
-            await bot.send_message(
-                chat_id=user_id,
-                text=(f'Статус Вашей записи изменён.\n\n'
-                    f'"{msg_text}"\n\nНовый статус: {status_emoji} {status}'),
-            )
-        except CantInitiateConversation:
-            pass
+        if call.message.chat.id != user_id:
+            try:
+                await bot.send_message(
+                    chat_id=user_id,
+                    text=(f'Статус Вашей записи изменён.\n\n'
+                        f'"{msg_text}"\n\nНовый статус: {status_emoji} {status}'),
+                )
+            except CantInitiateConversation:
+                pass  # тут нужно отправить другому юзеру той же станции
     await bot.edit_message_text(
         chat_id=call.message.chat.id,
         message_id=call.message.message_id,
@@ -165,8 +169,7 @@ async def ask_cancel(call: types.CallbackQuery, state: FSMContext):
 def register_handlers_petition(dp: Dispatcher):
     dp.register_message_handler(
         direction_select,
-        commands='task',
-        chat_type=types.ChatType.PRIVATE
+        commands='task'
     )
     dp.register_message_handler(
         ask_confirmation,

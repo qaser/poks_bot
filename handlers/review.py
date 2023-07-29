@@ -7,22 +7,123 @@ from config.mongo_config import admins, petitions, buffer, users
 from utils.constants import KS
 import keyboards.for_review as kb
 import utils.constants as const
-from utils.decorators import admin_check
+from utils.decorators import admin_check, registration_check
 
 
 # обработка команды /review
-@admin_check
+# @registration_check
+async def user_or_admin(message: types.Message):
+    if message.chat.type == 'private':
+        await message.delete()
+        user_id = message.chat.id
+        is_admin = admins.find_one({'user_id': user_id})
+        if is_admin is None:
+            await user_route(message)
+        else:
+            await choose_direction(message)
+    else:
+        await message.delete()
+
+
+async def user_route(message: types.Message):
+    user_id = message.chat.id
+    ks_users = list(users.find({'user_id': user_id}))
+    if len(ks_users) == 1:
+        ks = ks_users[0].get('ks')
+        await choose_user_direction(message, ks)
+    else:
+        ks_list = [KS.index(i['ks']) for i in ks_users]
+        await message.answer(
+            text='Выберите компрессорную станцию для просмотра:',
+            reply_markup=kb,
+        )
+
+
+async def choose_user_direction(message: types.Message, ks):
+    pipeline = [
+        {'$match': {'ks': ks, 'status': {'$in': ['create', 'rework', 'inwork']}}},
+        {'$group': {'_id': '$direction', 'count': {'$sum': 1}}},
+    ]
+    queryset = list(petitions.aggregate(pipeline))
+    dir_list = [(i['_id'], i['count']) for i in queryset]
+    if len(dir_list) == 0:
+        await message.answer(
+            text='Записи отсутствуют',
+        )
+    else:
+        await message.answer(
+            text='Выберите направление для просмотра:',
+            reply_markup=kb.directions_kb(dir_list, 'user'),
+        )
+
+
+@dp.callback_query_handler(Text(startswith='udir_'))
+async def show_user_petitions(call: types.CallbackQuery):
+    _, dir_code = call.data.split('_')
+    msg_ids = []  # для хранения id сообщений, чтобы их потом удалить
+    user_id = call.message.chat.id
+    user = users.find_one({'user_id': user_id})
+    ks = user.get('ks')
+    dir_name = const.DIRECTIONS_CODES[dir_code]
+    qs = list(petitions.find({
+        'direction': dir_code,
+        'ks': ks,
+        'status': {'$in': ['create', 'rework', 'inwork']}
+    }))
+    len_queryset = len(qs)
+    await call.message.delete()
+    for pet in qs:
+        ks_name = pet.get('ks')
+        date = pet.get('date')
+        text = pet.get('text')
+        pet_id = pet.get('_id')
+        status_code = pet.get('status')
+        status, _, status_emoji = const.PETITION_STATUS[status_code]
+        user_id = pet.get('user_id')
+        username = users.find_one({'user_id': user_id}).get('username')
+        msg = await call.message.answer(
+            text=(f'Станция: <b>{ks_name}</b>\n'
+                  f'Дата: <b>{date}</b>\n'
+                  f'Автор: <b>{username}</b>\n'
+                  f'Статус: {status_emoji} <b>{status}</b>\n\n<i>{text}</i>'),
+            parse_mode=types.ParseMode.HTML,
+            reply_markup=kb.status_kb(pet_id, status_code, 'user')
+        )
+        msg_ids.append(msg.message_id)
+    drop_id = buffer.insert_one({'messages_id': msg_ids}).inserted_id
+    summary_text = (
+        f'Выше показаны записи ({len_queryset} шт.) <b>{ks_name}</b>.\n'
+        f'Направление - "{dir_name}".\n\n'
+        '<b>После завершения просмотра нажмите кнопку "Выход"</b>'
+    )
+    await call.message.answer(
+        summary_text,
+        reply_markup=kb.get_drop_messages_kb(drop_id),
+        parse_mode=types.ParseMode.HTML
+    )
+
+
 async def choose_direction(message: types.Message):
-    await message.delete()
+    # await message.delete()
     user_id = message.chat.id
     dirs = admins.find_one({'user_id': user_id}).get('directions', [])
     if len(dirs) != 0:
-        if 'without' in dirs:
-            dirs = const.DIRECTIONS_CODES.keys()
-        await message.answer(
-            text='Выберите направление для просмотра:',
-            reply_markup=kb.directions_kb(dirs),
-        )
+        pipeline = [
+            {'$match': {'status': {'$in': ['create', 'inwork']}, 'direction': {'$in': dirs}}},
+            {'$group': {'_id': '$direction', 'count': {'$sum': 1}}},
+        ]
+        queryset = list(petitions.aggregate(pipeline))
+        dir_list = [(i['_id'], i['count']) for i in queryset]
+        if len(dir_list) == 0:
+            await message.answer(
+                text='Записи отсутствуют',
+                # reply_markup=kb.directions_kb(dir_list),
+            )
+        else:
+            await message.answer(
+                text='Выберите направление для просмотра:',
+                reply_markup=kb.directions_kb(dir_list, 'admin'),
+            )
     else:
         await message.answer(
             text=('В Вашем профиле нет информации о Вашей специализации. '
@@ -78,7 +179,7 @@ async def show_petitions(call: types.CallbackQuery):
                   f'Автор: <b>{username}</b>\n'
                   f'Статус: {status_emoji} <b>{status}</b>\n\n<i>{text}</i>'),
             parse_mode=types.ParseMode.HTML,
-            reply_markup=kb.status_kb(pet_id, status_code)
+            reply_markup=kb.status_kb(pet_id, status_code, 'admin')
         )
         msg_ids.append(msg.message_id)
     drop_id = buffer.insert_one({'messages_id': msg_ids}).inserted_id
@@ -109,12 +210,11 @@ async def drop_messages(call: types.CallbackQuery):
 async def menu_back(call: types.CallbackQuery):
     _, level, _ = call.data.split('_')
     if level == 'ks':
-        await choose_direction(call.message)
+        await user_or_admin(call.message)
 
 
 def register_handlers_review(dp: Dispatcher):
     dp.register_message_handler(
-        choose_direction,
-        commands='review',
-        chat_type=types.ChatType.PRIVATE
+        user_or_admin,
+        commands='review'
     )

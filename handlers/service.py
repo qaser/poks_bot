@@ -197,7 +197,6 @@ def register_handlers_service(dp: Dispatcher):
     dp.register_message_handler(send_logs, commands='log')
     dp.register_message_handler(
         check_admins,
-        commands='check',
-        chat_type=types.ChatType.PRIVATE
+        commands='check'
     )
     dp.register_message_handler(archive_messages, content_types=ContentType.ANY)
