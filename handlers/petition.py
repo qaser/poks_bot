@@ -19,6 +19,11 @@ class Petition(StatesGroup):
     waiting_petition_text = State()
 
 
+class EditPetition(StatesGroup):
+    waiting_for_text = State()
+    waiting_for_confirm = State()
+
+
 # точка входа командой /task
 async def direction_select(message: types.Message):
     if message.chat.type == 'private':
@@ -139,25 +144,108 @@ async def change_status(call: types.CallbackQuery):
         pet = petitions.find_one({'_id': ObjectId(pet_id)})
         status, _, status_emoji = const.PETITION_STATUS[pet.get('status')]
         warning_text = ''
-        if call.message.chat.id != user_id:
-            try:
+        # if call.message.chat.id != user_id:
+        try:
+            if new_status == 'rework':
                 await bot.send_message(
                     chat_id=user_id,
                     text=(f'Статус Вашей записи изменён.\n\n'
-                        f'"{msg_text}"\n\nНовый статус: {status_emoji} {status}'),
+                        f'"{msg_text}"\n\nНовый статус: {status_emoji} {status}\n\n'
+                        'Возможно специалисту ПОпоЭКС не понятен Ваш запрос.\n'
+                        'Вы можете изменить текст или удалить запись в архив'),
+                        reply_markup=kb.edit_kb(pet_id)
                 )
-            except CantInitiateConversation:
-                pass  # тут нужно отправить другому юзеру той же станции
-    await bot.edit_message_text(
-        chat_id=call.message.chat.id,
-        message_id=call.message.message_id,
-        text=(f'{warning_text}Запись от <b>{ks}</b>\n'
-              f'Дата: <b>{date}</b>\n'
-              f'Автор: <b>{username}</b>\n'
-              f'Статус: {status_emoji} <b>{status}</b>\n\n{msg_text}'),
-        parse_mode=types.ParseMode.HTML,
-        # reply_markup=kb.status_kb(pet_id, status_code)
+            elif new_status == 'create':
+                dir = pet.get('direction')
+                for adm in list(admins.find({})):
+                    dirs = adm.get('directions')
+                    if dir in dirs:
+                        try:
+                            await bot.send_message(
+                                chat_id=adm.get('user_id'),
+                                text=(f'Получена новая запись от <b>{ks}</b>\n'
+                                    f'Дата: <b>{date}</b>\n'
+                                    f'Автор: <b>{username}</b>\n'
+                                    f'Статус: {const.CREATE_EMOJI} <b>Создано</b>\n\n{msg_text}'),
+                                parse_mode=types.ParseMode.HTML,
+                                reply_markup=kb.status_kb(pet_id, 'create')
+                            )
+                        except CantInitiateConversation:
+                            continue
+            else:
+                await bot.send_message(
+                    chat_id=user_id,
+                    text=(f'Статус Вашей записи изменён.\n\n'
+                          f'"{msg_text}"\n\nНовый статус: {status_emoji} {status}')
+                )
+        except CantInitiateConversation:
+            pass  # тут нужно отправить другому юзеру той же станции
+    if new_status == 'create':
+        await call.message.edit_text('Отправлено')
+    else:
+        await bot.edit_message_text(
+            chat_id=call.message.chat.id,
+            message_id=call.message.message_id,
+            text=(f'{warning_text}Запись от <b>{ks}</b>\n'
+                f'Дата: <b>{date}</b>\n'
+                f'Автор: <b>{username}</b>\n'
+                f'Статус: {status_emoji} <b>{status}</b>\n\n{msg_text}'),
+            parse_mode=types.ParseMode.HTML,
+            # reply_markup=kb.status_kb(pet_id, status_code)
+        )
+
+
+
+@dp.callback_query_handler(Text(startswith='edit_'))
+async def edit_petition(call: types.CallbackQuery, state: FSMContext):
+    _, pet_id = call.data.split('_')
+    await state.update_data(pet_id=pet_id)
+    await call.message.edit_text(
+        'Введите новый текст. Если Вы передумали, то на следующем шаге действие можно отменить.'
     )
+    await EditPetition.waiting_for_text.set()
+
+
+async def edit_confirm(message: types.Message, state: FSMContext):
+    await state.update_data(new_text=message.text)
+    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    keyboard.add('Нет', 'Да')
+    await message.answer(
+        text='Вы точно хотите изменить текст записи?',
+        reply_markup=keyboard,
+    )
+    await EditPetition.waiting_for_confirm.set()
+
+
+async def save_edit_petition(message: types.Message, state: FSMContext):
+    if message.text.lower() not in ['нет', 'да']:
+        await message.answer(
+            'Пожалуйста, отправьте "Да" или "Нет"'
+        )
+        return
+    if message.text.lower() == 'да':
+        buffer_data = await state.get_data()
+        new_text = buffer_data['new_text']
+        pet_id = buffer_data['pet_id']
+        petitions.update_one(
+            {'_id': ObjectId(pet_id)},
+            {'$set': {'text': new_text}}
+        )
+        await message.answer(
+            text='Текст записи изменен',
+            reply_markup=types.ReplyKeyboardRemove()
+        )
+        await message.answer(
+            text='Для изменения статуса записи нажмите кнопку "Отправить"',
+            reply_markup=kb.edit_send_kb(pet_id)
+        )
+        await state.finish()
+    else:
+        await message.answer(
+            'Хорошо. Данные о записи не изменены',
+            reply_markup=types.ReplyKeyboardRemove()
+        )
+        await state.finish()
 
 
 @dp.callback_query_handler(Text(startswith='cancel'))
@@ -174,4 +262,12 @@ def register_handlers_petition(dp: Dispatcher):
     dp.register_message_handler(
         ask_confirmation,
         state=Petition.waiting_petition_text
+    )
+    dp.register_message_handler(
+        edit_confirm,
+        state=EditPetition.waiting_for_text
+    )
+    dp.register_message_handler(
+        save_edit_petition,
+        state=EditPetition.waiting_for_confirm
     )

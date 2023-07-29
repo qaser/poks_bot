@@ -12,7 +12,7 @@ from aiogram.utils.exceptions import MessageCantBeEdited
 
 
 # обработка команды /review
-@registration_check
+# @registration_check
 async def user_or_admin(message: types.Message):
     if message.chat.type == 'private':
         # await message.delete()

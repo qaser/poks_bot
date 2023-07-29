@@ -60,6 +60,29 @@ def status_kb(pet_id, status_code):
     return keyboard
 
 
+def edit_kb(pet_id):
+    keyboard = InlineKeyboardMarkup()
+    btn_delete = InlineKeyboardButton(
+        text=f'{const.DELETE_EMOJI} Удалить',
+        callback_data=f'status_{pet_id}_delete_rework'
+    )
+    btn_edit = InlineKeyboardButton(
+        text=f'{const.EDIT_EMOJI} Редактировать',
+        callback_data=f'edit_{pet_id}'
+    )
+    keyboard.row(btn_delete, btn_edit)
+    return keyboard
+
+
+def edit_send_kb(pet_id):
+    keyboard = InlineKeyboardMarkup()
+    btn = InlineKeyboardButton(
+        text=f'{const.SEND_EMOJI} Отправить',
+        callback_data=f'status_{pet_id}_create_rework'
+    )
+    keyboard.add(btn)
+    return keyboard
+
 # def status_kb(pet_id, status_code):
 #     keyboard = InlineKeyboardMarkup(row_width=2)
 #     btns = []
