@@ -20,7 +20,6 @@ async def bot_bug(message: types.Message):
     if message.chat.type == 'private':
         await message.answer(
             text=(
-                f'Добрый день {message.from_user.full_name}.\n'
                 'Если Вы обнаружили ошибки в работе бота или '
                 'у Вас есть предложения по улучшению его работы - '
                 'напишите о них в следующем сообщении'
