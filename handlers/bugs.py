@@ -17,15 +17,16 @@ class Bugs(StatesGroup):
 # обработка команды /bugs - отзывы и предложения
 @dp.message_handler(commands=['bugs'])
 async def bot_bug(message: types.Message):
-    await message.answer(
-        text=(
-            f'Добрый день {message.from_user.full_name}.\n'
-            'Если Вы обнаружили ошибки в работе бота или '
-            'у Вас есть предложения по улучшению его работы - '
-            'напишите о них в следующем сообщении'
-        ),
-    )
-    await Bugs.waiting_for_bug.set()
+    if message.chat.type == 'private':
+        await message.answer(
+            text=(
+                f'Добрый день {message.from_user.full_name}.\n'
+                'Если Вы обнаружили ошибки в работе бота или '
+                'у Вас есть предложения по улучшению его работы - '
+                'напишите о них в следующем сообщении'
+            ),
+        )
+        await Bugs.waiting_for_bug.set()
 
 
 async def add_bug(message: types.Message, state: FSMContext):
