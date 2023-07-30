@@ -1,13 +1,13 @@
-from config.bot_config import bot
-from config.mongo_config import groups
-from texts.initial import REMAINDER
-from utils.send_email import send_email
-from utils.get_mail import get_letters
 import imaplib
+
+import utils.constants as const
+from config.bot_config import bot
+from config.mail_config import IMAP_MAIL_SERVER, MAIL_LOGIN, MAIL_PASS
+from config.mongo_config import groups, users
 from utils.create_summary_docx import create_docx_file
 from utils.decorators import run_before
-
-from config.mail_config import MAIL_LOGIN, MAIL_PASS, IMAP_MAIL_SERVER
+from utils.get_mail import get_letters
+from utils.send_email import send_email
 
 
 async def send_remainder():
@@ -17,7 +17,20 @@ async def send_remainder():
         try:
             await bot.send_message(
                 chat_id=int(id),
-                text=REMAINDER
+                text=const.REMAINDER
+            )
+        except:
+            pass
+
+
+async def send_task_users_reminder():
+    # queryset = list(users.find({}))
+    queryset = users.distinct('user_id')
+    for user_id in queryset:
+        try:
+            await bot.send_message(
+                chat_id=user_id,
+                text=const.TASK_REMINDER,
             )
         except:
             pass

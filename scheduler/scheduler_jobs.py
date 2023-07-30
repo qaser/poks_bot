@@ -1,9 +1,9 @@
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from scheduler.scheduler_funcs import send_remainder
+from scheduler.scheduler_funcs import send_remainder, send_task_users_reminder
+from utils.constants import TIME_ZONE
 from utils.create_summary_docx import create_docx_file
 from utils.send_email import send_email
-from utils.constants import TIME_ZONE
 
 scheduler = AsyncIOScheduler()
 
@@ -21,17 +21,25 @@ def scheduler_jobs():
     scheduler.add_job(
         create_docx_file,
         'cron',
-        day_of_week='sun',
-        hour=14,
-        minute=3,
+        day_of_week='mon',
+        hour=8,
+        minute=44,
         timezone=TIME_ZONE
     )
     scheduler.add_job(
         send_email,
         'cron',
-        day_of_week='sun',
-        hour=14,
-        minute=4,
+        day_of_week='mon',
+        hour=8,  # изменив здесь время - измени его и в верхней задаче!!!!
+        minute=45,
+        timezone=TIME_ZONE
+    )
+    scheduler.add_job(
+        send_task_users_reminder,
+        'cron',
+        day_of_week='wed',
+        hour=10,
+        minute=15,
         timezone=TIME_ZONE
     )
     # scheduler.add_job(
