@@ -57,7 +57,8 @@ async def confirm_bug(message: types.Message, state: FSMContext):
             }
         )
         await message.answer(
-            text='Отлично! Сообщение отправлено.',
+            text=('Отлично! Сообщение отправлено.\n'
+                  'Если необходимо можете отправить скриншот экрана с ошибкой.'),
             reply_markup=types.ReplyKeyboardRemove()
         )
         await state.finish()

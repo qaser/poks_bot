@@ -169,42 +169,42 @@ async def change_status(call: types.CallbackQuery):
         pet = petitions.find_one({'_id': ObjectId(pet_id)})
         status, _, status_emoji = const.PETITION_STATUS[pet.get('status')]
         warning_text = ''
-        if call.message.chat.id != user_id:
-            try:
-                if new_status == 'rework':
-                    await bot.send_message(
-                        chat_id=user_id,
-                        text=(f'Статус Вашей записи изменён.\n\n'
-                            f'"{msg_text}"\n\nНовый статус: {status_emoji} {status}\n\n'
-                            'Возможно специалисту ПОпоЭКС не понятен Ваш запрос.\n'
-                            'Вы можете изменить текст или удалить запись в архив'),
-                            reply_markup=kb.edit_kb(pet_id)
-                    )
-                elif new_status == 'create':
-                    dir = pet.get('direction')
-                    for adm in list(admins.find({})):
-                        dirs = adm.get('directions')
-                        if dir in dirs:
-                            try:
-                                await bot.send_message(
-                                    chat_id=adm.get('user_id'),
-                                    text=(f'Получена новая запись от <b>{ks}</b>\n'
-                                        f'Дата: <b>{date}</b>\n'
-                                        f'Автор: <b>{username}</b>\n'
-                                        f'Статус: {const.CREATE_EMOJI} <b>Создано</b>\n\n{msg_text}'),
-                                    parse_mode=types.ParseMode.HTML,
-                                    reply_markup=kb.status_kb(pet_id, 'create')
-                                )
-                            except CantInitiateConversation:
-                                continue
-                else:
-                    await bot.send_message(
-                        chat_id=user_id,
-                        text=(f'Статус Вашей записи изменён.\n\n'
-                            f'"{msg_text}"\n\nНовый статус: {status_emoji} {status}')
-                    )
-            except CantInitiateConversation:
-                pass  # тут нужно отправить другому юзеру той же станции
+        # if call.message.chat.id != user_id:
+        try:
+            if new_status == 'rework':
+                await bot.send_message(
+                    chat_id=user_id,
+                    text=(f'Статус Вашей записи изменён.\n\n'
+                        f'"{msg_text}"\n\nНовый статус: {status_emoji} {status}\n\n'
+                        'Возможно специалисту ПОпоЭКС не понятен Ваш запрос из-за формулировки или Вы ошиблись адресатом.\n'
+                        'Вы можете изменить текст или удалить запись в архив, а затем создать новый запрос'),
+                        reply_markup=kb.edit_kb(pet_id)
+                )
+            elif new_status == 'create':
+                dir = pet.get('direction')
+                for adm in list(admins.find({})):
+                    dirs = adm.get('directions')
+                    if dir in dirs:
+                        try:
+                            await bot.send_message(
+                                chat_id=adm.get('user_id'),
+                                text=(f'Получена новая запись от <b>{ks}</b>\n'
+                                    f'Дата: <b>{date}</b>\n'
+                                    f'Автор: <b>{username}</b>\n'
+                                    f'Статус: {const.CREATE_EMOJI} <b>Создано</b>\n\n{msg_text}'),
+                                parse_mode=types.ParseMode.HTML,
+                                reply_markup=kb.status_kb(pet_id, 'create')
+                            )
+                        except CantInitiateConversation:
+                            continue
+            else:
+                await bot.send_message(
+                    chat_id=user_id,
+                    text=(f'Статус Вашей записи изменён.\n\n'
+                        f'"{msg_text}"\n\nНовый статус: {status_emoji} {status}')
+                )
+        except CantInitiateConversation:
+            pass  # тут нужно отправить другому юзеру той же станции
     if new_status == 'create':
         await call.message.edit_text('Отправлено')
     else:

@@ -97,7 +97,7 @@ PETITION_STATUS = {
     'create': ['Создано', 'Создать', CREATE_EMOJI],
     'inwork': ['В работе', 'В работу', INWORK_EMOJI],
     'rework': ['На доработке', 'На доработку', REWORK_EMOJI],
-    'delete': ['В архиве (удалено)', 'Удалить', DELETE_EMOJI],
+    'delete': ['В архиве (удалено)', 'В архив', DELETE_EMOJI],
     'finish': ['Завершено', 'Завершить', FINISH_EMOJI],
 }
 
