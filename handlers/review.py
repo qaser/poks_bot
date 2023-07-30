@@ -80,7 +80,6 @@ async def show_user_petitions(call: types.CallbackQuery):
     _, dir_code, ks_id = call.data.split('_')
     msg_ids = []  # для хранения id сообщений, чтобы их потом удалить
     user_id = call.message.chat.id
-    user = users.find_one({'user_id': user_id})
     ks = const.KS[int(ks_id)]
     dir_name = const.DIRECTIONS_CODES[dir_code]
     qs = list(petitions.find({
@@ -98,7 +97,8 @@ async def show_user_petitions(call: types.CallbackQuery):
         status_code = pet.get('status')
         status, _, status_emoji = const.PETITION_STATUS[status_code]
         user_id = pet.get('user_id')
-        username = users.find_one({'user_id': user_id}).get('username')
+        user = users.find_one({'user_id': user_id})
+        username = user.get('username') if user is not None else 'Неизвестен'
         msg = await call.message.answer(
             text=(f'Станция: <b>{ks_name}</b>\n'
                   f'Дата: <b>{date}</b>\n'
@@ -190,7 +190,8 @@ async def show_petitions(call: types.CallbackQuery):
         status_code = pet.get('status')
         status, _, status_emoji = const.PETITION_STATUS[status_code]
         user_id = pet.get('user_id')
-        username = users.find_one({'user_id': user_id}).get('username')
+        user = users.find_one({'user_id': user_id})
+        username = user.get('username') if user is not None else 'Неизвестен'
         msg = await call.message.answer(
             text=(f'Станция: <b>{ks_name}</b>\n'
                   f'Дата: <b>{date}</b>\n'

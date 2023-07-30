@@ -109,7 +109,7 @@ async def save_petition(call: types.CallbackQuery, state: FSMContext):
         date = dt.datetime.now(tz=const.TZINFO).strftime('%d.%m.%Y %H:%M')
         user = users.find_one({'user_id': user_id})
         ks = msg['ks'] if 'many_ks' in msg.keys() else user.get('ks')
-        username = user.get('username')
+        username = user.get('username') if user is not None else 'Неизвестен'
         msg_text = msg.get('text')
         pet_id= petitions.insert_one(
             {
@@ -155,7 +155,8 @@ async def change_status(call: types.CallbackQuery):
     ks = pet.get('ks')
     date = pet.get('date')
     user_id = pet.get('user_id')
-    username = users.find_one({'user_id': user_id}).get('username')
+    user = users.find_one({'user_id': user_id})
+    username = user.get('username') if user is not None else 'Неизвестен'
     # проверка на изменение статуса другим пользователем
     if pet.get('status') != current_status:
         status, _, status_emoji = const.PETITION_STATUS[pet.get('status')]
