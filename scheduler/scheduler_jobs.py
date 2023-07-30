@@ -21,9 +21,9 @@ def scheduler_jobs():
     scheduler.add_job(
         create_docx_file,
         'cron',
-        day_of_week='thu',
-        hour=8,
-        minute=55,
+        day_of_week='sun',
+        hour=14,
+        minute=3,
         timezone=TIME_ZONE
     )
     scheduler.add_job(
@@ -31,7 +31,7 @@ def scheduler_jobs():
         'cron',
         day_of_week='sun',
         hour=14,
-        minute=0,
+        minute=4,
         timezone=TIME_ZONE
     )
     # scheduler.add_job(
