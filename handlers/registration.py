@@ -88,8 +88,8 @@ async def user_save(message: types.Message, state: FSMContext):
                 prof_code = p_code
         user = message.from_user
         users.update_one(
-            {'user_id': user.id, 'prof': prof_code, 'ks': station},
-            {'$set': {'username': user.full_name}},
+            {'prof': prof_code, 'ks': station},
+            {'$set': {'username': user.full_name, 'user_id': user.id}},
             upsert=True
         )
         await message.answer(
