@@ -4,12 +4,14 @@ from aiogram import Dispatcher, types
 from aiogram.dispatcher import FSMContext
 from aiogram.types.message import ContentType
 
+
 from config.bot_config import bot
 from config.mongo_config import archive, groups, users, admins
 from config.telegram_config import MY_TELEGRAM_ID
 from handlers.emergency_stop import admin_check
 import utils.constants as const
 from utils.decorators import superuser_check
+import keyboards.for_users as kb
 
 
 # обработка команды /reset - сброс клавиатуры и состояния
@@ -21,42 +23,6 @@ async def reset_handler(message: types.Message, state: FSMContext):
         reply_markup=types.ReplyKeyboardRemove(),
     )
     await bot.delete_message(message.chat.id, message.message_id)
-
-
-# обработка команды /users просмотр количества пользователей в БД
-@admin_check
-async def count_users(message: types.Message):
-    queryset = list(users.find({}))
-    users_count = len(queryset)
-    final_text = ''
-    for user in queryset:
-        username = '{}, {}'.format(user['_id'], user['username'])
-        final_text = '{}\n\n{}'.format(username, final_text)
-    await message.answer(
-        text=f'Количество пользователей в БД: {users_count}\n\n{final_text}'
-    )
-
-
-# обработка команды /nousers просмотр количества пользователей в БД
-@admin_check
-async def count_nousers(message: types.Message):
-    num_of_stations = len(const.KS)
-    queryset = list(users.find({}))
-    res = []  # список внесённых станций
-    for i in queryset:
-        stan = i.get('_id')
-        res.append(stan)
-    unusers_count = num_of_stations - len(queryset)
-    final_text = ''
-    for station in const.KS:
-        if station not in res:
-            final_text = '{}\n{}'.format(final_text, station)
-    await message.answer(
-        text=f'Станции, с отсутствием данных: {final_text}'
-    )
-    await message.answer(
-        text=f'Осталось {unusers_count}'
-    )
 
 
 # запрет на рассылку уведомлений
@@ -190,8 +156,6 @@ async def check_admins(message: types.Message):
 
 def register_handlers_service(dp: Dispatcher):
     dp.register_message_handler(reset_handler, commands='reset', state='*')
-    # dp.register_message_handler(count_users, commands='users')
-    # dp.register_message_handler(count_nousers, commands='nousers')
     dp.register_message_handler(stop_subscribe, commands='unsub')
     dp.register_message_handler(start_subscribe, commands='sub')
     dp.register_message_handler(send_logs, commands='log')
