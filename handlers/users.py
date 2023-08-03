@@ -25,9 +25,11 @@ async def show_ks(message: types.Message):
     pipeline = [
         {'$match': {}},
         {'$group': {'_id': '$ks', 'count': {'$sum': 1}}},
+        {'$sort': {'ks': 1}}
     ]
     queryset = list(users.aggregate(pipeline))
     ks_list = [(const.KS.index(i['_id']), i['count']) for i in queryset]
+    await message.delete()
     await message.answer(
         text='Выберите станцию для просмотра зарегистрированных пользователей:',
         reply_markup=kb.ks_kb(ks_list)

@@ -8,14 +8,15 @@ from config.mongo_config import groups
 from config.telegram_config import MY_TELEGRAM_ID
 from handlers.admin import register_handlers_admin
 from handlers.bugs import register_handlers_bugs
-from handlers.emergency_stop import admin_check, register_handlers_emergency
+from handlers.emergency_stop import register_handlers_emergency
 from handlers.petition import register_handlers_petition
 from handlers.registration import register_handlers_registration
 from handlers.review import register_handlers_review
 from handlers.service import register_handlers_service
 from handlers.users import register_handlers_users
+from handlers.help import register_handlers_help
 from scheduler.scheduler_jobs import scheduler, scheduler_jobs
-from texts.initial import HELP_TEXT, INITIAL_TEXT, MANUAL, NEW_GROUP_TEXT
+from texts.initial import INITIAL_TEXT, MANUAL, NEW_GROUP_TEXT
 
 
 logging.basicConfig(
@@ -31,26 +32,6 @@ logging.basicConfig(
 @dp.message_handler(commands=['start'])
 async def start_handler(message: types.Message):
     await message.answer(text=INITIAL_TEXT)
-
-
-@admin_check
-@dp.message_handler(commands=['help'])
-async def help_handler(message: types.Message):
-    await bot.send_message(
-        message.chat.id,
-        text=f'{HELP_TEXT}'
-    )
-
-
-# @admin_check
-# @dp.message_handler(commands=['doc'])
-# async def doc_handler(message: types.Message):
-#     create_docx_file()
-
-
-# @dp.message_handler(commands=['mail'])
-# async def ask_cancel(message):
-#     await send_report()
 
 
 # обработка события - добавление бота в группу
@@ -125,4 +106,5 @@ if __name__ == '__main__':
     register_handlers_registration(dp)
     register_handlers_admin(dp)
     register_handlers_users(dp)
+    register_handlers_help(dp)
     executor.start_polling(dp, skip_updates=True, on_startup=on_startup)
