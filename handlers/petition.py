@@ -11,6 +11,7 @@ from config.mongo_config import admins, users, petitions, buffer
 from aiogram.utils.exceptions import CantInitiateConversation
 import keyboards.for_petition as kb
 import utils.constants as const
+from utils.utils import get_creator
 
 
 class Petition(StatesGroup):
@@ -118,7 +119,8 @@ async def save_petition(call: types.CallbackQuery, state: FSMContext):
                 'text': msg_text,
                 'direction': dir,
                 'ks': ks,
-                'status': 'create'
+                'status': 'create',
+                'status_creator': user_id,
             }
         ).inserted_id
         for adm in list(admins.find({})):
@@ -160,51 +162,54 @@ async def change_status(call: types.CallbackQuery):
     # проверка на изменение статуса другим пользователем
     if pet.get('status') != current_status:
         status, _, status_emoji = const.PETITION_STATUS[pet.get('status')]
-        warning_text = '<i>Статус этой записи уже был изменен другим специалистом</i>\n\n'
+        creator_id = pet.get('status_creator')
+        creator_name = get_creator(creator_id)
+        warning_text = '<i>Статус этой записи уже был изменен другим специалистом: </i>\n\n'
     else:
         petitions.update_one(
             {'_id': ObjectId(pet_id)},
-            {'$set': {'status': new_status}}
+            {'$set': {'status': new_status, 'status_creator': call.message.chat.id}}
         )
+        creator_name = creator_name = get_creator(call.message.chat.id)
         pet = petitions.find_one({'_id': ObjectId(pet_id)})
         status, _, status_emoji = const.PETITION_STATUS[pet.get('status')]
         warning_text = ''
-        # if call.message.chat.id != user_id:
-        try:
-            if new_status == 'rework':
-                await bot.send_message(
-                    chat_id=user_id,
-                    text=(f'Статус Вашей записи изменён.\n\n'
-                        f'"{msg_text}"\n\nНовый статус: {status_emoji} {status}\n\n'
-                        'Возможно специалисту ПОпоЭКС не понятен Ваш запрос из-за формулировки или Вы ошиблись адресатом.\n'
-                        'Вы можете изменить текст или удалить запись в архив, а затем создать новый запрос'),
-                        reply_markup=kb.edit_kb(pet_id)
-                )
-            elif new_status == 'create':
-                dir = pet.get('direction')
-                for adm in list(admins.find({})):
-                    dirs = adm.get('directions')
-                    if dir in dirs:
-                        try:
-                            await bot.send_message(
-                                chat_id=adm.get('user_id'),
-                                text=(f'Получена новая запись от <b>{ks}</b>\n'
-                                    f'Дата: <b>{date}</b>\n'
-                                    f'Автор: <b>{username}</b>\n'
-                                    f'Статус: {const.CREATE_EMOJI} <b>Создано</b>\n\n{msg_text}'),
-                                parse_mode=types.ParseMode.HTML,
-                                reply_markup=kb.status_kb(pet_id, 'create')
-                            )
-                        except CantInitiateConversation:
-                            continue
-            else:
-                await bot.send_message(
-                    chat_id=user_id,
-                    text=(f'Статус Вашей записи изменён.\n\n'
-                        f'"{msg_text}"\n\nНовый статус: {status_emoji} {status}')
-                )
-        except CantInitiateConversation:
-            pass  # тут нужно отправить другому юзеру той же станции
+        if call.message.chat.id != user_id:
+            try:
+                if new_status == 'rework':
+                    await bot.send_message(
+                        chat_id=user_id,
+                        text=(f'Статус Вашей записи изменён специалистом ПОпоЭКС: {creator_name}.\n\n'
+                            f'"{msg_text}"\n\nНовый статус: {status_emoji} {status}\n\n'
+                            f'Возможно специалисту ПОпоЭКС не понятен Ваш запрос из-за формулировки или Вы ошиблись адресатом.\n'
+                            'Вы можете изменить текст или удалить запись в архив, а затем создать новый запрос'),
+                            reply_markup=kb.edit_kb(pet_id)
+                    )
+                elif new_status == 'create':
+                    dir = pet.get('direction')
+                    for adm in list(admins.find({})):
+                        dirs = adm.get('directions')
+                        if dir in dirs:
+                            try:
+                                await bot.send_message(
+                                    chat_id=adm.get('user_id'),
+                                    text=(f'Получена новая запись от <b>{ks}</b>\n'
+                                        f'Дата: <b>{date}</b>\n'
+                                        f'Автор: <b>{username}</b>\n'
+                                        f'Статус: {const.CREATE_EMOJI} <b>Создано</b>\n\n{msg_text}'),
+                                    parse_mode=types.ParseMode.HTML,
+                                    reply_markup=kb.status_kb(pet_id, 'create')
+                                )
+                            except CantInitiateConversation:
+                                continue
+                else:
+                    await bot.send_message(
+                        chat_id=user_id,
+                        text=(f'Статус Вашей записи изменён специалистом ПОпоЭКС: {creator_name}.\n\n'
+                            f'"{msg_text}"\n\nНовый статус: {status_emoji} {status}')
+                    )
+            except CantInitiateConversation:
+                pass  # тут нужно отправить другому юзеру той же станции
     if new_status == 'create':
         await call.message.edit_text('Отправлено')
     else:
@@ -218,7 +223,6 @@ async def change_status(call: types.CallbackQuery):
             parse_mode=types.ParseMode.HTML,
             # reply_markup=kb.status_kb(pet_id, status_code)
         )
-
 
 
 @dp.callback_query_handler(filters.Text(startswith='edit_'))

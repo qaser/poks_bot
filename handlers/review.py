@@ -10,6 +10,8 @@ import utils.constants as const
 from utils.decorators import admin_check, registration_check
 from aiogram.utils.exceptions import MessageCantBeEdited
 
+from utils.utils import get_creator
+
 
 # обработка команды /review
 # @registration_check
@@ -99,11 +101,21 @@ async def show_user_petitions(call: types.CallbackQuery):
         user_id = pet.get('user_id')
         user = users.find_one({'user_id': user_id})
         username = user.get('username') if user is not None else 'Неизвестен'
+        if status_code == 'inwork':
+            creator_id = pet.get('status_creator')
+            creator_name = get_creator(creator_id)
+            msg_text = (f'Станция: <b>{ks_name}</b>\n'
+                    f'Дата: <b>{date}</b>\n'
+                    f'Автор: <b>{username}</b>\n'
+                    f'Статус: {status_emoji} <b>{status}</b>\n'
+                    f'Специалист ПОпоЭКС: <b>{creator_name}</b>\n\n<i>{text}</i>')
+        else:
+            msg_text = (f'Станция: <b>{ks_name}</b>\n'
+                    f'Дата: <b>{date}</b>\n'
+                    f'Автор: <b>{username}</b>\n'
+                    f'Статус: {status_emoji} <b>{status}</b>\n\n<i>{text}</i>')
         msg = await call.message.answer(
-            text=(f'Станция: <b>{ks_name}</b>\n'
-                  f'Дата: <b>{date}</b>\n'
-                  f'Автор: <b>{username}</b>\n'
-                  f'Статус: {status_emoji} <b>{status}</b>\n\n<i>{text}</i>'),
+            text=msg_text,
             parse_mode=types.ParseMode.HTML,
             reply_markup=kb.status_kb(pet_id, status_code, 'user')
         )
@@ -192,11 +204,21 @@ async def show_petitions(call: types.CallbackQuery):
         user_id = pet.get('user_id')
         user = users.find_one({'user_id': user_id})
         username = user.get('username') if user is not None else 'Неизвестен'
+        if status_code == 'inwork':
+            creator_id = pet.get('status_creator')
+            creator_name = get_creator(creator_id)
+            msg_text = (f'Станция: <b>{ks_name}</b>\n'
+                    f'Дата: <b>{date}</b>\n'
+                    f'Автор: <b>{username}</b>\n'
+                    f'Статус: {status_emoji} <b>{status}</b>\n'
+                    f'Специалист ПОпоЭКС: <b>{creator_name}</b>\n\n<i>{text}</i>')
+        else:
+            msg_text = (f'Станция: <b>{ks_name}</b>\n'
+                    f'Дата: <b>{date}</b>\n'
+                    f'Автор: <b>{username}</b>\n'
+                    f'Статус: {status_emoji} <b>{status}</b>\n\n<i>{text}</i>')
         msg = await call.message.answer(
-            text=(f'Станция: <b>{ks_name}</b>\n'
-                  f'Дата: <b>{date}</b>\n'
-                  f'Автор: <b>{username}</b>\n'
-                  f'Статус: {status_emoji} <b>{status}</b>\n\n<i>{text}</i>'),
+            text=msg_text,
             parse_mode=types.ParseMode.HTML,
             reply_markup=kb.status_kb(pet_id, status_code, 'admin')
         )
