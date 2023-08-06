@@ -16,7 +16,7 @@ DOC_EMOJI = emoji.emojize(':clipboard:')
 WASTE_EMOJI = emoji.emojize(':wastebasket:')
 EDIT_EMOJI = emoji.emojize(':pencil:')
 SEND_EMOJI = emoji.emojize(':envelope:')
-SCROLL_EMOJI = emoji.emojize(':scroll:')
+SCROLL_EMOJI = emoji.emojize(':orange_book:')
 
 KS = [
     'Бобровская КС',

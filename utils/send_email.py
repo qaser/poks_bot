@@ -21,7 +21,7 @@ async def send_email():
     msg["To"] = ', '.join([TO_MAIL])
     msg["cc"] = ', '.join([CC_MAIL])
     emails = [TO_MAIL] + [CC_MAIL]
-    f_path = 'static/docs_email/Сводный перечень вопросов.docx'
+    f_path = 'static/docs_email/Сводный перечень вопросов.xlsx'
     try:
         with open(f_path, 'rb') as f:
             part = MIMEApplication(f.read(), Name=f_path)

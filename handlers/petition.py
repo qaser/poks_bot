@@ -107,7 +107,8 @@ async def save_petition(call: types.CallbackQuery, state: FSMContext):
     else:
         dir_name = const.DIRECTIONS_CODES.get(dir)
         user_id = call.message.chat.id
-        date = dt.datetime.now(tz=const.TZINFO).strftime('%d.%m.%Y %H:%M')
+        # date = dt.datetime.now(tz=const.TZINFO).strftime('%d.%m.%Y %H:%M')
+        date = dt.datetime.now(tz=const.TZINFO)
         user = users.find_one({'user_id': user_id})
         ks = msg['ks'] if 'many_ks' in msg.keys() else user.get('ks')
         username = user.get('username') if user is not None else 'Неизвестен'
@@ -130,7 +131,7 @@ async def save_petition(call: types.CallbackQuery, state: FSMContext):
                     await bot.send_message(
                         chat_id=adm.get('user_id'),
                         text=(f'Получена новая запись от <b>{ks}</b>\n'
-                              f'Дата: <b>{date}</b>\n'
+                              f'Дата: <b>{date.strftime("%d.%m.%Y %H:%M")}</b>\n'
                               f'Автор: <b>{username}</b>\n'
                               f'Статус: {const.CREATE_EMOJI} <b>Создано</b>\n\n{msg_text}'),
                         parse_mode=types.ParseMode.HTML,
@@ -155,7 +156,7 @@ async def change_status(call: types.CallbackQuery):
     pet = petitions.find_one({'_id': ObjectId(pet_id)})
     msg_text = pet.get('text')
     ks = pet.get('ks')
-    date = pet.get('date')
+    date = pet.get('date').strftime('%d.%m.%Y %H:%M')
     user_id = pet.get('user_id')
     user = users.find_one({'user_id': user_id})
     username = user.get('username') if user is not None else 'Неизвестен'

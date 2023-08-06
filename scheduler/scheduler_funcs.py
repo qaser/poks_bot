@@ -5,6 +5,7 @@ from config.bot_config import bot
 from config.mail_config import IMAP_MAIL_SERVER, MAIL_LOGIN, MAIL_PASS
 from config.mongo_config import groups, users
 from utils.create_summary_docx import create_docx_file
+from utils.create_summary_excel import create_summary_excel
 from utils.decorators import run_before
 from utils.get_mail import get_letters
 from utils.send_email import send_email
@@ -44,3 +45,11 @@ async def check_mailbox():
     status, res = imap.login(username, mail_pass)
     if status == 'OK' and imap:
         await get_letters(imap)
+
+
+async def export_excel_week():
+    create_summary_excel('week')
+
+
+async def export_excel_month():
+    create_summary_excel('month')

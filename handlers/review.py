@@ -93,7 +93,7 @@ async def show_user_petitions(call: types.CallbackQuery):
     await call.message.delete()
     for pet in qs:
         ks_name = pet.get('ks')
-        date = pet.get('date')
+        date = pet.get('date').strftime('%d.%m.%Y %H:%M')
         text = pet.get('text')
         pet_id = pet.get('_id')
         status_code = pet.get('status')
@@ -196,7 +196,7 @@ async def show_petitions(call: types.CallbackQuery):
     await call.message.delete()
     for pet in queryset:
         ks_name = pet.get('ks')
-        date = pet.get('date')
+        date = pet.get('date').strftime('%d.%m.%Y %H:%M')
         text = pet.get('text')
         pet_id = pet.get('_id')
         status_code = pet.get('status')
