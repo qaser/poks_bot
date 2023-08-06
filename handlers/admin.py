@@ -19,12 +19,14 @@ async def dir_choose(message: types.Message, state: FSMContext):
     if message.chat.type == 'private':
         keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
         keyboard.add(f'{const.DONE_EMOJI} Завершить выбор')
+        keyboard.add(f'{const.SCROLL_EMOJI} Выбрать все направления')
         for dir in const.DIRECTIONS_CODES.values():
             keyboard.add(dir)
         await message.answer(
             text=(
                 'Выберите направления. Возможен множественный выбор.\n'
-                'По завершению нажмите "Завершить выбор"\n\n'
+                'По завершению нажмите "Завершить выбор"\n'
+                'Для выбора сразу всех направлений нажмите кнопку "Выбрать все направления"\n\n'
                 'Если Вы проходите повторную регистрацию, то вводите все необходимые направления'
             ),
             reply_markup=keyboard,
@@ -38,7 +40,10 @@ async def dir_choose(message: types.Message, state: FSMContext):
 
 async def create_dir_list(message: types.Message, state: FSMContext):
     dir_names = const.DIRECTIONS_CODES.values()
-    if message.text.lower() != f'{const.DONE_EMOJI} завершить выбор':
+    if message.text.lower() == f'{const.SCROLL_EMOJI} выбрать все направления':
+        dirs = list(const.DIRECTIONS_CODES.keys())
+        await state.update_data(dirs=dirs)
+    elif message.text.lower() != f'{const.DONE_EMOJI} завершить выбор':
         if message.text not in dir_names:
             await message.answer(
                 'Пожалуйста, выберите направление, используя список ниже.'
@@ -61,26 +66,26 @@ async def create_dir_list(message: types.Message, state: FSMContext):
         )
         return
     else:
-        keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
-        keyboard.add('Нет', 'Да')
         data = await state.get_data()
         dirs = data['dirs']
         if len(dirs) == 0:
             await message.answer('Необходимо выбрать минимум одно направление')
             return
-        text_dirs = ''
-        for i in dirs:
-            name = const.DIRECTIONS_CODES.get(i)
-            text_dirs = '{}\n    {}'.format(text_dirs, name)
-        await message.answer(
-            text=(
-                'Вы выбрали направления:\n'
-                f'{text_dirs}'
-                '\n\nСохранить?'
-            ),
-            reply_markup=keyboard,
-        )
-        await Admin.waiting_confirm.set()
+    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    keyboard.add('Нет', 'Да')
+    text_dirs = ''
+    for i in dirs:
+        name = const.DIRECTIONS_CODES.get(i)
+        text_dirs = '{}\n    {}'.format(text_dirs, name)
+    await message.answer(
+        text=(
+            'Вы выбрали направления:\n'
+            f'{text_dirs}'
+            '\n\nСохранить?'
+        ),
+        reply_markup=keyboard,
+    )
+    await Admin.waiting_confirm.set()
 
 
 async def admin_save(message: types.Message, state: FSMContext):

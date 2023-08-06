@@ -121,7 +121,7 @@ async def archive_messages(message: types.Message):
             )
 
 
-# обработка команды /check
+# обработка команды /admins
 @admin_check
 async def check_admins(message: types.Message):
     await message.delete()
@@ -129,6 +129,8 @@ async def check_admins(message: types.Message):
     res_text = ''
     dir_list = []
     for adm in queryset:
+        if adm.get('user_id') == int(MY_TELEGRAM_ID):
+            continue
         name = adm.get('username')
         directions = adm.get('directions')
         dir_text = ''
