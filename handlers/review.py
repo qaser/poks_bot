@@ -60,7 +60,8 @@ async def user_choose_direction(message: types.Message, ks):
     queryset = list(petitions.aggregate(pipeline))
     dir_list = [(i['_id'], i['count']) for i in queryset]
     if len(dir_list) == 0:
-        await message.edit_text(
+        await message.delete()
+        await message.answer(
             text='Записи отсутствуют',
         )
     else:

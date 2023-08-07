@@ -122,6 +122,7 @@ async def save_petition(call: types.CallbackQuery, state: FSMContext):
                 'ks': ks,
                 'status': 'create',
                 'status_creator': user_id,
+                'status_log': {'create': [user_id, date]}
             }
         ).inserted_id
         for adm in list(admins.find({})):
@@ -165,13 +166,21 @@ async def change_status(call: types.CallbackQuery):
         status, _, status_emoji = const.PETITION_STATUS[pet.get('status')]
         creator_id = pet.get('status_creator')
         creator_name = get_creator(creator_id)
-        warning_text = '<i>Статус этой записи уже был изменен другим специалистом: </i>\n\n'
+        warning_text = f'Статус этой записи ранее был изменен другим пользователем: <b>{creator_name}</b>\n\n'
     else:
+        creator_id = call.message.chat.id
+        creator_name = get_creator(creator_id)
+        status_log = pet.get('status_log')
+        status_date = dt.datetime.now()
+        status_log[new_status] = [creator_id, status_date]
         petitions.update_one(
             {'_id': ObjectId(pet_id)},
-            {'$set': {'status': new_status, 'status_creator': call.message.chat.id}}
+            {'$set': {
+                'status': new_status,
+                'status_creator': call.message.chat.id,
+                'status_log': status_log,
+            }}
         )
-        creator_name = creator_name = get_creator(call.message.chat.id)
         pet = petitions.find_one({'_id': ObjectId(pet_id)})
         status, _, status_emoji = const.PETITION_STATUS[pet.get('status')]
         warning_text = ''
