@@ -1,16 +1,15 @@
 import datetime as dt
 
 from aiogram import Dispatcher, types
-from aiogram.dispatcher import FSMContext
+from aiogram.dispatcher import FSMContext, filters
 from aiogram.dispatcher.filters.state import State, StatesGroup
-from bson.objectid import ObjectId
-from aiogram.dispatcher import filters
-
-from config.bot_config import bot, dp
-from config.mongo_config import admins, users, petitions, buffer
 from aiogram.utils.exceptions import CantInitiateConversation
+from bson.objectid import ObjectId
+
 import keyboards.for_petition as kb
 import utils.constants as const
+from config.bot_config import bot, dp
+from config.mongo_config import admins, buffer, docs, petitions, users
 from utils.utils import get_creator
 
 
@@ -20,6 +19,13 @@ class Petition(StatesGroup):
 
 class EditPetition(StatesGroup):
     waiting_for_text = State()
+    waiting_for_confirm = State()
+
+
+class QuickAnswer(StatesGroup):
+    waiting_for_text = State()
+    waiting_for_choose = State()
+    waiting_for_file = State()
     waiting_for_confirm = State()
 
 
@@ -107,7 +113,6 @@ async def save_petition(call: types.CallbackQuery, state: FSMContext):
     else:
         dir_name = const.DIRECTIONS_CODES.get(dir)
         user_id = call.message.chat.id
-        # date = dt.datetime.now(tz=const.TZINFO).strftime('%d.%m.%Y %H:%M')
         date = dt.datetime.now(tz=const.TZINFO)
         user = users.find_one({'user_id': user_id})
         ks = msg['ks'] if 'many_ks' in msg.keys() else user.get('ks')
@@ -122,24 +127,11 @@ async def save_petition(call: types.CallbackQuery, state: FSMContext):
                 'ks': ks,
                 'status': 'create',
                 'status_creator': user_id,
-                'status_log': {'create': [user_id, date]}
+                'status_log': {'create': [user_id, date]},
+                'answer': ''
             }
         ).inserted_id
-        for adm in list(admins.find({})):
-            dirs = adm.get('directions')
-            if dir in dirs:
-                try:
-                    await bot.send_message(
-                        chat_id=adm.get('user_id'),
-                        text=(f'Получена новая запись от <b>{ks}</b>\n'
-                              f'Дата: <b>{date.strftime("%d.%m.%Y %H:%M")}</b>\n'
-                              f'Автор: <b>{username}</b>\n'
-                              f'Статус: {const.CREATE_EMOJI} <b>Создано</b>\n\n{msg_text}'),
-                        parse_mode=types.ParseMode.HTML,
-                        reply_markup=kb.status_kb(pet_id, 'create')
-                    )
-                except CantInitiateConversation:
-                    continue
+        await send_petition_to_admins(ks, date, username, msg_text, pet_id, dir)
         await call.message.edit_text(
             text=(
                 f'Ваш запрос отправлен специалисту по направлению <b>"{dir_name}"</b>\n'
@@ -149,6 +141,24 @@ async def save_petition(call: types.CallbackQuery, state: FSMContext):
         )
     buffer.delete_one({'_id': ObjectId(msg_id)})
     await state.finish()
+
+
+async def send_petition_to_admins(ks, date, username, msg_text, pet_id, dir):
+    for adm in list(admins.find({})):
+        dirs = adm.get('directions')
+        if dir in dirs:
+            try:
+                await bot.send_message(
+                    chat_id=adm.get('user_id'),
+                    text=(f'Получена новая запись от <b>{ks}</b>\n'
+                            f'Дата: <b>{date.strftime("%d.%m.%Y %H:%M")}</b>\n'
+                            f'Автор: <b>{username}</b>\n'
+                            f'Статус: {const.CREATE_EMOJI} <b>Создано</b>\n\n{msg_text}'),
+                    parse_mode=types.ParseMode.HTML,
+                    reply_markup=kb.status_kb(pet_id, 'create')
+                )
+            except CantInitiateConversation:
+                continue
 
 
 @dp.callback_query_handler(filters.Text(startswith='status_'))
@@ -166,7 +176,8 @@ async def change_status(call: types.CallbackQuery):
         status, _, status_emoji = const.PETITION_STATUS[pet.get('status')]
         creator_id = pet.get('status_creator')
         creator_name = get_creator(creator_id)
-        warning_text = f'Статус этой записи ранее был изменен другим пользователем: <b>{creator_name}</b>\n\n'
+        warning_text = ('Статус этой записи ранее был изменен '
+                        f'другим пользователем: <b>{creator_name}</b>\n\n')
     else:
         creator_id = call.message.chat.id
         creator_name = get_creator(creator_id)
@@ -191,27 +202,15 @@ async def change_status(call: types.CallbackQuery):
                         chat_id=user_id,
                         text=(f'Статус Вашей записи изменён специалистом ПОпоЭКС: {creator_name}.\n\n'
                             f'"{msg_text}"\n\nНовый статус: {status_emoji} {status}\n\n'
-                            f'Возможно специалисту ПОпоЭКС не понятен Ваш запрос из-за формулировки или Вы ошиблись адресатом.\n'
-                            'Вы можете изменить текст или удалить запись в архив, а затем создать новый запрос'),
+                            f'Возможно специалисту ПОпоЭКС не понятен Ваш запрос '
+                            'из-за формулировки или Вы ошиблись адресатом.\n'
+                            'Вы можете изменить текст или удалить запись в архив, '
+                            'а затем создать новый запрос'),
                             reply_markup=kb.edit_kb(pet_id)
                     )
                 elif new_status == 'create':
                     dir = pet.get('direction')
-                    for adm in list(admins.find({})):
-                        dirs = adm.get('directions')
-                        if dir in dirs:
-                            try:
-                                await bot.send_message(
-                                    chat_id=adm.get('user_id'),
-                                    text=(f'Получена новая запись от <b>{ks}</b>\n'
-                                        f'Дата: <b>{date}</b>\n'
-                                        f'Автор: <b>{username}</b>\n'
-                                        f'Статус: {const.CREATE_EMOJI} <b>Создано</b>\n\n{msg_text}'),
-                                    parse_mode=types.ParseMode.HTML,
-                                    reply_markup=kb.status_kb(pet_id, 'create')
-                                )
-                            except CantInitiateConversation:
-                                continue
+                    await send_petition_to_admins(ks, date, username, msg_text, pet_id, dir)
                 else:
                     await bot.send_message(
                         chat_id=user_id,
@@ -233,6 +232,128 @@ async def change_status(call: types.CallbackQuery):
             parse_mode=types.ParseMode.HTML,
             # reply_markup=kb.status_kb(pet_id, status_code)
         )
+
+
+@dp.callback_query_handler(filters.Text(startswith='answer_'))
+async def quick_answer(call: types.CallbackQuery, state: FSMContext):
+    _, pet_id = call.data.split('_')
+    await state.update_data(pet_id=pet_id)
+    await call.message.edit_text(
+        text=('Введите текст ответа. Если Вы передумали, то '
+              'позже действие можно отменить.')
+    )
+    await QuickAnswer.waiting_for_text.set()
+
+
+async def doc_choose(message: types.Message, state: FSMContext):
+    await state.update_data(answer_text=message.text)
+    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    keyboard.add('Отправить без файла')
+    keyboard.add('Загрузить файл')
+    await message.answer(
+        text='Нужно ли прикрепить к сообщению файл?',
+        reply_markup=keyboard,
+    )
+    await QuickAnswer.waiting_for_choose.set()
+
+
+async def answer_file_upload(message: types.Message, state: FSMContext):
+    if message.text.lower() == 'отправить без файла':
+        await send_quick_answer(message, state)
+    elif message.text.lower() == 'загрузить файл':
+        await message.answer(
+            'Отправьте фото, видео или документ формата .pdf',
+            reply_markup=types.ReplyKeyboardRemove()
+        )
+        await QuickAnswer.waiting_for_file.set()
+
+
+async def answer_file_save(message: types.Message, state: FSMContext):
+    pet_data = await state.get_data()
+    pet_id = pet_data['pet_id']
+    # msg_id = work_data['msg_id']
+    # chat_id = message.chat.id
+    if message.content_type == 'photo':
+        file, file_type = message.photo[-1], 'photo'
+    elif message.video:
+        file, file_type = message.video, 'video'
+    elif message.document:
+        if message.document.mime_type == 'application/pdf':
+            file, file_type = message.document, 'document'
+        else:
+            await message.answer(
+                'Отправьте пожалуйста документ формата .pdf',
+                reply_markup=kb.get_upload_kb()
+            )
+            return
+    else:
+        await message.answer(
+            text=('Данные не загружены. Отправьте пожалуйста фото, '
+                    'видео или документ формата .pdf'),
+            reply_markup=kb.get_upload_kb()
+        )
+        return
+    docs.insert_one({'pet_id': pet_id, 'file_id': file.file_id, 'file_type': file_type})
+    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    keyboard.add('Нет', 'Да')
+    await message.answer(
+        text='Файл получен. Отправить сообщение?',
+        reply_markup=keyboard,
+    )
+    await QuickAnswer.waiting_for_confirm.set()
+
+
+async def confirm_answer(message: types.Message, state: FSMContext):
+    if message.text.lower() not in ['нет', 'да']:
+        await message.answer(
+            'Пожалуйста, отправьте "Да" или "Нет"'
+        )
+        return
+    if message.text.lower() == 'да':
+        await send_quick_answer(message, state)
+    else:
+        await message.answer(
+            'Хорошо. Сообщение не отправлено',
+            reply_markup=types.ReplyKeyboardRemove()
+        )
+        await state.finish()
+
+
+async def send_quick_answer(message, state):
+    buffer_data = await state.get_data()
+    answer_text = buffer_data['answer_text']
+    pet_id = buffer_data['pet_id']
+    petitions.update_one(
+        {'_id': ObjectId(pet_id)},
+        {'$set': {'answer': answer_text}}
+    )
+    admin = admins.find_one({'user_id': message.chat.id}).get('username')
+    send_to = petitions.find_one({'_id': ObjectId(pet_id)}).get('user_id')
+    await bot.send_message(
+        chat_id=send_to,
+        text=f'На Ваш запрос получен ответ от специалиста ПОпоЭКС: {admin}\n\n{answer_text}'
+    )
+    pet_docs = docs.find({'pet_id': pet_id})
+    if pet_docs is not None:
+        num_docs = len(list(pet_docs))
+        for doc in pet_docs:
+            file_id =doc.get('file_id')
+            file_type = doc.get('file_type')
+            if file_type == 'photo':
+                await bot.send_photo(chat_id=send_to, photo=file_id)
+            elif file_type == 'video':
+                await bot.send_video(chat_id=send_to, video=file_id)
+            elif file_type == 'document':
+                await bot.send_document(chat_id=send_to, document=file_id)
+    await message.answer(
+        text='Сообщение отправлено',
+        reply_markup=types.ReplyKeyboardRemove()
+    )
+    # await message.answer(
+    #     text='Для изменения статуса записи нажмите кнопку "Отправить"',
+    #     reply_markup=kb.edit_send_kb(pet_id)
+    # )
+    await state.finish()
 
 
 @dp.callback_query_handler(filters.Text(startswith='edit_'))
@@ -309,4 +430,20 @@ def register_handlers_petition(dp: Dispatcher):
     dp.register_message_handler(
         save_edit_petition,
         state=EditPetition.waiting_for_confirm
+    )
+    dp.register_message_handler(
+        doc_choose,
+        state=QuickAnswer.waiting_for_text
+    )
+    dp.register_message_handler(
+        answer_file_upload,
+        state=QuickAnswer.waiting_for_choose
+    )
+    dp.register_message_handler(
+        answer_file_save,
+        state=QuickAnswer.waiting_for_file
+    )
+    dp.register_message_handler(
+        confirm_answer,
+        state=QuickAnswer.waiting_for_confirm
     )

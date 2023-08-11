@@ -56,6 +56,12 @@ def status_kb(pet_id, status_code):
         text=f'{const.INWORK_EMOJI} В работу',
         callback_data=f'status_{pet_id}_inwork_{status_code}'
     )
+    keyboard.add(
+        InlineKeyboardButton(
+            text=f'{const.EMAIL_EMOJI} Отправить ответ',
+            callback_data=f'answer_{pet_id}'
+        )
+    )
     keyboard.row(btn_rework, btn_inwork)
     return keyboard
 
@@ -98,6 +104,17 @@ def ks_user_kb(ks_list):
         InlineKeyboardButton(
             text=f'{const.UNDONE_EMOJI} Выход',
             callback_data='cancel'
+        )
+    )
+    return keyboard
+
+
+def get_upload_kb():
+    keyboard = InlineKeyboardMarkup()
+    keyboard.add(
+        InlineKeyboardButton(
+            text=f'{const.EXIT_EMOJI} Отмена',
+            callback_data=f'break'
         )
     )
     return keyboard

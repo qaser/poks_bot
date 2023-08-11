@@ -17,6 +17,7 @@ WASTE_EMOJI = emoji.emojize(':wastebasket:')
 EDIT_EMOJI = emoji.emojize(':pencil:')
 SEND_EMOJI = emoji.emojize(':envelope:')
 SCROLL_EMOJI = emoji.emojize(':orange_book:')
+EMAIL_EMOJI = emoji.emojize(':e_mail:')
 
 KS = [
     'Бобровская КС',
