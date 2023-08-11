@@ -3,9 +3,12 @@ import datetime as dt
 from aiogram import Dispatcher, types
 from aiogram.dispatcher import FSMContext, filters
 from aiogram.dispatcher.filters.state import State, StatesGroup
-from aiogram.utils.exceptions import CantInitiateConversation
 from bson.objectid import ObjectId
+from aiogram.dispatcher import filters
 
+from config.bot_config import bot, dp
+from config.mongo_config import admins, users, petitions, buffer
+from aiogram.utils.exceptions import CantInitiateConversation, BotBlocked
 import keyboards.for_petition as kb
 import utils.constants as const
 from config.bot_config import bot, dp
@@ -157,7 +160,7 @@ async def send_petition_to_admins(ks, date, username, msg_text, pet_id, dir):
                     parse_mode=types.ParseMode.HTML,
                     reply_markup=kb.status_kb(pet_id, 'create')
                 )
-            except CantInitiateConversation:
+            except (CantInitiateConversation, BotBlocked):
                 continue
 
 
@@ -217,7 +220,7 @@ async def change_status(call: types.CallbackQuery):
                         text=(f'Статус Вашей записи изменён специалистом ПОпоЭКС: {creator_name}.\n\n'
                             f'"{msg_text}"\n\nНовый статус: {status_emoji} {status}')
                     )
-            except CantInitiateConversation:
+            except (CantInitiateConversation, BotBlocked):
                 pass  # тут нужно отправить другому юзеру той же станции
     if new_status == 'create':
         await call.message.edit_text('Отправлено')
