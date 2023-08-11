@@ -7,7 +7,7 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 from config.bot_config import bot, dp
 from config.mongo_config import emergency_stops, users
 from utils.constants import KS
-from aiogram.utils.exceptions import CantInitiateConversation
+from aiogram.utils.exceptions import CantInitiateConversation, BotBlocked
 from utils.decorators import admin_check
 
 
@@ -95,7 +95,7 @@ async def confirmation(message: types.Message, state: FSMContext):
                 reply_markup=types.ReplyKeyboardRemove()
             )
             await state.finish()
-        except CantInitiateConversation:
+        except (CantInitiateConversation, BotBlocked):
             zamnach_gks = users.find_one({'ks': data['station'], 'prof': 'znachgks'})
             if zamnach_gks is None:
                 await message.answer(
@@ -122,7 +122,7 @@ async def confirmation(message: types.Message, state: FSMContext):
                         reply_markup=types.ReplyKeyboardRemove()
                     )
                     await state.finish()
-                except CantInitiateConversation:
+                except (CantInitiateConversation, BotBlocked):
                     await message.answer(
                         text=(f'Бот не может отправить сообщение пользователю "{username}".\n'
                             'Вероятно пользователь заблокировал бота.\n'

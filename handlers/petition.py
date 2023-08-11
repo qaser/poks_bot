@@ -8,7 +8,7 @@ from aiogram.dispatcher import filters
 
 from config.bot_config import bot, dp
 from config.mongo_config import admins, users, petitions, buffer
-from aiogram.utils.exceptions import CantInitiateConversation
+from aiogram.utils.exceptions import CantInitiateConversation, BotBlocked
 import keyboards.for_petition as kb
 import utils.constants as const
 from utils.utils import get_creator
@@ -138,7 +138,7 @@ async def save_petition(call: types.CallbackQuery, state: FSMContext):
                         parse_mode=types.ParseMode.HTML,
                         reply_markup=kb.status_kb(pet_id, 'create')
                     )
-                except CantInitiateConversation:
+                except (CantInitiateConversation, BotBlocked):
                     continue
         await call.message.edit_text(
             text=(
@@ -210,7 +210,7 @@ async def change_status(call: types.CallbackQuery):
                                     parse_mode=types.ParseMode.HTML,
                                     reply_markup=kb.status_kb(pet_id, 'create')
                                 )
-                            except CantInitiateConversation:
+                            except (CantInitiateConversation, BotBlocked):
                                 continue
                 else:
                     await bot.send_message(
@@ -218,7 +218,7 @@ async def change_status(call: types.CallbackQuery):
                         text=(f'Статус Вашей записи изменён специалистом ПОпоЭКС: {creator_name}.\n\n'
                             f'"{msg_text}"\n\nНовый статус: {status_emoji} {status}')
                     )
-            except CantInitiateConversation:
+            except (CantInitiateConversation, BotBlocked):
                 pass  # тут нужно отправить другому юзеру той же станции
     if new_status == 'create':
         await call.message.edit_text('Отправлено')
