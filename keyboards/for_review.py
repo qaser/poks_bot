@@ -111,37 +111,35 @@ def get_drop_messages_kb(drop_id):
     return keyboard
 
 
-def status_kb(pet_id, status_code, job):
+def status_kb(pet_id, status_code, job, num_docs):
     keyboard = InlineKeyboardMarkup(row_width=2)
     btns = []
     if job == 'admin':
-        for status in const.PETITION_STATUS.keys():
-            if status == status_code or status == 'create':
-                continue
-            _, btn_name, status_emoji = const.PETITION_STATUS[status]
-            btn = InlineKeyboardButton(
-                text=f'{status_emoji} {btn_name}',
-                callback_data=f'status_{pet_id}_{status}_{status_code}'
-            )
-            btns.append(btn)
-        keyboard.add(*btns)
-        return keyboard
+        status_list = ['create']
     else:
-        for status in const.PETITION_STATUS.keys():
-            if status == status_code or status in ['create', 'rework', 'inwork']:
-                continue
-            _, btn_name, status_emoji = const.PETITION_STATUS[status]
-            btn = InlineKeyboardButton(
-                text=f'{status_emoji} {btn_name}',
-                callback_data=f'status_{pet_id}_{status}_{status_code}'
+        status_list = ['create', 'rework', 'inwork']
+    for status in const.PETITION_STATUS.keys():
+        if status == status_code or status in status_list:
+            continue
+        _, btn_name, status_emoji = const.PETITION_STATUS[status]
+        btn = InlineKeyboardButton(
+            text=f'{status_emoji} {btn_name}',
+            callback_data=f'status_{pet_id}_{status}_{status_code}'
+        )
+        btns.append(btn)
+    # if num_docs > 0:
+    #     keyboard.add(
+    #         InlineKeyboardButton(
+    #             text=f'{const.DOC_EMOJI} Посмотреть документы',
+    #             callback_data=f'doc_{pet_id}'
+    #         )
+    #     )
+    keyboard.add(*btns)
+    if status_code == 'rework':
+        keyboard.add(
+            InlineKeyboardButton(
+                text=f'{const.EDIT_EMOJI} Редактировать запись',
+                callback_data=f'edit_{pet_id}_{status}_{status_code}'
             )
-            btns.append(btn)
-        keyboard.add(*btns)
-        if status_code == 'rework':
-            keyboard.add(
-                InlineKeyboardButton(
-                    text=f'{const.EDIT_EMOJI} Редактировать запись',
-                    callback_data=f'edit_{pet_id}_{status}_{status_code}'
-                )
-            )
-        return keyboard
+        )
+    return keyboard

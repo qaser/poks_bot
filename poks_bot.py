@@ -17,12 +17,11 @@ from handlers.users import register_handlers_users
 from handlers.help import register_handlers_help
 from scheduler.scheduler_jobs import scheduler, scheduler_jobs
 from texts.initial import INITIAL_TEXT, MANUAL, NEW_GROUP_TEXT
-from utils.create_summary_excel import create_summary_excel
 
 
 logging.basicConfig(
     filename='logs_bot.log',
-    level=logging.INFO,
+    level=logging.DEBUG,
     filemode='a',
     format='%(asctime)s - %(message)s',
     datefmt='%d.%m.%y %H:%M:%S',

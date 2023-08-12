@@ -46,7 +46,7 @@ def send_kb(dir, msg_id):
     return keyboard
 
 
-def status_kb(pet_id, status_code):
+def status_kb(pet_id, status_code, num_docs):
     keyboard = InlineKeyboardMarkup()
     btn_rework = InlineKeyboardButton(
         text=f'{const.REWORK_EMOJI} На доработку',
@@ -56,9 +56,16 @@ def status_kb(pet_id, status_code):
         text=f'{const.INWORK_EMOJI} В работу',
         callback_data=f'status_{pet_id}_inwork_{status_code}'
     )
+    # if num_docs > 0:
+    #     keyboard.add(
+    #         InlineKeyboardButton(
+    #             text=f'{const.DOC_EMOJI} Посмотреть документы',
+    #             callback_data=f'doc_{pet_id}'
+    #         )
+    #     )
     keyboard.add(
         InlineKeyboardButton(
-            text=f'{const.EMAIL_EMOJI} Отправить ответ',
+            text=f'{const.SEND_EMOJI} Отправить ответ',
             callback_data=f'answer_{pet_id}'
         )
     )
@@ -113,23 +120,31 @@ def get_upload_kb():
     keyboard = InlineKeyboardMarkup()
     keyboard.add(
         InlineKeyboardButton(
-            text=f'{const.EXIT_EMOJI} Отмена',
-            callback_data=f'break'
+            text=f'{const.UNDONE_EMOJI} Отмена',
+            callback_data='cancel'
         )
     )
     return keyboard
 
-# def status_kb(pet_id, status_code):
-#     keyboard = InlineKeyboardMarkup(row_width=2)
-#     btns = []
-#     for status in const.PETITION_STATUS.keys():
-#         if status == status_code or status == 'create':
-#             continue
-#         _, btn_name, status_emoji = const.PETITION_STATUS[status]
-#         btn = InlineKeyboardButton(
-#             text=f'{status_emoji} {btn_name}',
-#             callback_data=f'status_{pet_id}_{status}_{status_code}'
-#         )
-#         btns.append(btn)
-#     keyboard.add(*btns)
-#     return keyboard
+
+def full_status_kb(pet_id, status_code, num_docs):
+    keyboard = InlineKeyboardMarkup(row_width=2)
+    btns = []
+    for status in const.PETITION_STATUS.keys():
+        if status == status_code or status == 'create':
+            continue
+        _, btn_name, status_emoji = const.PETITION_STATUS[status]
+        btn = InlineKeyboardButton(
+            text=f'{status_emoji} {btn_name}',
+            callback_data=f'status_{pet_id}_{status}_{status_code}'
+        )
+        btns.append(btn)
+    # if num_docs > 0:
+    #     keyboard.add(
+    #         InlineKeyboardButton(
+    #             text=f'{const.DOC_EMOJI} Посмотреть документы',
+    #             callback_data=f'doc_{pet_id}'
+    #         )
+    #     )
+    keyboard.add(*btns)
+    return keyboard

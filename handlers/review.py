@@ -3,12 +3,13 @@ from aiogram.dispatcher.filters import Text
 from bson.objectid import ObjectId
 
 from config.bot_config import bot, dp
-from config.mongo_config import admins, petitions, buffer, users
+from config.mongo_config import admins, petitions, buffer, users, docs
 from utils.constants import KS
 import keyboards.for_review as kb
 import utils.constants as const
 from utils.decorators import admin_check, registration_check
 from aiogram.utils.exceptions import MessageCantBeEdited
+from aiogram.types.message import ContentType
 
 from utils.utils import get_creator
 
@@ -93,10 +94,12 @@ async def show_user_petitions(call: types.CallbackQuery):
     len_queryset = len(qs)
     await call.message.delete()
     for pet in qs:
+        pet_id = pet.get('_id')
+        pet_docs = list(docs.find({'pet_id': str(pet_id)}))
+        num_docs = len(list(pet_docs))
         ks_name = pet.get('ks')
         date = pet.get('date').strftime('%d.%m.%Y %H:%M')
         text = pet.get('text')
-        pet_id = pet.get('_id')
         status_code = pet.get('status')
         status, _, status_emoji = const.PETITION_STATUS[status_code]
         user_id = pet.get('user_id')
@@ -106,19 +109,21 @@ async def show_user_petitions(call: types.CallbackQuery):
             creator_id = pet.get('status_creator')
             creator_name = get_creator(creator_id)
             msg_text = (f'Станция: <b>{ks_name}</b>\n'
-                    f'Дата: <b>{date}</b>\n'
-                    f'Автор: <b>{username}</b>\n'
-                    f'Статус: {status_emoji} <b>{status}</b>\n'
-                    f'Специалист ПОпоЭКС: <b>{creator_name}</b>\n\n<i>{text}</i>')
+                        f'Дата: <b>{date}</b>\n'
+                        f'Автор: <b>{username}</b>\n'
+                        f'Статус: {status_emoji} <b>{status}</b>\n'
+                        f'Документы: <b>{num_docs} шт.</b>\n'
+                        f'Специалист ПОпоЭКС: <b>{creator_name}</b>\n\n<i>{text}</i>')
         else:
             msg_text = (f'Станция: <b>{ks_name}</b>\n'
-                    f'Дата: <b>{date}</b>\n'
-                    f'Автор: <b>{username}</b>\n'
-                    f'Статус: {status_emoji} <b>{status}</b>\n\n<i>{text}</i>')
+                        f'Дата: <b>{date}</b>\n'
+                        f'Автор: <b>{username}</b>\n'
+                        f'Статус: {status_emoji} <b>{status}</b>\n'
+                        f'Документы: <b>{num_docs} шт.</b>\n\n<i>{text}</i>')
         msg = await call.message.answer(
             text=msg_text,
             parse_mode=types.ParseMode.HTML,
-            reply_markup=kb.status_kb(pet_id, status_code, 'user')
+            reply_markup=kb.status_kb(pet_id, status_code, 'user', num_docs)
         )
         msg_ids.append(msg.message_id)
     drop_id = buffer.insert_one({'messages_id': msg_ids}).inserted_id
@@ -196,10 +201,12 @@ async def show_petitions(call: types.CallbackQuery):
     len_queryset = len(queryset)
     await call.message.delete()
     for pet in queryset:
+        pet_id = pet.get('_id')
+        pet_docs = list(docs.find({'pet_id': str(pet_id)}))
+        num_docs = len(list(pet_docs))
         ks_name = pet.get('ks')
         date = pet.get('date').strftime('%d.%m.%Y %H:%M')
         text = pet.get('text')
-        pet_id = pet.get('_id')
         status_code = pet.get('status')
         status, _, status_emoji = const.PETITION_STATUS[status_code]
         user_id = pet.get('user_id')
@@ -209,19 +216,21 @@ async def show_petitions(call: types.CallbackQuery):
             creator_id = pet.get('status_creator')
             creator_name = get_creator(creator_id)
             msg_text = (f'Станция: <b>{ks_name}</b>\n'
-                    f'Дата: <b>{date}</b>\n'
-                    f'Автор: <b>{username}</b>\n'
-                    f'Статус: {status_emoji} <b>{status}</b>\n'
-                    f'Специалист ПОпоЭКС: <b>{creator_name}</b>\n\n<i>{text}</i>')
+                        f'Дата: <b>{date}</b>\n'
+                        f'Автор: <b>{username}</b>\n'
+                        f'Статус: {status_emoji} <b>{status}</b>\n'
+                        f'Документы: <b>{num_docs} шт.</b>\n'
+                        f'Специалист ПОпоЭКС: <b>{creator_name}</b>\n\n<i>{text}</i>')
         else:
             msg_text = (f'Станция: <b>{ks_name}</b>\n'
-                    f'Дата: <b>{date}</b>\n'
-                    f'Автор: <b>{username}</b>\n'
-                    f'Статус: {status_emoji} <b>{status}</b>\n\n<i>{text}</i>')
+                        f'Дата: <b>{date}</b>\n'
+                        f'Автор: <b>{username}</b>\n'
+                        f'Статус: {status_emoji} <b>{status}</b>\n'
+                        f'Документы: <b>{num_docs} шт.</b>\n\n<i>{text}</i>')
         msg = await call.message.answer(
             text=msg_text,
             parse_mode=types.ParseMode.HTML,
-            reply_markup=kb.status_kb(pet_id, status_code, 'admin')
+            reply_markup=kb.status_kb(pet_id, status_code, 'admin', num_docs)
         )
         msg_ids.append(msg.message_id)
     drop_id = buffer.insert_one({'messages_id': msg_ids}).inserted_id
@@ -253,6 +262,21 @@ async def menu_back(call: types.CallbackQuery):
     _, level, _ = call.data.split('_')
     if level == 'ks':
         await user_or_admin(call.message)
+
+
+@dp.callback_query_handler(Text(startswith='doc_'))
+async def doc_sending(call: types.CallbackQuery):
+    _, pet_id = call.data.split('_')
+    queryset = list(docs.find({'pet_id': ObjectId(pet_id)}))
+    for file in queryset:
+        file_id = file.get('file_id')
+        file_type = file.get('file_type')
+        if file_type == 'photo':
+            await call.message.answer_photo(file_id)
+        elif file_type == 'video':
+            await call.message.answer_video(file_id)
+        elif file_type == 'document':
+            await call.message.answer_document(file_id)
 
 
 def register_handlers_review(dp: Dispatcher):

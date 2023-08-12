@@ -4,7 +4,6 @@ import utils.constants as const
 from config.bot_config import bot
 from config.mail_config import IMAP_MAIL_SERVER, MAIL_LOGIN, MAIL_PASS
 from config.mongo_config import groups, users
-from utils.create_summary_docx import create_docx_file
 from utils.create_summary_excel import create_summary_excel
 from utils.decorators import run_before
 from utils.get_mail import get_letters
@@ -18,7 +17,7 @@ async def send_remainder():
         try:
             await bot.send_message(
                 chat_id=int(id),
-                text=const.REMAINDER
+                text=const.GROUP_REMAINDER
             )
         except:
             pass

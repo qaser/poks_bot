@@ -3,6 +3,7 @@ import datetime as dt
 from aiogram import Dispatcher, types
 from aiogram.dispatcher import FSMContext, filters
 from aiogram.dispatcher.filters.state import State, StatesGroup
+from aiogram.types.message import ContentType
 from bson.objectid import ObjectId
 from aiogram.dispatcher import filters
 
@@ -29,7 +30,7 @@ class QuickAnswer(StatesGroup):
     waiting_for_text = State()
     waiting_for_choose = State()
     waiting_for_file = State()
-    waiting_for_confirm = State()
+    # waiting_for_confirm = State()
 
 
 # точка входа командой /task
@@ -147,6 +148,8 @@ async def save_petition(call: types.CallbackQuery, state: FSMContext):
 
 
 async def send_petition_to_admins(ks, date, username, msg_text, pet_id, dir):
+    pet_docs = docs.find({'pet_id': pet_id})
+    num_docs = len(list(pet_docs)) if pet_docs is not None else 0
     for adm in list(admins.find({})):
         dirs = adm.get('directions')
         if dir in dirs:
@@ -154,11 +157,12 @@ async def send_petition_to_admins(ks, date, username, msg_text, pet_id, dir):
                 await bot.send_message(
                     chat_id=adm.get('user_id'),
                     text=(f'Получена новая запись от <b>{ks}</b>\n'
-                            f'Дата: <b>{date.strftime("%d.%m.%Y %H:%M")}</b>\n'
-                            f'Автор: <b>{username}</b>\n'
-                            f'Статус: {const.CREATE_EMOJI} <b>Создано</b>\n\n{msg_text}'),
+                          f'Дата: <b>{date.strftime("%d.%m.%Y %H:%M")}</b>\n'
+                          f'Автор: <b>{username}</b>\n'
+                          f'Статус: {const.CREATE_EMOJI} <b>Создано</b>\n'
+                          f'Документы: <b>{num_docs} шт.</b>\n\n{msg_text}'),
                     parse_mode=types.ParseMode.HTML,
-                    reply_markup=kb.status_kb(pet_id, 'create')
+                    reply_markup=kb.status_kb(pet_id, 'create', num_docs)
                 )
             except (CantInitiateConversation, BotBlocked):
                 continue
@@ -168,6 +172,8 @@ async def send_petition_to_admins(ks, date, username, msg_text, pet_id, dir):
 async def change_status(call: types.CallbackQuery):
     _, pet_id, new_status, current_status = call.data.split('_')
     pet = petitions.find_one({'_id': ObjectId(pet_id)})
+    pet_docs = docs.find({'pet_id': pet_id})
+    num_docs = len(list(pet_docs)) if pet_docs is not None else 0
     msg_text = pet.get('text')
     ks = pet.get('ks')
     date = pet.get('date').strftime('%d.%m.%Y %H:%M')
@@ -196,6 +202,8 @@ async def change_status(call: types.CallbackQuery):
             }}
         )
         pet = petitions.find_one({'_id': ObjectId(pet_id)})
+        pet_docs = docs.find({'pet_id': pet_id})
+        num_docs = len(list(pet_docs)) if pet_docs is not None else 0
         status, _, status_emoji = const.PETITION_STATUS[pet.get('status')]
         warning_text = ''
         if call.message.chat.id != user_id:
@@ -231,9 +239,9 @@ async def change_status(call: types.CallbackQuery):
             text=(f'{warning_text}Запись от <b>{ks}</b>\n'
                 f'Дата: <b>{date}</b>\n'
                 f'Автор: <b>{username}</b>\n'
-                f'Статус: {status_emoji} <b>{status}</b>\n\n{msg_text}'),
+                f'Статус: {status_emoji} <b>{status}</b>\n'
+                f'Документы: <b>{num_docs} шт.</b>\n\n{msg_text}'),
             parse_mode=types.ParseMode.HTML,
-            # reply_markup=kb.status_kb(pet_id, status_code)
         )
 
 
@@ -241,10 +249,9 @@ async def change_status(call: types.CallbackQuery):
 async def quick_answer(call: types.CallbackQuery, state: FSMContext):
     _, pet_id = call.data.split('_')
     await state.update_data(pet_id=pet_id)
-    await call.message.edit_text(
-        text=('Введите текст ответа. Если Вы передумали, то '
-              'позже действие можно отменить.')
-    )
+    pet_text = petitions.find_one({'_id': ObjectId(pet_id)}).get('text')
+    await call.message.edit_text(text=f'Текст запроса:\n\n "{pet_text}"')
+    await call.message.answer('Введите Ваш ответ')
     await QuickAnswer.waiting_for_text.set()
 
 
@@ -265,7 +272,8 @@ async def answer_file_upload(message: types.Message, state: FSMContext):
         await send_quick_answer(message, state)
     elif message.text.lower() == 'загрузить файл':
         await message.answer(
-            'Отправьте фото, видео или документ формата .pdf',
+            text=('Отправьте фото, видео или документ формата .pdf\n\n'
+                  'Если необходимо, отправьте несколько файлов одним сообщением'),
             reply_markup=types.ReplyKeyboardRemove()
         )
         await QuickAnswer.waiting_for_file.set()
@@ -274,9 +282,7 @@ async def answer_file_upload(message: types.Message, state: FSMContext):
 async def answer_file_save(message: types.Message, state: FSMContext):
     pet_data = await state.get_data()
     pet_id = pet_data['pet_id']
-    # msg_id = work_data['msg_id']
-    # chat_id = message.chat.id
-    if message.content_type == 'photo':
+    if message.photo:
         file, file_type = message.photo[-1], 'photo'
     elif message.video:
         file, file_type = message.video, 'video'
@@ -284,42 +290,17 @@ async def answer_file_save(message: types.Message, state: FSMContext):
         if message.document.mime_type == 'application/pdf':
             file, file_type = message.document, 'document'
         else:
-            await message.answer(
-                'Отправьте пожалуйста документ формата .pdf',
-                reply_markup=kb.get_upload_kb()
-            )
+            await message.answer('Отправьте пожалуйста документ формата .pdf')
             return
     else:
         await message.answer(
             text=('Данные не загружены. Отправьте пожалуйста фото, '
-                    'видео или документ формата .pdf'),
-            reply_markup=kb.get_upload_kb()
+                  'видео или документ формата .pdf')
         )
         return
     docs.insert_one({'pet_id': pet_id, 'file_id': file.file_id, 'file_type': file_type})
-    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    keyboard.add('Нет', 'Да')
-    await message.answer(
-        text='Файл получен. Отправить сообщение?',
-        reply_markup=keyboard,
-    )
-    await QuickAnswer.waiting_for_confirm.set()
-
-
-async def confirm_answer(message: types.Message, state: FSMContext):
-    if message.text.lower() not in ['нет', 'да']:
-        await message.answer(
-            'Пожалуйста, отправьте "Да" или "Нет"'
-        )
-        return
-    if message.text.lower() == 'да':
-        await send_quick_answer(message, state)
-    else:
-        await message.answer(
-            'Хорошо. Сообщение не отправлено',
-            reply_markup=types.ReplyKeyboardRemove()
-        )
-        await state.finish()
+    await message.answer('Файл получен')
+    await send_quick_answer(message, state)
 
 
 async def send_quick_answer(message, state):
@@ -332,15 +313,18 @@ async def send_quick_answer(message, state):
     )
     admin = admins.find_one({'user_id': message.chat.id}).get('username')
     send_to = petitions.find_one({'_id': ObjectId(pet_id)}).get('user_id')
-    await bot.send_message(
-        chat_id=send_to,
-        text=f'На Ваш запрос получен ответ от специалиста ПОпоЭКС: {admin}\n\n{answer_text}'
-    )
+    try:
+        await bot.send_message(
+            chat_id=send_to,
+            text=f'На Ваш запрос получен ответ от специалиста ПОпоЭКС: {admin}\n\n{answer_text}'
+        )
+    except (CantInitiateConversation, BotBlocked):
+        pass
     pet_docs = docs.find({'pet_id': pet_id})
     if pet_docs is not None:
         num_docs = len(list(pet_docs))
         for doc in pet_docs:
-            file_id =doc.get('file_id')
+            file_id = doc.get('file_id')
             file_type = doc.get('file_type')
             if file_type == 'photo':
                 await bot.send_photo(chat_id=send_to, photo=file_id)
@@ -352,11 +336,26 @@ async def send_quick_answer(message, state):
         text='Сообщение отправлено',
         reply_markup=types.ReplyKeyboardRemove()
     )
-    # await message.answer(
-    #     text='Для изменения статуса записи нажмите кнопку "Отправить"',
-    #     reply_markup=kb.edit_send_kb(pet_id)
-    # )
     await state.finish()
+    await message.answer('Теперь можете изменить статус записи')
+    pet = petitions.find_one({'_id': ObjectId(pet_id)})
+    ks = pet.get('ks')
+    date = pet.get('date').strftime('%d.%m.%Y %H:%M')
+    user_id = pet.get('user_id')
+    text = pet.get('text')
+    user = users.find_one({'user_id': user_id})
+    username = user.get('username') if user is not None else 'Неизвестен'
+    status_code = pet.get('status')
+    status, _, status_emoji = const.PETITION_STATUS[status_code]
+    await message.answer(
+        text=(f'Запись от <b>{ks}</b>\n'
+              f'Дата: <b>{date}</b>\n'
+              f'Автор: <b>{username}</b>\n'
+              f'Статус: {status_emoji} <b>{status}</b>\n'
+              f'Документы: <b>{num_docs} шт.</b>\n\n{text}'),
+        parse_mode=types.ParseMode.HTML,
+        reply_markup=kb.full_status_kb(pet_id, status_code, num_docs)
+    )
 
 
 @dp.callback_query_handler(filters.Text(startswith='edit_'))
@@ -418,10 +417,6 @@ async def ask_cancel(call: types.CallbackQuery, state: FSMContext):
 
 
 def register_handlers_petition(dp: Dispatcher):
-    # dp.register_message_handler(
-    #     direction_select,
-    #     commands='task'
-    # )
     dp.register_message_handler(
         ask_confirmation,
         state=Petition.waiting_petition_text
@@ -444,9 +439,6 @@ def register_handlers_petition(dp: Dispatcher):
     )
     dp.register_message_handler(
         answer_file_save,
-        state=QuickAnswer.waiting_for_file
-    )
-    dp.register_message_handler(
-        confirm_answer,
-        state=QuickAnswer.waiting_for_confirm
+        state=QuickAnswer.waiting_for_file,
+        content_types=ContentType.ANY
     )
