@@ -1,17 +1,13 @@
-import time
-
 from aiogram import Dispatcher, types
 from aiogram.dispatcher import FSMContext
 from aiogram.types.message import ContentType
 
-
+import utils.constants as const
 from config.bot_config import bot
-from config.mongo_config import archive, groups, users, admins
+from config.mongo_config import admins, archive, groups
 from config.telegram_config import MY_TELEGRAM_ID
 from handlers.emergency_stop import admin_check
-import utils.constants as const
 from utils.decorators import superuser_check
-import keyboards.for_users as kb
 
 
 # обработка команды /reset - сброс клавиатуры и состояния

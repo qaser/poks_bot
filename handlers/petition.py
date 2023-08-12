@@ -4,12 +4,9 @@ from aiogram import Dispatcher, types
 from aiogram.dispatcher import FSMContext, filters
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.types.message import ContentType
+from aiogram.utils.exceptions import BotBlocked, CantInitiateConversation
 from bson.objectid import ObjectId
-from aiogram.dispatcher import filters
 
-from config.bot_config import bot, dp
-from config.mongo_config import admins, users, petitions, buffer
-from aiogram.utils.exceptions import CantInitiateConversation, BotBlocked
 import keyboards.for_petition as kb
 import utils.constants as const
 from config.bot_config import bot, dp
@@ -414,6 +411,21 @@ async def save_edit_petition(message: types.Message, state: FSMContext):
 async def ask_cancel(call: types.CallbackQuery, state: FSMContext):
     await state.finish()
     await call.message.delete()
+
+
+@dp.callback_query_handler(filters.Text(startswith='docs_'))
+async def send_files(call: types.CallbackQuery):
+    _, pet_id = call.data.split('_')
+    queryset = list(docs.find({'pet_id': pet_id}))
+    for file in queryset:
+        file_id = file.get('file_id')
+        file_type = file.get('file_type')
+        if file_type == 'photo':
+            await call.message.answer_photo(file_id)
+        elif file_type == 'video':
+            await call.message.answer_video(file_id)
+        elif file_type == 'document':
+            await call.message.answer_document(file_id)
 
 
 def register_handlers_petition(dp: Dispatcher):

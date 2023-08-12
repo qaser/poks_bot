@@ -1,6 +1,6 @@
-import emoji
-from datetime import timezone, timedelta
+from datetime import timedelta, timezone
 
+import emoji
 
 FINISH_EMOJI = emoji.emojize(':green_circle:')
 CREATE_EMOJI = emoji.emojize(':white_circle:')

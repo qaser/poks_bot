@@ -1,4 +1,5 @@
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+
 import utils.constants as const
 
 
@@ -127,13 +128,13 @@ def status_kb(pet_id, status_code, job, num_docs):
             callback_data=f'status_{pet_id}_{status}_{status_code}'
         )
         btns.append(btn)
-    # if num_docs > 0:
-    #     keyboard.add(
-    #         InlineKeyboardButton(
-    #             text=f'{const.DOC_EMOJI} Посмотреть документы',
-    #             callback_data=f'doc_{pet_id}'
-    #         )
-    #     )
+    if num_docs > 0:
+        keyboard.add(
+            InlineKeyboardButton(
+                text=f'{const.DOC_EMOJI} Посмотреть документы',
+                callback_data=f'docs_{pet_id}'
+            )
+        )
     keyboard.add(*btns)
     if status_code == 'rework':
         keyboard.add(

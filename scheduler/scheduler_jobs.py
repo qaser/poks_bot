@@ -1,6 +1,8 @@
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from scheduler.scheduler_funcs import export_excel_month, export_excel_week, send_remainder, send_task_users_reminder
+from scheduler.scheduler_funcs import (export_excel_month, export_excel_week,
+                                       send_remainder,
+                                       send_task_users_reminder)
 from utils.constants import TIME_ZONE
 from utils.create_summary_docx import create_docx_file
 from utils.send_email import send_email

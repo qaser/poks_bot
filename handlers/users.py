@@ -1,17 +1,14 @@
 import time
 
 from aiogram import Dispatcher, types
-from aiogram.dispatcher import FSMContext
-from aiogram.types.message import ContentType
 from aiogram.dispatcher.filters import Text
 
-from config.bot_config import bot, dp
-from config.mongo_config import archive, groups, users, admins
-from config.telegram_config import MY_TELEGRAM_ID
-from handlers.emergency_stop import admin_check
-import utils.constants as const
-from utils.decorators import superuser_check
 import keyboards.for_users as kb
+import utils.constants as const
+from config.bot_config import dp
+from config.mongo_config import users
+from handlers.emergency_stop import admin_check
+from utils.decorators import superuser_check
 
 
 # обработка команды /users просмотр пользователей по КС

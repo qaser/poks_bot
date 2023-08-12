@@ -1,16 +1,14 @@
 from aiogram import Dispatcher, types
 from aiogram.dispatcher.filters import Text
+from aiogram.utils.exceptions import MessageCantBeEdited
 from bson.objectid import ObjectId
 
-from config.bot_config import bot, dp
-from config.mongo_config import admins, petitions, buffer, users, docs
-from utils.constants import KS
 import keyboards.for_review as kb
 import utils.constants as const
+from config.bot_config import bot, dp
+from config.mongo_config import admins, buffer, docs, petitions, users
+from utils.constants import KS
 from utils.decorators import admin_check, registration_check
-from aiogram.utils.exceptions import MessageCantBeEdited
-from aiogram.types.message import ContentType
-
 from utils.utils import get_creator
 
 
@@ -262,21 +260,6 @@ async def menu_back(call: types.CallbackQuery):
     _, level, _ = call.data.split('_')
     if level == 'ks':
         await user_or_admin(call.message)
-
-
-@dp.callback_query_handler(Text(startswith='doc_'))
-async def doc_sending(call: types.CallbackQuery):
-    _, pet_id = call.data.split('_')
-    queryset = list(docs.find({'pet_id': ObjectId(pet_id)}))
-    for file in queryset:
-        file_id = file.get('file_id')
-        file_type = file.get('file_type')
-        if file_type == 'photo':
-            await call.message.answer_photo(file_id)
-        elif file_type == 'video':
-            await call.message.answer_video(file_id)
-        elif file_type == 'document':
-            await call.message.answer_document(file_id)
 
 
 def register_handlers_review(dp: Dispatcher):
