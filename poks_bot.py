@@ -34,6 +34,16 @@ async def start_handler(message: types.Message):
 
 
 # обработка события - добавление бота в группу
+@dp.message_handler(content_types=['migrate_to_chat_id'])
+async def change_group_id(message: types.Message):
+    groups.find_one({'_id': message.chat.id,})
+    await bot.send_message(
+        chat_id=MY_TELEGRAM_ID,
+        text=f'Группу {message.chat.title} сделали супергруппой'
+    )
+
+
+# обработка события - добавление бота в группу
 @dp.message_handler(content_types=['new_chat_members'])
 async def add_bot_message(message: types.Message):
     bot_obj = await bot.get_me()
