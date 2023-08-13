@@ -23,9 +23,9 @@ def scheduler_jobs():
     scheduler.add_job(
         export_excel_week,
         'cron',
-        day_of_week='mon',
+        day_of_week='sun',
         hour=23,
-        minute=24,
+        minute=29,
         timezone=TIME_ZONE
     )
     scheduler.add_job(
@@ -33,7 +33,7 @@ def scheduler_jobs():
         'cron',
         day_of_week='sun',
         hour=23,  # изменив здесь время - измени его и в верхней задаче!!!!
-        minute=25,
+        minute=30,
         timezone=TIME_ZONE
     )
     scheduler.add_job(
