@@ -25,7 +25,6 @@ async def send_remainder():
                 chat_id=err.migrate_to_chat_id,
                 text=const.GROUP_REMAINDER
             )
-            # print(err.migrate_to_chat_id)
 
 
 async def send_task_users_reminder():
