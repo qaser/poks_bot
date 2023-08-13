@@ -36,22 +36,20 @@ async def start_handler(message: types.Message):
 # обработка события - добавление бота в группу
 @dp.message_handler(content_types=['migrate_to_chat_id'])
 async def change_group_id(message: types.Message):
-    print(message)
-    check = groups.find_one({'_id': message.migrate_to_chat_id})
-    print(check)
-    if check is None:
-        groups.insert_one(
-            {
-                '_id': message.migrate_to_chat_id,
-                'group_name': message.chat.title,
-                'sub_banned': 'false',
-            }
-        )
-        await bot.send_message(
-            chat_id=MY_TELEGRAM_ID,
-            text=f'Группу "{message.chat.title}" сделали супергруппой'
-        )
-        groups.delete_one({'_id': message.chat.id})
+    # check = groups.find_one({'_id': message.migrate_to_chat_id})
+    # if check is None:
+    #     groups.insert_one(
+    #         {
+    #             '_id': message.migrate_to_chat_id,
+    #             'group_name': message.chat.title,
+    #             'sub_banned': 'false',
+    #         }
+    #     )
+    await bot.send_message(
+        chat_id=MY_TELEGRAM_ID,
+        text=f'Группу "{message.chat.title}" сделали супергруппой'
+    )
+        # groups.delete_one({'_id': message.chat.id})
 
 
 # обработка события - добавление бота в группу
