@@ -8,6 +8,7 @@ from utils.create_summary_excel import create_summary_excel
 from utils.decorators import run_before
 from utils.get_mail import get_letters
 from utils.send_email import send_email
+from aiogram.utils.exceptions import BadRequest
 
 
 async def send_remainder():
@@ -19,8 +20,8 @@ async def send_remainder():
                 chat_id=int(id),
                 text=const.GROUP_REMAINDER
             )
-        except:
-            pass
+        except BadRequest as err:
+            print(err)
 
 
 async def send_task_users_reminder():
