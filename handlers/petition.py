@@ -16,6 +16,7 @@ from utils.utils import get_creator
 
 class Petition(StatesGroup):
     waiting_petition_text = State()
+    waiting_for_file = State()
 
 
 class EditPetition(StatesGroup):
@@ -72,13 +73,13 @@ async def ask_problem(call: types.CallbackQuery, state: FSMContext):
         text=(
             f'Вы выбрали направление <b>"{dir_name}"</b>\n\n'
             'Введите текст Вашего запроса/предложения/проблемы.\n\n'
-            'Сообщение будет отправлено специалисту по выбранному Вами направлению.'
-            # 'Если Вы передумали, то нажмите кнопку <b>Отмена</b>'
+            'Сообщение будет отправлено специалисту по выбранному Вами направлению.\n'
+            'Если Вы передумали, то нажмите кнопку <b>Отмена</b>'
         ),
-        # reply_markup=kb.cancel_kb(),
+        reply_markup=kb.cancel_kb(),
         parse_mode=types.ParseMode.HTML
     )
-    await state.update_data({'dir': dir, 'msg_id': call.message.message_id})
+    await state.update_data({'dir': dir, 'msg': call.message.message_id})
     await Petition.waiting_petition_text.set()
 
 
@@ -86,24 +87,63 @@ async def ask_confirmation(message: types.Message, state: FSMContext):
     await state.update_data({'text': message.text})
     data = await state.get_data()
     dir = data['dir']
-    msg = data['msg_id']
+    msg = data['msg']
     if 'many_ks' in data.keys():
         ks = data['ks']
         many_ks = data['many_ks']
         msg_id = buffer.insert_one({'text': message.text, 'ks': ks, 'many_ks': many_ks}).inserted_id
     else:
         msg_id = buffer.insert_one({'text': message.text}).inserted_id
-    await state.finish()
+    await state.update_data({'msg_id': msg_id})
     await message.answer(
-        text=f'Вы ввели следующий запрос:\n\n<i>"{message.text}"</i>\n\nОтправить?',
-        reply_markup=kb.send_kb(dir, msg_id),
+        text=(f'Вы ввели следующий запрос:\n\n<i>"{message.text}"</i>\n\n'
+              'Хотите прикрепить к сообщению документ или фотографию?'),
+        reply_markup=kb.upload_choose_kb(dir, msg_id),
         parse_mode=types.ParseMode.HTML
     )
     await bot.delete_message(chat_id=message.from_user.id, message_id=msg)
-    # await message.delete()
 
 
-@dp.callback_query_handler(filters.Text(startswith='ask_'))
+@dp.callback_query_handler(filters.Text(startswith='upload'), state='*')
+async def upload_file_from_user(call: types.CallbackQuery):
+    await call.message.edit_text(
+        text=('Отправьте фото, видео или документ формата .pdf\n\n'
+              'На данный момент можно отправить только один файл'),
+    )
+    await Petition.waiting_for_file.set()
+
+
+async def save_file_from_user(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    num_docs = data.get('num_docs', 0)
+    if num_docs < 1:
+        docs = data.get('docs', [])
+        dir = data['dir']
+        msg_id = data['msg_id']
+        if message.photo:
+            file, file_type = message.photo[-1], 'photo'
+        elif message.video:
+            file, file_type = message.video, 'video'
+        elif message.document:
+            if message.document.mime_type == 'application/pdf':
+                file, file_type = message.document, 'document'
+            else:
+                await message.answer('Отправьте пожалуйста документ формата .pdf')
+                return
+        else:
+            await message.answer(
+                text=('Данные не загружены. Отправьте пожалуйста фото, '
+                      'видео или документ формата .pdf')
+            )
+            return
+        docs.append((file.file_id, file_type))
+        await state.update_data({'docs': docs})
+        num_docs += 1
+        await state.update_data({'num_docs': num_docs})
+        await message.answer('Файл получен. Отправить?', reply_markup=kb.send_kb(dir, msg_id))
+
+
+@dp.callback_query_handler(filters.Text(startswith='ask_'), state='*')
 async def save_petition(call: types.CallbackQuery, state: FSMContext):
     _, action, dir, msg_id = call.data.split('_')
     msg = buffer.find_one({'_id': ObjectId(msg_id)})
@@ -119,7 +159,7 @@ async def save_petition(call: types.CallbackQuery, state: FSMContext):
         ks = msg['ks'] if 'many_ks' in msg.keys() else user.get('ks')
         username = user.get('username') if user is not None else 'Неизвестен'
         msg_text = msg.get('text')
-        pet_id= petitions.insert_one(
+        pet_id = petitions.insert_one(
             {
                 'date': date,
                 'user_id': user_id,
@@ -132,6 +172,15 @@ async def save_petition(call: types.CallbackQuery, state: FSMContext):
                 'answer': ''
             }
         ).inserted_id
+        data = await state.get_data()
+        docs_list = data.get('docs')
+        if docs_list is not None:
+            for doc in docs_list:
+                file_id, file_type = doc
+                docs.insert_one({'pet_id': str(pet_id), 'file_id': file_id, 'file_type': file_type})
+        buffer.delete_one({'_id': ObjectId(msg_id)})
+        await state.finish()
+        # time.sleep(2.5)
         await send_petition_to_admins(ks, date, username, msg_text, pet_id, dir)
         await call.message.edit_text(
             text=(
@@ -140,13 +189,11 @@ async def save_petition(call: types.CallbackQuery, state: FSMContext):
             ),
             parse_mode=types.ParseMode.HTML,
         )
-    buffer.delete_one({'_id': ObjectId(msg_id)})
-    await state.finish()
 
 
 async def send_petition_to_admins(ks, date, username, msg_text, pet_id, dir):
-    pet_docs = docs.find({'pet_id': pet_id})
-    num_docs = len(list(pet_docs)) if pet_docs is not None else 0
+    pet_docs = docs.find({'pet_id': str(pet_id)})
+    num_docs = len(list(pet_docs))if pet_docs is not None else 0
     for adm in list(admins.find({})):
         dirs = adm.get('directions')
         if dir in dirs:
@@ -270,7 +317,7 @@ async def answer_file_upload(message: types.Message, state: FSMContext):
     elif message.text.lower() == 'загрузить файл':
         await message.answer(
             text=('Отправьте фото, видео или документ формата .pdf\n\n'
-                  'Если необходимо, отправьте несколько файлов одним сообщением'),
+                  'На данный момент можно отправить только один файл'),
             reply_markup=types.ReplyKeyboardRemove()
         )
         await QuickAnswer.waiting_for_file.set()
@@ -278,26 +325,30 @@ async def answer_file_upload(message: types.Message, state: FSMContext):
 
 async def answer_file_save(message: types.Message, state: FSMContext):
     pet_data = await state.get_data()
-    pet_id = pet_data['pet_id']
-    if message.photo:
-        file, file_type = message.photo[-1], 'photo'
-    elif message.video:
-        file, file_type = message.video, 'video'
-    elif message.document:
-        if message.document.mime_type == 'application/pdf':
-            file, file_type = message.document, 'document'
+    num_docs = pet_data.get('num_docs', 0)
+    if num_docs < 1:
+        pet_id = pet_data.get('pet_id')
+        if message.photo:
+            file, file_type = message.photo[-1], 'photo'
+        elif message.video:
+            file, file_type = message.video, 'video'
+        elif message.document:
+            if message.document.mime_type == 'application/pdf':
+                file, file_type = message.document, 'document'
+            else:
+                await message.answer('Отправьте пожалуйста документ формата .pdf')
+                return
         else:
-            await message.answer('Отправьте пожалуйста документ формата .pdf')
+            await message.answer(
+                text=('Данные не загружены. Отправьте пожалуйста фото, '
+                    'видео или документ формата .pdf')
+            )
             return
-    else:
-        await message.answer(
-            text=('Данные не загружены. Отправьте пожалуйста фото, '
-                  'видео или документ формата .pdf')
-        )
-        return
-    docs.insert_one({'pet_id': pet_id, 'file_id': file.file_id, 'file_type': file_type})
-    await message.answer('Файл получен')
-    await send_quick_answer(message, state)
+        docs.insert_one({'pet_id': pet_id, 'file_id': file.file_id, 'file_type': file_type})
+        await message.answer('Файл получен')
+        num_docs += 1
+        await state.update_data(num_docs=num_docs)
+        await send_quick_answer(message, state)
 
 
 async def send_quick_answer(message, state):
@@ -407,7 +458,7 @@ async def save_edit_petition(message: types.Message, state: FSMContext):
         await state.finish()
 
 
-@dp.callback_query_handler(filters.Text(startswith='cancel'))
+@dp.callback_query_handler(filters.Text(startswith='cancel'), state='*')
 async def ask_cancel(call: types.CallbackQuery, state: FSMContext):
     await state.finish()
     await call.message.delete()
@@ -452,5 +503,10 @@ def register_handlers_petition(dp: Dispatcher):
     dp.register_message_handler(
         answer_file_save,
         state=QuickAnswer.waiting_for_file,
+        content_types=ContentType.ANY
+    )
+    dp.register_message_handler(
+        save_file_from_user,
+        state=Petition.waiting_for_file,
         content_types=ContentType.ANY
     )

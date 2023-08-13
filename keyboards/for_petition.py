@@ -48,6 +48,23 @@ def send_kb(dir, msg_id):
     return keyboard
 
 
+def upload_choose_kb(dir, msg_id):
+    keyboard = InlineKeyboardMarkup()
+    keyboard.add(
+        InlineKeyboardButton(
+            text=f'{const.DOC_EMOJI} Прикрепить файл',
+            callback_data=f'upload'
+        )
+    )
+    keyboard.add(
+        InlineKeyboardButton(
+            text=f'{const.SEND_EMOJI} Отправить без файла',
+            callback_data=f'ask_send_{dir}_{msg_id}'
+        )
+    )
+    return keyboard
+
+
 def status_kb(pet_id, status_code, num_docs):
     keyboard = InlineKeyboardMarkup()
     btn_rework = InlineKeyboardButton(

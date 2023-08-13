@@ -136,7 +136,7 @@ def status_kb(pet_id, status_code, job, num_docs):
             )
         )
     keyboard.add(*btns)
-    if status_code == 'rework':
+    if status_code == 'rework' and job != 'admin':
         keyboard.add(
             InlineKeyboardButton(
                 text=f'{const.EDIT_EMOJI} Редактировать запись',
