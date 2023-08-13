@@ -33,6 +33,18 @@ async def stop_subscribe(message: types.Message):
             upsert=False
         )
         await message.answer('Напоминания для этой группы отключены')
+    elif message.chat.type == 'supergroup':
+        group_check = groups.find_one({'group_name': message.chat.title})
+        if group_check is not None:
+            groups.delete_one({'_id': group_check['_id']})
+            groups.insert_one(
+                {
+                    '_id': message.chat.id,
+                    'group_name': message.chat.title,
+                    'sub_banned': 'true'
+                },
+            )
+            await message.answer('Напоминания для этой группы отключены')
     else:
         await message.answer(
             'Информации об этой группе не найдено.\n'
@@ -53,6 +65,18 @@ async def start_subscribe(message: types.Message):
             upsert=False
         )
         await message.answer('Напоминания для этой группы включены')
+    elif message.chat.type == 'supergroup':
+        group_check = groups.find_one({'group_name': message.chat.title})
+        if group_check is not None:
+            groups.delete_one({'_id': group_check['_id']})
+            groups.insert_one(
+                {
+                    '_id': message.chat.id,
+                    'group_name': message.chat.title,
+                    'sub_banned': 'false'
+                },
+            )
+            await message.answer('Напоминания для этой группы включены')
     else:
         await message.answer(
             text=('Информации об этой группе не найдено.\n'
