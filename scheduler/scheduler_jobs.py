@@ -16,24 +16,24 @@ def scheduler_jobs():
         send_remainder,
         'cron',
         day_of_week='mon-sun',
-        hour=22,
-        minute=29,
+        hour=18,
+        minute=0,
         timezone=TIME_ZONE
     )
     scheduler.add_job(
         export_excel_week,
         'cron',
         day_of_week='mon',
-        hour=8,
-        minute=29,
+        hour=23,
+        minute=24,
         timezone=TIME_ZONE
     )
     scheduler.add_job(
         send_email,
         'cron',
-        day_of_week='mon',
-        hour=8,  # изменив здесь время - измени его и в верхней задаче!!!!
-        minute=30,
+        day_of_week='sun',
+        hour=23,  # изменив здесь время - измени его и в верхней задаче!!!!
+        minute=25,
         timezone=TIME_ZONE
     )
     scheduler.add_job(

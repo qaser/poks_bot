@@ -20,7 +20,7 @@ from texts.initial import INITIAL_TEXT, MANUAL, NEW_GROUP_TEXT
 
 logging.basicConfig(
     filename='logs_bot.log',
-    level=logging.DEBUG,
+    level=logging.INFO,
     filemode='a',
     format='%(asctime)s - %(message)s',
     datefmt='%d.%m.%y %H:%M:%S',
