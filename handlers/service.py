@@ -18,7 +18,7 @@ async def reset_handler(message: types.Message, state: FSMContext):
         text='Текущее действие отменено',
         reply_markup=types.ReplyKeyboardRemove(),
     )
-    await bot.delete_message(message.chat.id, message.message_id)
+    await message.delete()
 
 
 # запрет на рассылку уведомлений
@@ -50,7 +50,7 @@ async def stop_subscribe(message: types.Message):
             'Информации об этой группе не найдено.\n'
             'Удалите бота из группы, а затем снова добавьте'
         )
-    await bot.delete_message(message.chat.id, message.message_id)
+    await message.delete()
 
 
 # включение рассылки уведомлений
@@ -82,7 +82,7 @@ async def start_subscribe(message: types.Message):
             text=('Информации об этой группе не найдено.\n'
                   'Удалите бота из группы, а затем снова добавьте')
         )
-    await bot.delete_message(message.chat.id, message.message_id)
+    await message.delete()
 
 
 # обработка команды /log

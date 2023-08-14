@@ -8,7 +8,7 @@ from utils.create_summary_excel import create_summary_excel
 from utils.decorators import run_before
 from utils.get_mail import get_letters
 from utils.send_email import send_email
-from aiogram.utils.exceptions import MigrateToChat
+from aiogram.utils.exceptions import MigrateToChat, ChatNotFound, Unauthorized
 
 
 async def send_remainder():
@@ -16,15 +16,25 @@ async def send_remainder():
     for group in queryset:
         id = group.get('_id')
         try:
-            await bot.send_message(
-                chat_id=int(id),
-                text=const.GROUP_REMAINDER
-            )
+            await bot.send_message(chat_id=int(id), text=const.GROUP_REMAINDER)
         except MigrateToChat as err:
-            await bot.send_message(
-                chat_id=err.migrate_to_chat_id,
-                text=const.GROUP_REMAINDER
+            groups.delete_one({'_id': id})
+            groups.insert_one(
+                {
+                    '_id': err.migrate_to_chat_id,
+                    'group_name': group.get('group_name'),
+                    'sub_banned': 'false',
+                }
             )
+            try:
+                await bot.send_message(
+                    chat_id=err.migrate_to_chat_id,
+                    text=const.GROUP_REMAINDER
+                )
+            except (ChatNotFound, Unauthorized):
+                groups.delete_one({'_id': err.migrate_to_chat_id})
+        except (ChatNotFound, Unauthorized) as err:
+            groups.delete_one({'_id': id})
 
 
 async def send_task_users_reminder():

@@ -13,7 +13,7 @@ def admin_check(f):
         func_args = inspect.getcallargs(f, *args, **kwargs)
         post = func_args['message']
         if admins.find_one({'user_id': post.from_user.id}) is None:
-            await bot.delete_message(chat_id=post.from_user.id, message_id=post.message_id)
+            # await bot.delete_message(chat_id=post.chat.id, message_id=post.message_id)
             try:
                 await bot.send_message(post.from_user.id, 'Вам не доступна эта команда')
             except:
