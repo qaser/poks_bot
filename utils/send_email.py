@@ -11,7 +11,7 @@ from config.mail_config import (CC_MAIL, MAIL_LOGIN, MAIL_PASS, PORT,
                                 SMTP_MAIL_SERVER, TO_MAIL, CC_MAIL_2)
 
 
-async def send_email(emails):
+async def send_email():
     # формируем тело письма
     msg = MIMEMultipart()
     msg["From"] = MAIL_LOGIN
