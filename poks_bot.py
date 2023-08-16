@@ -17,6 +17,7 @@ from handlers.service import register_handlers_service
 from handlers.users import register_handlers_users
 from scheduler.scheduler_jobs import scheduler, scheduler_jobs
 from texts.initial import INITIAL_TEXT, MANUAL, NEW_GROUP_TEXT
+from utils.create_summary_excel import create_summary_excel
 
 logging.basicConfig(
     filename='logs_bot.log',
@@ -33,6 +34,12 @@ async def start_handler(message: types.Message):
     await message.answer(text=INITIAL_TEXT)
 
 
+@dp.message_handler(commands=['excel'])
+async def excel_handler(message: types.Message):
+    create_summary_excel('week')
+
+
+# обработка события - добавление бота в группу
 @dp.message_handler(content_types=['migrate_to_chat_id'])
 async def change_group_id(message: types.Message):
     is_banned = groups.find_one({'_id': message.chat.id}).get('sub_banned')

@@ -26,6 +26,7 @@ def create_summary_excel(period):
     worksheet.title = 'Отчет по проблемным вопросам'
     columns = [
         ('№ п/п', 5),
+        ('КС', 40),
         ('Направление', 30),
         ('Дата', 20),
         ('Содержание вопроса', 125),
@@ -65,23 +66,24 @@ def create_summary_excel(period):
         elif period == 'month':
             title = 'Отчет по проблемным вопросам филиалов по направлению ПОпоЭКС'
             pipeline = {'ks': ks, 'status': {'$in': ['inwork', 'create', 'rework', 'finish', 'delete']}}
-        queryset = list(petitions.find(pipeline).sort([('status', 1), ('directions', 1)]))
+        queryset = list(petitions.find(pipeline).sort([('ks', 1), ('status', 1), ('directions', 1)]))
         num_petitions = len(queryset)
         if num_petitions == 0:
             continue
-        row_num += 1
-        worksheet.merge_cells(start_column=1, start_row=row_num, end_column=len(columns), end_row=row_num)
-        ks_cell = worksheet.cell(row=row_num, column=1)
-        ks_cell.value = ks
-        ks_cell.alignment = centered_alignment
-        ks_cell.fill = PatternFill(start_color='B5B8B1', end_color='B5B8B1', fill_type='solid')
-        ks_cell.border = thin_border
+        # row_num += 1
+        # worksheet.merge_cells(start_column=1, start_row=row_num, end_column=len(columns), end_row=row_num)
+        # ks_cell = worksheet.cell(row=row_num, column=1)
+        # ks_cell.value = ks
+        # ks_cell.alignment = centered_alignment
+        # ks_cell.fill = PatternFill(start_color='B5B8B1', end_color='B5B8B1', fill_type='solid')
+        # ks_cell.border = thin_border
         for num, pet in enumerate(queryset):
             row_num += 1
             status = pet.get('status')
             color = const.PETITION_COLOR[status]
             row = [
                 str(num + 1),
+                ks,
                 const.DIRECTIONS_CODES[pet.get('direction')],
                 pet.get('date').strftime('%d.%m.%Y %H:%M'),
                 pet.get('text'),

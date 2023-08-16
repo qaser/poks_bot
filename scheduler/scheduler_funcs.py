@@ -31,6 +31,7 @@ async def send_remainder():
                 )
             except DuplicateKeyError as e:
                 logging.exception(f'Исключение сработало {e}')
+                pass
             try:
                 await bot.send_message(
                     chat_id=err.migrate_to_chat_id,
