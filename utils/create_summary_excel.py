@@ -70,13 +70,6 @@ def create_summary_excel(period):
         num_petitions = len(queryset)
         if num_petitions == 0:
             continue
-        # row_num += 1
-        # worksheet.merge_cells(start_column=1, start_row=row_num, end_column=len(columns), end_row=row_num)
-        # ks_cell = worksheet.cell(row=row_num, column=1)
-        # ks_cell.value = ks
-        # ks_cell.alignment = centered_alignment
-        # ks_cell.fill = PatternFill(start_color='B5B8B1', end_color='B5B8B1', fill_type='solid')
-        # ks_cell.border = thin_border
         for num, pet in enumerate(queryset):
             row_num += 1
             status = pet.get('status')

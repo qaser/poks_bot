@@ -8,10 +8,10 @@ import utils.constants as const
 from config.telegram_config import MY_TELEGRAM_ID
 from config.bot_config import bot
 from config.mail_config import (CC_MAIL, MAIL_LOGIN, MAIL_PASS, PORT,
-                                SMTP_MAIL_SERVER, TO_MAIL)
+                                SMTP_MAIL_SERVER, TO_MAIL, CC_MAIL_2)
 
 
-async def send_email():
+async def send_email(emails):
     # формируем тело письма
     msg = MIMEMultipart()
     msg["From"] = MAIL_LOGIN
@@ -19,8 +19,8 @@ async def send_email():
     msg["Date"] = formatdate(localtime=True)
     msg.attach(MIMEText(const.MAIL_TEXT))
     msg["To"] = ', '.join([TO_MAIL])
-    msg["cc"] = ', '.join([CC_MAIL])
-    emails = [TO_MAIL] + [CC_MAIL]
+    msg["cc"] = ', '.join([CC_MAIL, CC_MAIL_2])
+    emails = [TO_MAIL] + [CC_MAIL] + [CC_MAIL_2]
     f_path = 'static/docs_email/Сводный перечень вопросов.xlsx'
     try:
         with open(f_path, 'rb') as f:
