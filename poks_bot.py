@@ -15,6 +15,7 @@ from handlers.registration import register_handlers_registration
 from handlers.review import register_handlers_review
 from handlers.service import register_handlers_service
 from handlers.users import register_handlers_users
+from handlers.mail import register_handlers_mail
 from scheduler.scheduler_jobs import scheduler, scheduler_jobs
 from texts.initial import INITIAL_TEXT, MANUAL, NEW_GROUP_TEXT
 
@@ -125,4 +126,5 @@ if __name__ == '__main__':
     register_handlers_admin(dp)
     register_handlers_users(dp)
     register_handlers_help(dp)
+    register_handlers_mail(dp)
     executor.start_polling(dp, skip_updates=True, on_startup=on_startup)
