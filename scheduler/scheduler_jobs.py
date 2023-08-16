@@ -28,14 +28,14 @@ def scheduler_jobs():
         minute=29,
         timezone=TIME_ZONE
     )
-    scheduler.add_job(
-        send_email,
-        'cron',
-        day_of_week='mon',
-        hour=8,  # изменив здесь время - измени его и в верхней задаче!!!!
-        minute=30,
-        timezone=TIME_ZONE
-    )
+    # scheduler.add_job(
+    #     send_email,
+    #     'cron',
+    #     day_of_week='mon',
+    #     hour=8,  # изменив здесь время - измени его и в верхней задаче!!!!
+    #     minute=30,
+    #     timezone=TIME_ZONE
+    # )
     scheduler.add_job(
         export_excel_month,
         'cron',
@@ -44,14 +44,14 @@ def scheduler_jobs():
         minute=59,
         timezone=TIME_ZONE
     )
-    scheduler.add_job(
-        send_email,
-        'cron',
-        day=1,
-        hour=9,
-        minute=0,
-        timezone=TIME_ZONE
-    )
+    # scheduler.add_job(
+    #     send_email,
+    #     'cron',
+    #     day=1,
+    #     hour=9,
+    #     minute=0,
+    #     timezone=TIME_ZONE
+    # )
     scheduler.add_job(
         send_task_users_reminder,
         'cron',

@@ -11,16 +11,15 @@ from config.mail_config import (CC_MAIL, MAIL_LOGIN, MAIL_PASS, PORT,
                                 SMTP_MAIL_SERVER, TO_MAIL, CC_MAIL_2)
 
 
-async def send_email():
+async def send_email(emails, user_id=MY_TELEGRAM_ID):
     # формируем тело письма
     msg = MIMEMultipart()
     msg["From"] = MAIL_LOGIN
     msg["Subject"] = const.MAIL_SUBJECT
     msg["Date"] = formatdate(localtime=True)
     msg.attach(MIMEText(const.MAIL_TEXT))
-    msg["To"] = ', '.join([TO_MAIL])
-    msg["cc"] = ', '.join([CC_MAIL, CC_MAIL_2])
-    emails = [TO_MAIL] + [CC_MAIL] + [CC_MAIL_2]
+    msg["To"] = ', '.join(emails)
+    msg["cc"] = ''
     f_path = 'static/docs_email/Сводный перечень вопросов.xlsx'
     try:
         with open(f_path, 'rb') as f:
@@ -40,7 +39,7 @@ async def send_email():
         smtp.sendmail(MAIL_LOGIN, emails, msg.as_string())
         smtp.close()
         await bot.send_message(
-            chat_id=MY_TELEGRAM_ID,
+            chat_id=user_id,
             text='Письмо успешно отправлено'
         )
     except smtplib.SMTPException as err:
