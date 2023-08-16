@@ -19,16 +19,16 @@ async def mail_handler(message: types.Message):
         email = admin.get('mail')
         if email is not None:
             create_summary_excel('week')
-            await message.answer('Запрос получен, ожидайте')
+            msg = await message.answer('Запрос получен, ожидайте')
             time.sleep(5.0)
             await send_email(emails=[email], user_id=admin.get('user_id'))
+            try:
+                await bot.delete_message(chat_id=user_id, message_id=msg.message_id)
+            except:
+                pass
         else:
             await message.answer('Информации о Вашем адресе email не найдено')
     await message.delete()
-
-
-    # await bot.send_message(chat_id=MY_TELEGRAM_ID, text=emails)
-    # await send_email(emails)
 
 
 def register_handlers_mail(dp: Dispatcher):

@@ -67,17 +67,9 @@ async def check_mailbox():
         await get_letters(imap)
 
 
-async def export_excel_week():
-    create_summary_excel('week')
-
-
-async def export_excel_month():
-    create_summary_excel('month')
-
-
 async def send_mail_summary(period):
     queryset = list(admins.find({}))
     emails = list(set([admin.get('mail') for admin in queryset if admin.get('mail') is not None]))
     create_summary_excel(period)
     sleep(5.0)
-    await send_email(['dangerexit@gmail.com', 'huji@mail.ru'], user_id=MY_TELEGRAM_ID)
+    await send_email(emails, user_id=MY_TELEGRAM_ID)

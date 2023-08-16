@@ -23,9 +23,9 @@ def scheduler_jobs():
     scheduler.add_job(
         send_mail_summary,
         'cron',
-        day_of_week='wed',
-        hour=23,
-        minute=15,
+        day_of_week='mon',
+        hour=8,
+        minute=30,
         timezone=TIME_ZONE,
         args=['week']
     )

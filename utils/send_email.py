@@ -1,14 +1,13 @@
 import smtplib
-from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
+from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import formatdate
 
 import utils.constants as const
-from config.telegram_config import MY_TELEGRAM_ID
 from config.bot_config import bot
-from config.mail_config import (CC_MAIL, MAIL_LOGIN, MAIL_PASS, PORT,
-                                SMTP_MAIL_SERVER, TO_MAIL, CC_MAIL_2)
+from config.mail_config import MAIL_LOGIN, MAIL_PASS, PORT, SMTP_MAIL_SERVER
+from config.telegram_config import MY_TELEGRAM_ID
 
 
 async def send_email(emails, user_id=MY_TELEGRAM_ID):
