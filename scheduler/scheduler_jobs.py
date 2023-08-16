@@ -1,6 +1,6 @@
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from scheduler.scheduler_funcs import (export_excel_month, export_excel_week,
+from scheduler.scheduler_funcs import (export_excel_month, export_excel_week, send_mail_summary,
                                        send_remainder,
                                        send_task_users_reminder)
 from utils.constants import TIME_ZONE
@@ -21,37 +21,23 @@ def scheduler_jobs():
         timezone=TIME_ZONE
     )
     scheduler.add_job(
-        export_excel_week,
+        send_mail_summary,
         'cron',
-        day_of_week='mon',
-        hour=8,
-        minute=29,
-        timezone=TIME_ZONE
+        day_of_week='wed',
+        hour=23,
+        minute=0,
+        timezone=TIME_ZONE,
+        args=['week']
     )
-    # scheduler.add_job(
-    #     send_email,
-    #     'cron',
-    #     day_of_week='mon',
-    #     hour=8,  # изменив здесь время - измени его и в верхней задаче!!!!
-    #     minute=30,
-    #     timezone=TIME_ZONE
-    # )
     scheduler.add_job(
-        export_excel_month,
+        send_mail_summary,
         'cron',
         day=1,
         hour=8,
-        minute=59,
-        timezone=TIME_ZONE
+        minute=31,
+        timezone=TIME_ZONE,
+        args=['month']
     )
-    # scheduler.add_job(
-    #     send_email,
-    #     'cron',
-    #     day=1,
-    #     hour=9,
-    #     minute=0,
-    #     timezone=TIME_ZONE
-    # )
     scheduler.add_job(
         send_task_users_reminder,
         'cron',

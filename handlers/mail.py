@@ -26,8 +26,7 @@ async def mail_handler(message: types.Message):
             await message.answer('Информации о Вашем адресе email не найдено')
     await message.delete()
 
-    # queryset = list(admins.find({}))
-    # emails = [admin.get('mail') for admin in queryset if admin.get('mail') is not None]
+
     # await bot.send_message(chat_id=MY_TELEGRAM_ID, text=emails)
     # await send_email(emails)
 

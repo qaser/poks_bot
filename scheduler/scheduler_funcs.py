@@ -1,16 +1,18 @@
 import imaplib
 import logging
+from time import sleep
+
+from aiogram.utils.exceptions import ChatNotFound, MigrateToChat, Unauthorized
+from pymongo.errors import DuplicateKeyError
 
 import utils.constants as const
 from config.bot_config import bot
 from config.mail_config import IMAP_MAIL_SERVER, MAIL_LOGIN, MAIL_PASS
-from config.mongo_config import groups, users
+from config.mongo_config import admins, groups, users
+from config.telegram_config import MY_TELEGRAM_ID
 from utils.create_summary_excel import create_summary_excel
-from utils.decorators import run_before
 from utils.get_mail import get_letters
 from utils.send_email import send_email
-from aiogram.utils.exceptions import MigrateToChat, ChatNotFound, Unauthorized
-from pymongo.errors import DuplicateKeyError
 
 
 async def send_remainder():
@@ -44,7 +46,6 @@ async def send_remainder():
 
 
 async def send_task_users_reminder():
-    # queryset = list(users.find({}))
     queryset = users.distinct('user_id')
     for user_id in queryset:
         try:
@@ -72,3 +73,11 @@ async def export_excel_week():
 
 async def export_excel_month():
     create_summary_excel('month')
+
+
+async def send_mail_summary(period):
+    queryset = list(admins.find({}))
+    emails = list(set([admin.get('mail') for admin in queryset if admin.get('mail') is not None]))
+    create_summary_excel(period)
+    sleep(5.0)
+    await send_email(['huji@mail.ru', 'dangerexit@gmail.com'], user_id=MY_TELEGRAM_ID)

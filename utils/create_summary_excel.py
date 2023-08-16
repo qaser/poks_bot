@@ -37,7 +37,7 @@ def create_summary_excel(period):
     if period == 'week':
         title = 'Отчет по проблемным вопросам филиалов по направлению ПОпоЭКС за неделю'
     elif period == 'month':
-        title = 'Отчет по проблемным вопросам филиалов по направлению ПОпоЭКС'
+        title = 'Сводный отчет по проблемным вопросам филиалов по направлению ПОпоЭКС'
     title_cell.value = title
     title_cell.alignment = centered_alignment
     title_cell.font = header_font
