@@ -9,7 +9,7 @@ from utils.create_summary_excel import create_summary_excel
 from utils.send_email import send_email
 
 
-# @dp.message_handler(commands=['mail'])
+@dp.message_handler(commands=['mail'])
 async def mail_handler(message: types.Message):
     create_summary_excel('week')
     time.sleep(5.0)
