@@ -33,7 +33,6 @@ async def start_handler(message: types.Message):
     await message.answer(text=INITIAL_TEXT)
 
 
-# обработка события - добавление бота в группу
 @dp.message_handler(content_types=['migrate_to_chat_id'])
 async def change_group_id(message: types.Message):
     is_banned = groups.find_one({'_id': message.chat.id}).get('sub_banned')
