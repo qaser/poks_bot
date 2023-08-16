@@ -80,4 +80,4 @@ async def send_mail_summary(period):
     emails = list(set([admin.get('mail') for admin in queryset if admin.get('mail') is not None]))
     create_summary_excel(period)
     sleep(5.0)
-    await send_email(['huji@mail.ru', 'dangerexit@gmail.com'], user_id=MY_TELEGRAM_ID)
+    await send_email(['dangerexit@gmail.com', 'huji@mail.ru'], user_id=MY_TELEGRAM_ID)

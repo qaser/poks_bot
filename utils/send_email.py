@@ -19,7 +19,6 @@ async def send_email(emails, user_id=MY_TELEGRAM_ID):
     msg["Date"] = formatdate(localtime=True)
     msg.attach(MIMEText(const.MAIL_TEXT))
     msg["To"] = ', '.join(emails)
-    msg["cc"] = ''
     f_path = 'static/docs_email/Сводный перечень вопросов.xlsx'
     try:
         with open(f_path, 'rb') as f:

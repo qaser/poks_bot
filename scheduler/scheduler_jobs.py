@@ -25,7 +25,7 @@ def scheduler_jobs():
         'cron',
         day_of_week='wed',
         hour=23,
-        minute=0,
+        minute=15,
         timezone=TIME_ZONE,
         args=['week']
     )
