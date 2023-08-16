@@ -1,11 +1,9 @@
-from aiogram import types, Dispatcher
-from aiogram.utils import executor
+from aiogram import Dispatcher, types
 
 from config.bot_config import bot, dp
-from scheduler.scheduler_jobs import scheduler, scheduler_jobs
+from config.mongo_config import admins, users
 from texts.initial import HELP_ADMIN, HELP_USER
 from utils.decorators import registration_check
-from config.mongo_config import admins, users
 
 
 @registration_check
@@ -23,7 +21,7 @@ async def help_handler(message: types.Message):
             await bot.send_message(
                 user_id,
                 ('Вы не зарегистрированы в системе.\n'
-                    'Вам не доступна эта команда')
+                 'Вам не доступна эта команда')
             )
     await message.delete()
 

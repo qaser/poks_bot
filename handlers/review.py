@@ -8,7 +8,6 @@ import utils.constants as const
 from config.bot_config import bot, dp
 from config.mongo_config import admins, buffer, docs, petitions, users
 from utils.constants import KS
-from utils.decorators import admin_check, registration_check
 from utils.utils import get_creator
 
 

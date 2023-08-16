@@ -2,11 +2,10 @@ from aiogram import Dispatcher, types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 
-from config.bot_config import dp, bot
+import utils.constants as const
+from config.bot_config import bot, dp
 from config.mongo_config import admins
 from config.telegram_config import MY_TELEGRAM_ID
-import utils.constants as const
-from aiogram.dispatcher import filters
 
 
 class Admin(StatesGroup):

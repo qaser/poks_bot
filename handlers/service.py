@@ -29,7 +29,7 @@ async def stop_subscribe(message: types.Message):
     if group_check is not None:
         groups.update_one(
             {'_id': group_id},
-            {'$set': {'sub_banned': 'true',}},
+            {'$set': {'sub_banned': 'true'}},
             upsert=False
         )
         await message.answer('Напоминания для этой группы отключены')
@@ -88,7 +88,7 @@ async def start_subscribe(message: types.Message):
 # обработка команды /log
 @superuser_check
 async def send_logs(message: types.Message):
-    file = f'logs_bot.log'
+    file = 'logs_bot.log'
     with open(file, 'rb') as f:
         content = f.read()
         await bot.send_document(chat_id=MY_TELEGRAM_ID, document=content)

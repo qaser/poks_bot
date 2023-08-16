@@ -3,11 +3,11 @@ import datetime as dt
 from aiogram import Dispatcher, types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
+from aiogram.utils.exceptions import BotBlocked, CantInitiateConversation
 
 from config.bot_config import bot, dp
 from config.mongo_config import emergency_stops, users
 from utils.constants import KS
-from aiogram.utils.exceptions import CantInitiateConversation, BotBlocked
 from utils.decorators import admin_check
 
 
@@ -100,16 +100,16 @@ async def confirmation(message: types.Message, state: FSMContext):
             if zamnach_gks is None:
                 await message.answer(
                     text=(f'Бот не может отправить сообщение пользователю "{username}".\n'
-                        'Вероятно пользователь заблокировал бота.\n'
-                        'Информация о заместителе отсутствует в БД.\n'
-                        'Свяжитесь с пользователем, а потом повторите попытку.'),
+                          'Вероятно пользователь заблокировал бота.\n'
+                          'Информация о заместителе отсутствует в БД.\n'
+                          'Свяжитесь с пользователем, а потом повторите попытку.'),
                     reply_markup=types.ReplyKeyboardRemove()
                 )
             else:
                 await message.answer(
                     text=(f'Бот не может отправить сообщение пользователю "{username}".\n'
-                        'Вероятно пользователь заблокировал бота.\n'
-                        'Пытаюсь отправить его заместителю...'),
+                          'Вероятно пользователь заблокировал бота.\n'
+                          'Пытаюсь отправить его заместителю...'),
                     reply_markup=types.ReplyKeyboardRemove()
                 )
                 try:
@@ -125,8 +125,8 @@ async def confirmation(message: types.Message, state: FSMContext):
                 except (CantInitiateConversation, BotBlocked):
                     await message.answer(
                         text=(f'Бот не может отправить сообщение пользователю "{username}".\n'
-                            'Вероятно пользователь заблокировал бота.\n'
-                            'Свяжитесь с пользователем, а потом повторите попытку.'),
+                              'Вероятно пользователь заблокировал бота.\n'
+                              'Свяжитесь с пользователем, а потом повторите попытку.'),
                         reply_markup=types.ReplyKeyboardRemove()
                     )
                     await state.finish()
@@ -140,10 +140,6 @@ async def confirmation(message: types.Message, state: FSMContext):
 
 
 def register_handlers_emergency(dp: Dispatcher):
-    # dp.register_message_handler(
-    #     emergency_start,
-    #     commands='ao'
-    # )
     dp.register_message_handler(
         station_name,
         state=Emergency.waiting_station_name

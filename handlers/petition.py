@@ -28,7 +28,6 @@ class QuickAnswer(StatesGroup):
     waiting_for_text = State()
     waiting_for_choose = State()
     waiting_for_file = State()
-    # waiting_for_confirm = State()
 
 
 # точка входа командой /task
@@ -256,12 +255,12 @@ async def change_status(call: types.CallbackQuery):
                     await bot.send_message(
                         chat_id=user_id,
                         text=(f'Статус Вашей записи изменён специалистом ПОпоЭКС: {creator_name}.\n\n'
-                            f'"{msg_text}"\n\nНовый статус: {status_emoji} {status}\n\n'
-                            f'Возможно специалисту ПОпоЭКС не понятен Ваш запрос '
-                            'из-за формулировки или Вы ошиблись адресатом.\n'
-                            'Вы можете изменить текст или удалить запись в архив, '
-                            'а затем создать новый запрос'),
-                            reply_markup=kb.edit_kb(pet_id)
+                              f'"{msg_text}"\n\nНовый статус: {status_emoji} {status}\n\n'
+                              f'Возможно специалисту ПОпоЭКС не понятен Ваш запрос '
+                              'из-за формулировки или Вы ошиблись адресатом.\n'
+                              'Вы можете изменить текст или удалить запись в архив, '
+                              'а затем создать новый запрос'),
+                        reply_markup=kb.edit_kb(pet_id)
                     )
                 elif new_status == 'create':
                     dir = pet.get('direction')
@@ -270,7 +269,7 @@ async def change_status(call: types.CallbackQuery):
                     await bot.send_message(
                         chat_id=user_id,
                         text=(f'Статус Вашей записи изменён специалистом ПОпоЭКС: {creator_name}.\n\n'
-                            f'"{msg_text}"\n\nНовый статус: {status_emoji} {status}')
+                              f'"{msg_text}"\n\nНовый статус: {status_emoji} {status}')
                     )
             except (CantInitiateConversation, BotBlocked):
                 pass  # тут нужно отправить другому юзеру той же станции
@@ -281,10 +280,10 @@ async def change_status(call: types.CallbackQuery):
             chat_id=call.message.chat.id,
             message_id=call.message.message_id,
             text=(f'{warning_text}Запись от <b>{ks}</b>\n'
-                f'Дата: <b>{date}</b>\n'
-                f'Автор: <b>{username}</b>\n'
-                f'Статус: {status_emoji} <b>{status}</b>\n'
-                f'Документы: <b>{num_docs} шт.</b>\n\n{msg_text}'),
+                  f'Дата: <b>{date}</b>\n'
+                  f'Автор: <b>{username}</b>\n'
+                  f'Статус: {status_emoji} <b>{status}</b>\n'
+                  f'Документы: <b>{num_docs} шт.</b>\n\n{msg_text}'),
             parse_mode=types.ParseMode.HTML,
         )
 
@@ -341,7 +340,7 @@ async def answer_file_save(message: types.Message, state: FSMContext):
         else:
             await message.answer(
                 text=('Данные не загружены. Отправьте пожалуйста фото, '
-                    'видео или документ формата .pdf')
+                      'видео или документ формата .pdf')
             )
             return
         docs.insert_one({'pet_id': pet_id, 'file_id': file.file_id, 'file_type': file_type})

@@ -1,5 +1,3 @@
-import time
-
 from aiogram import Dispatcher, types
 from aiogram.dispatcher.filters import Text
 
@@ -8,7 +6,6 @@ import utils.constants as const
 from config.bot_config import dp
 from config.mongo_config import users
 from handlers.emergency_stop import admin_check
-from utils.decorators import superuser_check
 
 
 # обработка команды /users просмотр пользователей по КС

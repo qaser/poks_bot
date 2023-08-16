@@ -10,15 +10,14 @@ from handlers.admin import register_handlers_admin
 from handlers.bugs import register_handlers_bugs
 from handlers.emergency_stop import register_handlers_emergency
 from handlers.help import register_handlers_help
+from handlers.mail import register_handlers_mail
 from handlers.petition import register_handlers_petition
 from handlers.registration import register_handlers_registration
 from handlers.review import register_handlers_review
 from handlers.service import register_handlers_service
 from handlers.users import register_handlers_users
-from handlers.mail import register_handlers_mail
 from scheduler.scheduler_jobs import scheduler, scheduler_jobs
 from texts.initial import INITIAL_TEXT, MANUAL, NEW_GROUP_TEXT
-
 
 logging.basicConfig(
     filename='logs_bot.log',

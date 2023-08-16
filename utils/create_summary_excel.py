@@ -1,7 +1,8 @@
+import datetime as dt
+
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
-import datetime as dt
 
 import utils.constants as const
 from config.mongo_config import petitions

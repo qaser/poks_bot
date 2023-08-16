@@ -1,13 +1,11 @@
-from math import ceil
-
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Mm, Pt
 
-from config.mongo_config import petitions
 import utils.constants as const
+from config.mongo_config import petitions
 
 
 def set_cell_color(cell, color):
