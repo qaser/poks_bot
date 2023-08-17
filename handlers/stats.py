@@ -10,7 +10,7 @@ from utils.decorators import admin_check
 async def stats_handler(message: types.Message):
     if message.chat.type == 'private':
         res_text = ''
-        count_ao = emergency_stops.count_documents()
+        count_ao = emergency_stops.count_documents({})
         pipeline = [
             {'$group': {'_id': '$station', 'count': {'$sum': 1}}},
             {'$sort': { 'station': 1}}
