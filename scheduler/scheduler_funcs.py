@@ -17,10 +17,22 @@ from utils.send_email import send_email
 
 async def send_remainder():
     queryset = list(groups.find({'sub_banned': 'false'}))
+    num_groups = groups.count_documents({'sub_banned': 'false'})
+    await bot.send_message(
+        chat_id=MY_TELEGRAM_ID,
+        text=f'Всего отслеживается групп: {num_groups}'
+    )
+    count_groups = 0
     for group in queryset:
         id = group.get('_id')
+        name = group.get('group_name')
         try:
             await bot.send_message(chat_id=int(id), text=const.GROUP_REMAINDER)
+            await bot.send_message(
+                chat_id=MY_TELEGRAM_ID,
+                text=f'Группе "{name}" отправлено напоминание'
+            )
+            count_groups = count_groups + 1
         except MigrateToChat as err:
             groups.delete_one({'_id': id})
             try:
@@ -39,10 +51,28 @@ async def send_remainder():
                     chat_id=err.migrate_to_chat_id,
                     text=const.GROUP_REMAINDER
                 )
+                await bot.send_message(
+                    chat_id=MY_TELEGRAM_ID,
+                    text=f'Группе "{name}" отправлено напоминание'
+                )
+                count_groups = count_groups + 1
             except (ChatNotFound, Unauthorized):
                 groups.delete_one({'_id': err.migrate_to_chat_id})
+                await bot.send_message(
+                    chat_id=MY_TELEGRAM_ID,
+                    text=f'Группа "{name}" удалена или удален бот'
+                )
         except (ChatNotFound, Unauthorized) as err:
             groups.delete_one({'_id': id})
+            await bot.send_message(
+                chat_id=MY_TELEGRAM_ID,
+                text=f'Группа "{name}" удалена или удален бот'
+            )
+    await bot.send_message(
+        chat_id=MY_TELEGRAM_ID,
+        text=('Задача рассылки уведомлений завершена.\n'
+              f'Всего обработано групп: {count_groups}')
+    )
 
 
 async def send_task_users_reminder():
