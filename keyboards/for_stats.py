@@ -18,4 +18,10 @@ def sort_kb(sort_param):
                 callback_data='sort_ks'
             )
         )
+    keyboard.add(
+        InlineKeyboardButton(
+            text=f'{const.UNDONE_EMOJI} Закрыть',
+            callback_data='cancel'
+        )
+    )
     return keyboard
