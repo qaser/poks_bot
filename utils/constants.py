@@ -18,6 +18,7 @@ EDIT_EMOJI = emoji.emojize(':pencil:')
 SEND_EMOJI = emoji.emojize(':envelope:')
 SCROLL_EMOJI = emoji.emojize(':orange_book:')
 GROUP_EMOJI = emoji.emojize(':closed_mailbox_with_raised_flag:')
+SORT_EMOJI = emoji.emojize(':chart_increasing:')
 
 KS = [
     'Бобровская КС',

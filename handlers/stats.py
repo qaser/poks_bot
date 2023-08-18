@@ -3,6 +3,7 @@ from aiogram import Dispatcher, types
 from config.bot_config import dp
 from config.mongo_config import emergency_stops
 from utils.decorators import admin_check
+import keyboards.for_stats as kb
 
 
 @admin_check
@@ -23,7 +24,10 @@ async def stats_handler(message: types.Message):
             res_text = f'{res_text}{station_text}'
         summary_text = f'Всего ботом учтено АО(ВНО): {count_ao}\n\n{res_text}'
         await message.delete()
-        await message.answer(summary_text)
+        await message.answer(
+            summary_text,
+            reply_markup=kb.sort_kb('ks')
+        )
 
 
 def register_handlers_stats(dp: Dispatcher):

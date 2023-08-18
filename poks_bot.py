@@ -9,6 +9,7 @@ from callbacks.new import register_callbacks_new
 from callbacks.cancel import register_callbacks_cancel
 from callbacks.docs import register_callbacks_docs
 from callbacks.edit import register_callbacks_edit
+from callbacks.sort import register_callbacks_sort
 from callbacks.status import register_callbacks_status
 from config.bot_config import bot, dp
 from config.mongo_config import groups
@@ -42,7 +43,7 @@ async def start_handler(message: types.Message):
     await message.answer(text=INITIAL_TEXT)
 
 
-# обработка события - добавление бота в группу
+# обработка события - супергруппа
 @dp.message_handler(content_types=['migrate_to_chat_id'])
 async def change_group_id(message: types.Message):
     is_banned = groups.find_one({'_id': message.chat.id}).get('sub_banned')
@@ -100,7 +101,7 @@ async def add_bot_message(message: types.Message):
         pass
 
 
-# удаление сервисного сообщения 'пользователь удалён'
+# удаление сервисных сообщений
 @dp.message_handler(
         content_types=[
             'pinned_message',
@@ -113,7 +114,10 @@ async def add_bot_message(message: types.Message):
     )
 async def delete_service_pinned_message(message: types.Message):
     try:
-        await bot.delete_message(message.chat.id, message.message_id)
+        await bot.delete_message(
+            message.chat.id,
+            message.message_id
+        )
     except:
         pass
 
@@ -142,4 +146,9 @@ if __name__ == '__main__':
     register_callbacks_docs(dp)
     register_callbacks_answer(dp)
     register_callbacks_group(dp)
-    executor.start_polling(dp, skip_updates=True, on_startup=on_startup)
+    register_callbacks_sort(dp)
+    executor.start_polling(
+        dp,
+        skip_updates=True,
+        on_startup=on_startup
+    )

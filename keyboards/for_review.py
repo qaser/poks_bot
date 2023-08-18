@@ -117,6 +117,18 @@ def status_kb(pet_id, status_code, job, num_docs):
     btns = []
     if job == 'admin':
         status_list = ['create']
+        keyboard.add(
+            InlineKeyboardButton(
+                text=f'{const.SEND_EMOJI} Отправить ответ',
+                callback_data=f'answer_{pet_id}'
+            )
+        )
+        keyboard.add(
+            InlineKeyboardButton(
+                text=f'{const.GROUP_EMOJI} Открыть чат',
+                callback_data=f'group_{pet_id}'
+            )
+        )
     else:
         status_list = ['create', 'rework', 'inwork']
     for status in const.PETITION_STATUS.keys():

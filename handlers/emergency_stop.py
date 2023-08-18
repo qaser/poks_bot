@@ -3,7 +3,8 @@ import datetime as dt
 from aiogram import Dispatcher, types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
-from aiogram.utils.exceptions import BotBlocked, CantInitiateConversation
+from aiogram.utils.exceptions import (BotBlocked, CantInitiateConversation,
+                                      MessageNotModified)
 
 from config.bot_config import bot, dp
 from config.mongo_config import emergency_stops, users
