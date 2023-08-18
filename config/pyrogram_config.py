@@ -1,5 +1,13 @@
-# from pyrogram import Client
+import os
 
-# from config.telegram_config import API_HASH, API_ID, TITLE
+from dotenv import load_dotenv
+from pyrogram import Client
 
-# app = Client(TITLE, api_id=API_ID, api_hash=API_HASH)
+load_dotenv()
+
+API_HASH = os.getenv('API_HASH')
+API_ID = os.getenv('API_ID')
+TITLE = os.getenv('TITLE')
+
+
+app = Client(TITLE, api_id=API_ID, api_hash=API_HASH)

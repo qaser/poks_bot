@@ -21,7 +21,7 @@ async def stats_handler(message: types.Message):
             count = item.get('count')
             station_text = f'{name}: {count}\n'
             res_text = f'{res_text}{station_text}'
-        summary_text = f'Всего ботом учтено {count_ao} АО(ВНО)\n\n{res_text}'
+        summary_text = f'Всего ботом учтено АО(ВНО): {count_ao}\n\n{res_text}'
         await message.delete()
         await message.answer(summary_text)
 

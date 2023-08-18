@@ -38,11 +38,11 @@ def send_kb(dir, msg_id):
     keyboard.row(
         InlineKeyboardButton(
             text=f'{const.UNDONE_EMOJI} Нет',
-            callback_data=f'ask_cancel_none_{msg_id}'
+            callback_data=f'new_cancel_none_{msg_id}'
         ),
         InlineKeyboardButton(
             text=f'{const.DONE_EMOJI} Да',
-            callback_data=f'ask_send_{dir}_{msg_id}'
+            callback_data=f'new_send_{dir}_{msg_id}'
         )
     )
     return keyboard
@@ -59,7 +59,7 @@ def upload_choose_kb(dir, msg_id):
     keyboard.add(
         InlineKeyboardButton(
             text=f'{const.SEND_EMOJI} Отправить без файла',
-            callback_data=f'ask_send_{dir}_{msg_id}'
+            callback_data=f'new_send_{dir}_{msg_id}'
         )
     )
     return keyboard
@@ -86,6 +86,12 @@ def status_kb(pet_id, status_code, num_docs):
         InlineKeyboardButton(
             text=f'{const.SEND_EMOJI} Отправить ответ',
             callback_data=f'answer_{pet_id}'
+        )
+    )
+    keyboard.add(
+        InlineKeyboardButton(
+            text=f'{const.GROUP_EMOJI} Открыть чат',
+            callback_data=f'group_{pet_id}'
         )
     )
     keyboard.row(btn_rework, btn_inwork)
@@ -146,10 +152,11 @@ def get_upload_kb():
     return keyboard
 
 
-def full_status_kb(pet_id, status_code, num_docs):
+def full_status_kb(pet_id, status_code, num_docs, is_admin):
     keyboard = InlineKeyboardMarkup(row_width=2)
     btns = []
-    for status in const.PETITION_STATUS.keys():
+    status_list = const.PETITION_STATUS.keys() if is_admin else ['delete', 'finish']
+    for status in status_list:
         if status == status_code or status == 'create':
             continue
         _, btn_name, status_emoji = const.PETITION_STATUS[status]
@@ -166,4 +173,15 @@ def full_status_kb(pet_id, status_code, num_docs):
             )
         )
     keyboard.add(*btns)
+    return keyboard
+
+
+def answer_kb(pet_id):
+    keyboard = InlineKeyboardMarkup()
+    keyboard.add(
+        InlineKeyboardButton(
+            text=f'{const.SEND_EMOJI} Отправить ответ',
+            callback_data=f'answer_{pet_id}'
+        )
+    )
     return keyboard

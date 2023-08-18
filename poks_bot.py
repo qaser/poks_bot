@@ -3,6 +3,13 @@ import logging
 from aiogram import types
 from aiogram.utils import executor
 
+from callbacks.answer import register_callbacks_answer
+from callbacks.group import register_callbacks_group
+from callbacks.new import register_callbacks_new
+from callbacks.cancel import register_callbacks_cancel
+from callbacks.docs import register_callbacks_docs
+from callbacks.edit import register_callbacks_edit
+from callbacks.status import register_callbacks_status
 from config.bot_config import bot, dp
 from config.mongo_config import groups
 from config.telegram_config import MY_TELEGRAM_ID
@@ -128,4 +135,11 @@ if __name__ == '__main__':
     register_handlers_help(dp)
     register_handlers_mail(dp)
     register_handlers_stats(dp)
+    register_callbacks_cancel(dp)
+    register_callbacks_status(dp)
+    register_callbacks_new(dp)
+    register_callbacks_edit(dp)
+    register_callbacks_docs(dp)
+    register_callbacks_answer(dp)
+    register_callbacks_group(dp)
     executor.start_polling(dp, skip_updates=True, on_startup=on_startup)
