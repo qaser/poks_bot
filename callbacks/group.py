@@ -17,14 +17,16 @@ async def create_group(call: types.CallbackQuery):
     ks = pet.get('ks')
     log = pet.get('text')
     username = users.find_one({'user_id': user}).get('username')
+    msg = await call.message.answer('Начинается процесс создания рабочего чата...')
     async with app:
         user_id = call.message.chat.id
         group_name = f'{ks} - {username}'
         try:
             group = await app.create_supergroup(group_name)
             await bot.send_message(MY_TELEGRAM_ID, text=f'Создана группа {group_name}')
+            await msg.edit_text('Группа создана.\n Идет процесс назначения администратора...')
         except:
-            await call.message.answer(
+            await msg.edit_text(
                 'Возникли проблемы при создании группы, повторите попытку позже'
             )
             await bot.send_message(
@@ -54,19 +56,22 @@ async def create_group(call: types.CallbackQuery):
                 MY_TELEGRAM_ID,
                 text=f'Администратор группы "{group_name}" назначен'
             )
+            await msg.edit_text('Вы назначены администратором.\nДобавляю собеседника...')
         except:
             await bot.send_message(
                 MY_TELEGRAM_ID,
                 text=f'Проблема при назначении администратора группы "{group_name}"'
             )
+            await msg.edit_text('Проблема с процессом назначения администратора :(')
         try:
             await app.add_chat_members(group_id, user)
             await bot.send_message(
                 MY_TELEGRAM_ID,
                 text=f'Автор вопроса добавлен в группу "{group_name}"'
             )
+            await msg.edit_text('Собеседник добавлен.\nФормирую ссылку группы...')
         except:
-            await call.message.answer(
+            await msg.edit_text(
                 'Возникли проблемы c добавлением автора вопроса в группу'
             )
             await bot.send_message(
@@ -74,7 +79,7 @@ async def create_group(call: types.CallbackQuery):
                 text=f'Возникли проблемы c добавлением автора вопроса в группу {group_name}'
             )
         link = await app.create_chat_invite_link(group_id)
-        await call.message.answer(link.invite_link)
+        await msg.edit_text(link.invite_link)
         invite_text = f'Ваш вопрос приглашают обсудить в отдельном чате: {link.invite_link}'
         try:
             await bot.send_message(user, text=invite_text)
