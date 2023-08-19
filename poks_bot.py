@@ -15,6 +15,7 @@ from config.bot_config import bot, dp
 from config.mongo_config import groups
 from config.telegram_config import MY_TELEGRAM_ID
 from handlers.admin import register_handlers_admin
+from handlers.ao import register_handlers_ao
 from handlers.bugs import register_handlers_bugs
 from handlers.emergency_stop import register_handlers_emergency
 from handlers.help import register_handlers_help
@@ -41,6 +42,11 @@ logging.basicConfig(
 @dp.message_handler(commands=['start'])
 async def start_handler(message: types.Message):
     await message.answer(text=INITIAL_TEXT)
+
+
+@dp.message_handler(commands=['bot'])
+async def bot_handler(message: types.Message):
+    await message.answer(text=f'{message.bot.id}')
 
 
 # обработка события - супергруппа
@@ -133,6 +139,7 @@ if __name__ == '__main__':
     register_handlers_bugs(dp)
     register_handlers_petition(dp)
     register_handlers_emergency(dp)
+    register_handlers_ao(dp)
     register_handlers_registration(dp)
     register_handlers_admin(dp)
     register_handlers_users(dp)
