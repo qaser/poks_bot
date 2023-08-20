@@ -42,6 +42,8 @@ async def create_group(call: types.CallbackQuery):
                     MY_TELEGRAM_ID,
                     text=f'Проблема при создании {group_name}'
                 )
+            link = await app.create_chat_invite_link(group_id)
+            invite_text = f'Ваш вопрос приглашают обсудить в отдельном чате: {link.invite_link}'
             try:
                 await app.promote_chat_member(
                     chat_id= group_id,
@@ -70,35 +72,38 @@ async def create_group(call: types.CallbackQuery):
                     MY_TELEGRAM_ID,
                     text=f'Проблема при назначении администратора группы "{group_name}"'
                 )
-                await msg.edit_text('Проблема с процессом назначения администратора :(')
+                await msg.edit_text('Проблема с процессом назначения администратора :(\n Перейдите по ссылке')
+                await call.message.answer(link.invite_link)
             try:
                 await app.add_chat_members(group_id, user)
+                try:
+                    await bot.send_message(user, text=invite_text)
+                except (CantInitiateConversation, BotBlocked):
+                    pass
                 await bot.send_message(
                     MY_TELEGRAM_ID,
                     text=f'Автор вопроса добавлен в группу "{group_name}"'
                 )
-                await msg.edit_text('Собеседник добавлен.\nФормирую ссылку группы...')
+                await msg.edit_text('Собеседник добавлен')
             except:
-                await msg.edit_text(
-                    'Возникли проблемы c добавлением автора вопроса в группу'
-                )
-                await bot.send_message(
-                    MY_TELEGRAM_ID,
-                    text=f'Возникли проблемы c добавлением автора вопроса в группу {group_name}'
-                )
-            link = await app.create_chat_invite_link(group_id)
+                try:
+                    await bot.send_message(user, text=invite_text)
+                    await msg.edit_text(
+                        'Автор вопроса получил ссылку на доступ в группу'
+                    )
+                    await bot.send_message(
+                        MY_TELEGRAM_ID,
+                        text=f'Автор вопроса получил ссылку на доступ в группу {group_name}'
+                    )
+                except (CantInitiateConversation, BotBlocked):
+                    await call.message.answer(
+                        'Автор вопроса не доступен, возможно он заблокировал бота'
+                    )
             petitions.update_one(
                 {'_id': ObjectId(pet_id)},
                 {'$set': {'group_link': (user_id, link.invite_link)}}
             )
             await msg.edit_text(link.invite_link)
-            invite_text = f'Ваш вопрос приглашают обсудить в отдельном чате: {link.invite_link}'
-            try:
-                await bot.send_message(user, text=invite_text)
-            except (CantInitiateConversation, BotBlocked):
-                await call.message.answer(
-                    'Автор вопроса не доступен, возможно он заблокировал бота'
-                )
             await app.send_message(group_id, text=f'Тема разговора:\n\n"{log}"')
             try:
                 await app.leave_chat(group_id)

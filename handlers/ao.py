@@ -109,38 +109,74 @@ async def create_group(ao_id, message: types.Message):
         msg = await message.answer('Начинается процесс создания рабочего чата...')
         try:
             group = await app.create_supergroup(group_name)
-            group_id = group.id
-            link = await app.create_chat_invite_link(group_id)
             await bot.send_message(MY_TELEGRAM_ID, text=f'Создана группа {group_name}')
-            await msg.edit_text('Группа создана.\nИдет процесс приглашения пользователей...')
-        except:
+        except Exception as err:
             await msg.edit_text(
                 'Возникли проблемы при создании группы, повторите попытку позже'
             )
             await bot.send_message(
                 MY_TELEGRAM_ID,
-                text=f'Проблема при создании {group_name}'
+                text=f'Проблема при создании группы "{group_name}"\n\n{err}'
             )
-        await add_admin_to_group(BOT_ID, group_id)
+        await msg.edit_text('Группа создана.\nИдет процесс приглашения пользователей...')
+        group_id = group.id
+        try:
+            link = await app.create_chat_invite_link(group_id)
+            await bot.send_message(MY_TELEGRAM_ID, text=f'Ссылка для группы "{group_name}" создана')
+        except Exception as error:
+            await bot.send_message(
+                MY_TELEGRAM_ID,
+                text=f'Ссылка для группы "{group_name}" не создана\n\n{error}'
+            )
+        try:
+            await add_admin_to_group(BOT_ID, group_id)
+            await bot.send_message(MY_TELEGRAM_ID, text=f'Бот в группе {group_name}')
+        except Exception as e:
+            await bot.send_message(
+                MY_TELEGRAM_ID,
+                text=f'Бот не смог войти в группу {group_name}\n\n{e}'
+            )
         admin_users = list(admins.find({}))
         invite_text = f'Вас приглашают в чат для расследования АО(ВНО): {link.invite_link}'
+        users_in_group = []
+        users_with_link = []
+        users_not_available = []
         for admin in admin_users:
             admin_id = admin.get('user_id')
+            admin_name = admin.get('username')
             try:
                 await add_admin_to_group(admin_id, group_id)
-                await bot.send_message(chat_id=admin_id, text=invite_text)
-            except (BotBlocked, CantInitiateConversation):
-                pass
+                users_in_group.append(admin_name)
+            except:
+                try:
+                    await bot.send_message(chat_id=admin_id, text=invite_text)
+                    users_with_link.append(admin_name)
+                except (BotBlocked, CantInitiateConversation):
+                    users_not_available.append(admin_name)
+                    pass
         ks_users = list(users.find({'ks': ks}))
-        await msg.edit_text('Пользователи добавлены.\nПочти готово...')
         for user in ks_users:
             user_id = user.get('user_id')
+            user_name = user.get('username')
             try:
                 await app.add_chat_members(group_id, user_id)
-                await bot.send_message(chat_id=user_id, text=invite_text)
-            except (BotBlocked, CantInitiateConversation):
-                pass
-        await msg.delete()
+                users_in_group.append(user_name)
+            except:
+                try:
+                    await bot.send_message(chat_id=user_id, text=invite_text)
+                    users_with_link.append(user_name)
+                except (BotBlocked, CantInitiateConversation):
+                    users_not_available.append(user_name)
+                    pass
+        in_group_text = ', '.join(users_in_group) if len(users_in_group) > 0 else 'отсутствуют'
+        with_link_text = ', '.join(users_with_link) if len(users_with_link) > 0 else 'отсутствуют'
+        not_available_text = ', '.join(users_not_available) if len(users_not_available) > 0 else 'отсутствуют'
+        await msg.edit_text(
+            text=(f'Добавлены в группу:\n{in_group_text}\n\n'
+                  f'Получили ссылки:\n{with_link_text}\n\n'
+                  f'Недоступны:\n{not_available_text}')
+        )
+        await message.answer(link.invite_link)
         try:
             await app.leave_chat(group_id)
             await bot.send_message(
@@ -172,6 +208,20 @@ async def add_admin_to_group(user_id, group_id):
             is_anonymous=False
         )
     )
+
+
+@dp.message_handler(commands=['qwerty'])
+async def hash_users(message: types.Message):
+    queryset = list(users.find({}))
+    async with app:
+        for user in queryset:
+            try:
+                res = await app.get_chat(user.get('user_id'))
+                print("Success!")
+                print(res)
+            except Exception as e:
+                print("Error!")
+                print(e)
 
 
 def register_handlers_ao(dp: Dispatcher):
