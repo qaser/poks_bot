@@ -89,7 +89,7 @@ async def create_group(call: types.CallbackQuery):
                 try:
                     await bot.send_message(user, text=invite_text)
                     await msg.edit_text(
-                        'Автор вопроса получил ссылку на доступ в группу'
+                        'Бот не смог добавить автора вопроса, но он получил ссылку на доступ в группу'
                     )
                     await bot.send_message(
                         MY_TELEGRAM_ID,

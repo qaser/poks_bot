@@ -5,7 +5,7 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.utils.exceptions import BotBlocked, CantInitiateConversation
 from pyrogram.types import ChatPrivileges
-from config.telegram_config import MY_TELEGRAM_ID, BOT_ID
+from config.telegram_config import MY_TELEGRAM_ID, BOT_ID, OTDEL_ID
 
 from config.bot_config import bot, dp
 from config.mongo_config import emergency_stops, users, admins
@@ -24,18 +24,19 @@ class Ao(StatesGroup):
 @admin_check
 @dp.message_handler(commands=['es'])
 async def emergency_start(message: types.Message):
-    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    for station in KS:
-        keyboard.add(station)
-    await message.answer(
-        text=(
-            'Выберите компрессорную станцию, '
-            'на которой произошёл аварийный останов'
-        ),
-        reply_markup=keyboard
-    )
-    await message.delete()
-    await Ao.waiting_station_name.set()
+    if message.chat.type == 'private':
+        keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        for station in KS:
+            keyboard.add(station)
+        await message.answer(
+            text=(
+                'Выберите компрессорную станцию, '
+                'на которой произошёл аварийный останов'
+            ),
+            reply_markup=keyboard
+        )
+        await message.delete()
+        await Ao.waiting_station_name.set()
 
 
 async def station_name(message: types.Message, state: FSMContext):
@@ -181,13 +182,17 @@ async def create_group(ao_id, message: types.Message):
             await app.leave_chat(group_id)
             await bot.send_message(
                 MY_TELEGRAM_ID,
-                text=f'Я удачно покинул группу {group_name}'
+                text=f'Я покинул группу {group_name}'
             )
         except:
             await bot.send_message(
                 MY_TELEGRAM_ID,
                 text=f'Почему-то я не покинул группу {group_name}'
             )
+        try:
+            await bot.send_message(chat_id=OTDEL_ID, text=link.invite_link)
+        except Exception as error:
+            await bot.send_message(MY_TELEGRAM_ID, text=error)
 
 
 async def add_admin_to_group(user_id, group_id):
