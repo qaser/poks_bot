@@ -3,7 +3,6 @@ import pymongo
 # Create the client
 client = pymongo.MongoClient('localhost', 27017)
 db = client['poks_bot_db']
-gks_users = db['gks_users']
 emergency_stops = db['emergency_stops']
 groups = db['groups']
 admins = db['admins']
@@ -13,9 +12,24 @@ buffer = db['buffer']
 users = db['users']
 bugs = db['bugs']
 docs = db['docs']
+bounces = db['bounces']
+equip = db['equip']
 
 
 '''
+структура данных ELECTRICS
+    'class_of' класс оборудования
+    'type_of': вид оборудования
+    'code': шифр оборудования
+    'part_code': шифр узла
+    'part': наименование узла
+    'cipher': шифр оборудования согласно СТО 1011
+
+структура данных ОТКАЗОВ
+    'type_of': тип отказа
+    'code': шифр отказа
+    'description': описание (характер) отказа
+
 структура данных группы
     '_id': id telegram-группы
     'group_name': название группы

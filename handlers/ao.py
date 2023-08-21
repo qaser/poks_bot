@@ -121,6 +121,7 @@ async def create_group(ao_id, message: types.Message):
             )
         await msg.edit_text('Группа создана.\nИдет процесс приглашения пользователей...')
         group_id = group.id
+        await app.set_chat_protected_content(chat_id=group_id, enabled=True)
         try:
             link = await app.create_chat_invite_link(group_id)
             await bot.send_message(MY_TELEGRAM_ID, text=f'Ссылка для группы "{group_name}" создана')
