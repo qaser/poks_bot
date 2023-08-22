@@ -12,7 +12,7 @@ from config.telegram_config import MY_TELEGRAM_ID
 
 # backup_dir = f'C:\Dev\poks_bot\\var\\backups\mongobackups\\22-08-23\poks_bot_db'
 
-async def send_backups(emails, db_name, backup_path):
+async def send_dbs_mail(emails, db_name, backup_path):
     # cur_date = dt.datetime.now().strftime('%d-%m-%y')
     # backup_dir = f'../../../var/backups/mongobackups/{cur_date}/poks_bot_db'
     # формируем тело письма
@@ -28,7 +28,7 @@ async def send_backups(emails, db_name, backup_path):
             f_path = f'{backup_path}/{file}'
             with open(file, 'rb') as f:
                 part = MIMEApplication(f.read(), Name=f_path)
-                part['Content-Disposition'] = 'attachment; filename="Сводная таблица"'
+                part['Content-Disposition'] = 'attachment; filename="Backup my dbs"'
                 msg.attach(part)
     except IOError as err:
         await bot.send_message(
@@ -43,4 +43,7 @@ async def send_backups(emails, db_name, backup_path):
         smtp.sendmail(MAIL_LOGIN, emails, msg.as_string())
         smtp.close()
     except smtplib.SMTPException as e:
-        print(e)
+        await bot.send_message(
+            chat_id=MY_TELEGRAM_ID,
+            text=f'Ошибка при отправке почты: {err}'
+        )
