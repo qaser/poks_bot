@@ -1,5 +1,7 @@
+import datetime as dt
 import imaplib
 import logging
+import os
 from time import sleep
 
 from aiogram.utils.exceptions import ChatNotFound, MigrateToChat, Unauthorized
@@ -7,12 +9,13 @@ from pymongo.errors import DuplicateKeyError
 
 import utils.constants as const
 from config.bot_config import bot
-from config.mail_config import IMAP_MAIL_SERVER, MAIL_LOGIN, MAIL_PASS
+from config.mail_config import IMAP_MAIL_SERVER, MAIL_LOGIN, MAIL_PASS, ADMIN_EMAIL
 from config.mongo_config import admins, groups, users
 from config.telegram_config import MY_TELEGRAM_ID
 from utils.create_summary_excel import create_summary_excel
 from utils.get_mail import get_letters
 from utils.send_email import send_email
+from utils.backup_db import send_backups
 
 
 async def send_remainder():
@@ -103,3 +106,12 @@ async def send_mail_summary(period):
     create_summary_excel(period)
     sleep(5.0)
     await send_email(emails, user_id=MY_TELEGRAM_ID)
+
+
+async def send_backups():
+    cur_date = dt.datetime.now().strftime('%d-%m-%y')
+    backup_dir = f'../../../var/backups/mongobackups/{cur_date}'
+    for db_name in os.listdir(backup_dir):
+        backup_path = f'{backup_dir}/{db_name}'
+        emails = [ADMIN_EMAIL]
+        await send_backups(emails, db_name, backup_path)

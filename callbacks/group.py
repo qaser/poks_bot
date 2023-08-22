@@ -32,6 +32,7 @@ async def create_group(call: types.CallbackQuery):
             try:
                 group = await app.create_supergroup(group_name)
                 group_id = group.id
+                await app.set_chat_protected_content(chat_id=group_id, enabled=True)
                 await bot.send_message(MY_TELEGRAM_ID, text=f'Создана группа {group_name}')
                 await msg.edit_text('Группа создана.\n Идет процесс назначения администратора...')
             except:
