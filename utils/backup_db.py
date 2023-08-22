@@ -1,4 +1,3 @@
-import datetime as dt
 import os
 import smtplib
 from email.mime.application import MIMEApplication

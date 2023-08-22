@@ -108,7 +108,7 @@ async def send_mail_summary(period):
     await send_email(emails, user_id=MY_TELEGRAM_ID)
 
 
-async def send_backups():
+async def prepare_send_backups():
     cur_date = dt.datetime.now().strftime('%d-%m-%y')
     backup_dir = f'../../../var/backups/mongobackups/{cur_date}'
     for db_name in os.listdir(backup_dir):
