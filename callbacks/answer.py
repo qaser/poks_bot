@@ -21,13 +21,29 @@ class QuickAnswer(StatesGroup):
 
 
 async def quick_answer(call: types.CallbackQuery, state: FSMContext):
-    # нужно проверить на наличие ответа от другого специалиста
     _, pet_id = call.data.split('_')
-    await state.update_data({'pet_id': pet_id, 'user_id': call.message.chat.id})
-    pet_text = petitions.find_one({'_id': ObjectId(pet_id)}).get('text')
-    await call.message.edit_text(text=f'Текст запроса:\n\n "{pet_text}"')
-    await call.message.answer('Введите Ваш ответ')
-    await QuickAnswer.waiting_for_text.set()
+    caller = call.message.chat.id
+    await state.update_data({'pet_id': pet_id, 'user_id': caller})
+    pet = petitions.find_one({'_id': ObjectId(pet_id)})
+    author = pet.get('user_id')
+    pet_text = pet.get('text')
+    conversation = pet.get('conversation')
+    try:
+        interviewer_id = conversation[1][1]  # получаем id специалиста, первый ответивший на вопрос
+        interviewer = admins.find_one({'user_id': interviewer_id}).get('username')
+    except:
+        interviewer_id = None
+        interviewer = 'неизвестно'
+    # проверяем на наличие ответа от другого специалиста
+    if caller == author or len(conversation) == 1 or (len(conversation) > 1 and caller == interviewer_id):
+        await call.message.edit_text(text=f'Текст запроса:\n\n "{pet_text}"')
+        await call.message.answer('Введите Ваш ответ')
+        await QuickAnswer.waiting_for_text.set()
+    else:
+        await call.message.answer(
+            f'С этим вопросом уже работает другой специалист: {interviewer}'
+        )
+        await state.finish()
 
 
 async def doc_choose(message: types.Message, state: FSMContext):
@@ -138,10 +154,10 @@ async def send_quick_answer(message, state):
     status, _, status_emoji = const.PETITION_STATUS[status_code]
     await message.answer(
         text=(f'Запись от <b>{ks}</b>\n'
-              f'Дата: <b>{date}</b>\n'
-              f'Автор: <b>{username}</b>\n'
-              f'Статус: {status_emoji} <b>{status}</b>\n'
-              f'Документы: <b>{num_docs} шт.</b>\n\n{text}'),
+            f'Дата: <b>{date}</b>\n'
+            f'Автор: <b>{username}</b>\n'
+            f'Статус: {status_emoji} <b>{status}</b>\n'
+            f'Документы: <b>{num_docs} шт.</b>\n\n{text}'),
         parse_mode=types.ParseMode.HTML,
         reply_markup=kb.full_status_kb(pet_id, status_code, num_docs, is_admin)
     )

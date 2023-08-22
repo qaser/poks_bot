@@ -47,8 +47,8 @@ def scheduler_jobs():
         send_backups,
         'cron',
         day_of_week='mon-sun',
-        hour=14,
-        minute=10,
+        hour=13,
+        minute=30,
         timezone=TIME_ZONE
     )
     # scheduler.add_job(
