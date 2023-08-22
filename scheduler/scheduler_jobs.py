@@ -43,14 +43,14 @@ def scheduler_jobs():
         minute=15,
         timezone=TIME_ZONE
     )
-    scheduler.add_job(
-        send_backups,
-        'cron',
-        day_of_week='mon-sun',
-        hour=12,
-        minute=45,
-        timezone=TIME_ZONE
-    )
+    # scheduler.add_job(
+    #     send_backups,
+    #     'cron',
+    #     day_of_week='mon-sun',
+    #     hour=12,
+    #     minute=45,
+    #     timezone=TIME_ZONE
+    # )
     # scheduler.add_job(
     #     check_mailbox,
     #     'interval',

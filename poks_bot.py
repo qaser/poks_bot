@@ -27,6 +27,7 @@ from handlers.service import register_handlers_service
 from handlers.stats import register_handlers_stats
 from handlers.users import register_handlers_users
 from scheduler.scheduler_jobs import scheduler, scheduler_jobs
+from scheduler.scheduler_funcs import send_backups
 from texts.initial import INITIAL_TEXT, MANUAL, NEW_GROUP_TEXT
 
 logging.basicConfig(
@@ -47,6 +48,11 @@ async def start_handler(message: types.Message):
 @dp.message_handler(commands=['bot'])
 async def bot_handler(message: types.Message):
     await message.answer(text=f'{message.bot.id}')
+
+
+@dp.message_handler(commands=['back'])
+async def backup_handler(message: types.Message):
+    await send_backups()
 
 
 # обработка события - супергруппа

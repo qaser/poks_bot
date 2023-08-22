@@ -10,11 +10,7 @@ from config.mail_config import MAIL_LOGIN, MAIL_PASS, PORT, SMTP_MAIL_SERVER
 from config.telegram_config import MY_TELEGRAM_ID
 
 
-# backup_dir = f'C:\Dev\poks_bot\\var\\backups\mongobackups\\22-08-23\poks_bot_db'
-
 async def send_dbs_mail(emails, db_name, backup_path):
-    # cur_date = dt.datetime.now().strftime('%d-%m-%y')
-    # backup_dir = f'../../../var/backups/mongobackups/{cur_date}/poks_bot_db'
     # формируем тело письма
     topic = f'Архивы БД {db_name}'
     msg = MIMEMultipart()
@@ -25,8 +21,9 @@ async def send_dbs_mail(emails, db_name, backup_path):
     msg["To"] = ', '.join(emails)
     try:
         for file in os.listdir(backup_path):
+            # f_path = f'{backup_path}\{file}'
             f_path = f'{backup_path}/{file}'
-            with open(file, 'rb') as f:
+            with open(f_path, 'rb') as f:
                 part = MIMEApplication(f.read(), Name=f_path)
                 part['Content-Disposition'] = f'attachment; filename="{file}"'
                 msg.attach(part)
