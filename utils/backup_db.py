@@ -28,12 +28,12 @@ async def send_dbs_mail(emails, db_name, backup_path):
             f_path = f'{backup_path}/{file}'
             with open(file, 'rb') as f:
                 part = MIMEApplication(f.read(), Name=f_path)
-                part['Content-Disposition'] = 'attachment; filename="Backup my dbs"'
+                part['Content-Disposition'] = f'attachment; filename="{file}"'
                 msg.attach(part)
     except IOError as err:
         await bot.send_message(
             chat_id=MY_TELEGRAM_ID,
-            text=f'Ошибка при открытии файла вложения: {err}'
+            text=f'Ошибка при открытии файла вложения: {err}\n\n{f_path}\n{file}'
         )
     try:
         smtp = smtplib.SMTP(SMTP_MAIL_SERVER, PORT)
