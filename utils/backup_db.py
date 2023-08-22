@@ -24,9 +24,9 @@ async def send_backups(emails, db_name, backup_path):
     msg.attach(MIMEText(topic))
     msg["To"] = ', '.join(emails)
     try:
-        for d in os.listdir(backup_path):
-            f_path = f'{backup_path}\{d}'
-            with open(d, 'rb') as f:
+        for file in os.listdir(backup_path):
+            f_path = f'{backup_path}/{file}'
+            with open(file, 'rb') as f:
                 part = MIMEApplication(f.read(), Name=f_path)
                 part['Content-Disposition'] = 'attachment; filename="Сводная таблица"'
                 msg.attach(part)
