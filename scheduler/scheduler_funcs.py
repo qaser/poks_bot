@@ -113,7 +113,8 @@ async def send_backups():
     # backup_dir = f'C:\Dev\poks_bot\\var\\backups\mongobackups\{cur_date}'
     backup_dir = f'../../../var/backups/mongobackups/{cur_date}'
     for db_name in os.listdir(backup_dir):
-        # backup_path = f'{backup_dir}\{db_name}'
-        backup_path = f'{backup_dir}/{db_name}'
-        emails = [ADMIN_EMAIL]
-        await send_dbs_mail(emails, db_name, backup_path)
+        if db_name in ['poks_bot_db', 'ozp_bot', 'tehnika_bot_db', 'quiz_db']:
+            # backup_path = f'{backup_dir}\{db_name}'
+            backup_path = f'{backup_dir}/{db_name}'
+            emails = [ADMIN_EMAIL]
+            await send_dbs_mail(emails, db_name, backup_path)
