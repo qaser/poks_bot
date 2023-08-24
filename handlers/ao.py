@@ -96,7 +96,7 @@ async def confirmation(message: types.Message, state: FSMContext):
             gpa_id = data['gpa_id']
             gpa_instance = gpa.find({'_id': gpa_id})
             ao_list = gpa_instance.get('ao')
-            if ao_list is not None:
+            if gpa_instance is not None:
                 ao_list.append(ao_id)
             else:
                 ao_list = []

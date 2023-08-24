@@ -29,129 +29,30 @@ import pymongo
 client = pymongo.MongoClient('localhost', 27017)
 db = client['poks_bot_db']
 gpa = db['gpa']
-
-def populate_gpa():
-    # path = f'C:\Dev\poks_bot\static\\rto'
-    path = f'static/rto'
-    f_path = f'{path}/gpa.csv'
-    with open(f_path, encoding='utf-8') as file:
-        reader = file.readlines()
-        for i, row in enumerate(reader):
-            if i:
-                _, name_gpa, _, shop, _, _, full_num_gpa, cbn_type, _, _, _, _, _, _ = row.split(';')
-                gpa.insert_one({
-                    'name_gpa': name_gpa,
-                    'num_gpa': full_num_gpa,
-                    'num_shop': shop,
-                    'cbn_type': cbn_type
-                })
+emergency_stops = db['emergency_stops']
 
 
-def pop_name_gpa():
-    qs = list(gpa.find({}))
-    for i in qs:
-        gpa_id = i.get('_id')
-        name_gpa = i.get('name_gpa')
-        num_shop = i.get('num_shop')
-        cbn_type = i.get('cbn_type')
+def pop_aos():
+    qs = list(emergency_stops.find({}))
+    count_old = 0
+    count_new = 0
+    for ao in qs:
+        gpa_inst = gpa.find_one({'ks': ao.get('station'), 'num_gpa': ao.get('gpa')})
+        if gpa_inst is not None:
+            ao_list = gpa_inst.get('ao')
+            if ao_list is not None:
+                ao_list.append(ao.get('_id'))
+                count_old += 1
+            else:
+                ao_list = []
+                count_new += 1
+            gpa.update_one(
+                {'ks': ao.get('station'), 'num_gpa': ao.get('gpa')},
+                {'$set': {'ao': ao_list}}
+            )
+        else:
+            continue
+    print(count_old)
+    print(count_new)
 
-        path_name = f'static/rto/name_gpa.csv'
-        path_group = f'static/rto/group_name_gpa.csv'
-        path_type = f'static/rto/type_gpa.csv'
-        path_between = f'static/rto/gpaName_engineType.csv'
-        path_engine = f'static/rto/engine_type.csv'
-        path_shop = f'static/rto/shop.csv'
-        path_ks = f'static/rto/ks.csv'
-        path_cbn = f'static/rto/cbn_type.csv'
-        path_pipe = f'static/rto/gas_pipeline.csv'
-        path_lpu = f'static/rto/lpu.csv'
-
-        with open(path_name, encoding='utf-8') as file:
-            reader = file.readlines()
-            for i, row in enumerate(reader):
-                if i:
-                    if row.split(';')[0] == name_gpa:
-                        n_gpa = row.split(';')[1]
-                        group_name = row.split(';')[2].rstrip()
-                        with open(path_group, encoding='utf-8') as file:
-                            reader = file.readlines()
-                            for i, row in enumerate(reader):
-                                if i:
-                                    if row.split(';')[0] == group_name:
-                                        g_name = row.split(';')[1]
-                                        id_type = row.split(';')[2]
-                                        with open(path_type, encoding='utf-8') as file:
-                                            reader = file.readlines()
-                                            for i, row in enumerate(reader):
-                                                if i:
-                                                    if row.split(';')[0] == id_type:
-                                                        type_gpa = row.split(';')[1]
-        with open(path_between, encoding='utf-8') as file:
-            reader = file.readlines()
-            for i, row in enumerate(reader):
-                if i:
-                    if row.split(';')[0] == name_gpa:
-                        id_engine_type = row.split(';')[1].rstrip()
-                        with open(path_engine, encoding='utf-8') as file:
-                            reader = file.readlines()
-                            for i, row in enumerate(reader):
-                                if i:
-                                    if row.split(';')[0] == id_engine_type:
-                                        engine_type = row.split(';')[1].rstrip()
-        with open(path_shop, encoding='utf-8') as file:
-            reader = file.readlines()
-            for i, row in enumerate(reader):
-                if i:
-                    if row.split(';')[0] == num_shop:
-                        num_shop = row.split(';')[1]
-                        id_ks = row.split(';')[2]
-                        id_pipe = row.split(';')[3]
-                        with open(path_ks, encoding='utf-8') as file:
-                            reader = file.readlines()
-                            for i, row in enumerate(reader):
-                                if i:
-                                    if row.split(';')[0] == id_ks:
-                                        try:
-                                            KS, name = row.split(';')[1].split(' ')
-                                            ks = f'{name} {KS}'
-                                        except:
-                                            ks = row.split(';')[1]
-                                        lpu_id = row.split(';')[2]
-                                        with open(path_lpu, encoding='utf-8') as file:
-                                            reader = file.readlines()
-                                            for i, row in enumerate(reader):
-                                                if i:
-                                                    if row.split(';')[0] == lpu_id:
-                                                        lpu, mg, lpu_name = row.split(';')[1].split(' ')
-                                                        lpu = f'{lpu_name} {lpu}{mg}'
-                        with open(path_pipe, encoding='utf-8') as file:
-                            reader = file.readlines()
-                            for i, row in enumerate(reader):
-                                if i:
-                                    if row.split(';')[0] == id_pipe:
-                                        pipeline = row.split(';')[1].rstrip()
-        with open(path_cbn, encoding='utf-8') as file:
-            reader = file.readlines()
-            for i, row in enumerate(reader):
-                if i:
-                    if row.split(';')[0] == cbn_type:
-                        cbn_type = row.split(';')[1].rstrip()
-        gpa.update_one(
-            {'_id': gpa_id},
-            {'$set': {
-                'lpu': lpu,
-                'ks': ks,
-                'pipeline': pipeline,
-                'num_shop': num_shop,
-                'name_gpa': n_gpa,
-                'group_gpa': g_name,
-                'type_gpa': type_gpa,
-                'cbn_type': cbn_type,
-                'engine_type': engine_type,
-            }}
-        )
-
-
-
-populate_gpa()
-pop_name_gpa()
+pop_aos()
