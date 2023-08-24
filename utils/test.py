@@ -31,8 +31,9 @@ db = client['poks_bot_db']
 gpa = db['gpa']
 
 def populate_gpa():
-    path = f'C:\Dev\poks_bot\static\\rto'
-    f_path = f'{path}\gpa.csv'
+    # path = f'C:\Dev\poks_bot\static\\rto'
+    path = f'./static/rto'
+    f_path = f'{path}/gpa.csv'
     with open(f_path, encoding='utf-8') as file:
         reader = file.readlines()
         for i, row in enumerate(reader):
@@ -54,16 +55,16 @@ def pop_name_gpa():
         num_shop = i.get('num_shop')
         cbn_type = i.get('cbn_type')
 
-        path_name = f'C:\Dev\poks_bot\static\\rto\\name_gpa.csv'
-        path_group = f'C:\Dev\poks_bot\static\\rto\\group_name_gpa.csv'
-        path_type = f'C:\Dev\poks_bot\static\\rto\\type_gpa.csv'
-        path_between = f'C:\Dev\poks_bot\static\\rto\\gpaName_engineType.csv'
-        path_engine = f'C:\Dev\poks_bot\static\\rto\\engine_type.csv'
-        path_shop = f'C:\Dev\poks_bot\static\\rto\\shop.csv'
-        path_ks = f'C:\Dev\poks_bot\static\\rto\\ks.csv'
-        path_cbn = f'C:\Dev\poks_bot\static\\rto\\cbn_type.csv'
-        path_pipe = f'C:\Dev\poks_bot\static\\rto\\gas_pipeline.csv'
-        path_lpu = f'C:\Dev\poks_bot\static\\rto\\lpu.csv'
+        path_name = f'./static/rto/name_gpa.csv'
+        path_group = f'./static/rto/group_name_gpa.csv'
+        path_type = f'./static/rto/type_gpa.csv'
+        path_between = f'./static/rto/gpaName_engineType.csv'
+        path_engine = f'./static/rto/engine_type.csv'
+        path_shop = f'./static/rto/shop.csv'
+        path_ks = f'./static/rto/ks.csv'
+        path_cbn = f'./static/rto/cbn_type.csv'
+        path_pipe = f'./static/rto/gas_pipeline.csv'
+        path_lpu = f'./static/rto/lpu.csv'
 
         with open(path_name, encoding='utf-8') as file:
             reader = file.readlines()
