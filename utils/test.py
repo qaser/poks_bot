@@ -24,6 +24,7 @@
 #     print(date)
 
 import pymongo
+import pprint
 
 # Create the client
 client = pymongo.MongoClient('localhost', 27017)
@@ -32,27 +33,47 @@ gpa = db['gpa']
 emergency_stops = db['emergency_stops']
 
 
-def pop_aos():
-    qs = list(emergency_stops.find({}))
-    count_old = 0
-    count_new = 0
-    for ao in qs:
-        gpa_inst = gpa.find_one({'ks': ao.get('station'), 'num_gpa': ao.get('gpa')})
-        if gpa_inst is not None:
-            ao_list = gpa_inst.get('ao')
-            if ao_list is not None:
-                ao_list.append(ao.get('_id'))
-                count_old += 1
-            else:
-                ao_list = []
-                count_new += 1
-            gpa.update_one(
-                {'ks': ao.get('station'), 'num_gpa': ao.get('gpa')},
-                {'$set': {'ao': ao_list}}
-            )
-        else:
-            continue
-    print(count_old)
-    print(count_new)
+pipeline = [
+    {'$match': {'ao': {'$exists': 'true'}}},
+    {'$project': {
+        'name_gpa': 1,
+        'numberOfAO': {
+            '$cond': {
+                'if': {'$isArray': "$ao"},
+                'then': { '$size': "$ao" },
+                'else': "NA"
+            }
+        }
+    }
+    },
+    {'$group': {'_id': '$name_gpa', 'count': {'$sum': '$numberOfAO'}}}
+]
 
-pop_aos()
+qs = gpa.aggregate(pipeline)
+pprint.pprint(list(qs))
+
+
+# def pop_aos():
+#     qs = list(emergency_stops.find({}))
+#     count_old = 0
+#     count_new = 0
+#     for ao in qs:
+#         gpa_inst = gpa.find_one({'ks': ao.get('station'), 'num_gpa': ao.get('gpa')})
+#         if gpa_inst is not None:
+#             ao_list = gpa_inst.get('ao')
+#             if ao_list is not None:
+#                 ao_list.append(ao.get('_id'))
+#                 count_old += 1
+#             else:
+#                 ao_list = []
+#                 count_new += 1
+#             gpa.update_one(
+#                 {'ks': ao.get('station'), 'num_gpa': ao.get('gpa')},
+#                 {'$set': {'ao': ao_list}}
+#             )
+#         else:
+#             continue
+#     print(count_old)
+#     print(count_new)
+
+# pop_aos()
