@@ -4,11 +4,11 @@ from aiogram import types
 from aiogram.utils import executor
 
 from callbacks.answer import register_callbacks_answer
-from callbacks.group import register_callbacks_group
-from callbacks.new import register_callbacks_new
 from callbacks.cancel import register_callbacks_cancel
 from callbacks.docs import register_callbacks_docs
 from callbacks.edit import register_callbacks_edit
+from callbacks.group import register_callbacks_group
+from callbacks.new import register_callbacks_new
 from callbacks.sort import register_callbacks_sort
 from callbacks.status import register_callbacks_status
 from config.bot_config import bot, dp
@@ -26,8 +26,8 @@ from handlers.review import register_handlers_review
 from handlers.service import register_handlers_service
 from handlers.stats import register_handlers_stats
 from handlers.users import register_handlers_users
-from scheduler.scheduler_jobs import scheduler, scheduler_jobs
 from scheduler.scheduler_funcs import send_backups
+from scheduler.scheduler_jobs import scheduler, scheduler_jobs
 from texts.initial import INITIAL_TEXT, MANUAL, NEW_GROUP_TEXT
 
 logging.basicConfig(

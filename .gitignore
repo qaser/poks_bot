@@ -49,3 +49,7 @@ run.sh
 *.docx
 
 *.session
+
+# rto/
+
+poks_bot_db.gpa.json
