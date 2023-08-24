@@ -14,6 +14,7 @@ bugs = db['bugs']
 docs = db['docs']
 bounces = db['bounces']
 equip = db['equip']
+gpa = db['gpa']
 
 
 '''

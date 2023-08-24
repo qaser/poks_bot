@@ -8,7 +8,7 @@ from pyrogram.types import ChatPrivileges
 from config.telegram_config import MY_TELEGRAM_ID, BOT_ID, OTDEL_ID
 
 from config.bot_config import bot, dp
-from config.mongo_config import emergency_stops, users, admins
+from config.mongo_config import emergency_stops, users, admins, gpa
 from config.pyrogram_config import app
 from utils.constants import KS
 from utils.decorators import admin_check
@@ -61,9 +61,16 @@ async def gpa_number(message: types.Message, state: FSMContext):
     keyboard.add('Нет', 'Да')
     data = await state.get_data()
     station = data['station']
-    gpa = data['gpa_num']
+    gpa_num = data['gpa_num']
+    try:
+        gpa_instance = gpa.find_one({'ks': station, 'num_gpa': gpa_num})
+        gpa_name = gpa_instance.get('name_gpa')
+        await state.update_data(gpa_id=gpa_instance.get('_id'))
+        gpa_text = f' (по моим данным это {gpa_name})'
+    except:
+        gpa_text = ''
     await message.answer(
-        text=f'Вы выбрали "{station}"\nГПА {gpa}.\nВсё верно?',
+        text=f'Вы выбрали "{station}"\nГПА{gpa_num}{gpa_text}.\nВсё верно?',
         reply_markup=keyboard,
     )
     await Ao.next()
@@ -85,6 +92,17 @@ async def confirmation(message: types.Message, state: FSMContext):
                 'gpa': data['gpa_num'],
             }
         ).inserted_id
+        try:
+            gpa_id = data['gpa_id']
+            gpa_instance = gpa.find({'_id': gpa_id})
+            ao_list = gpa_instance.get('ao')
+            if ao_list is not None:
+                ao_list.append(ao_id)
+            else:
+                ao_list = []
+            gpa.update_one({'_id': gpa_id}, {'$set': {'ao': ao_list}})
+        except:
+            pass
         await state.finish()
         await message.answer(
             text=f'Принято',
@@ -105,8 +123,8 @@ async def create_group(ao_id, message: types.Message):
     async with app:
         ks = ao.get('station')
         date = ao.get('date')
-        gpa = ao.get('gpa')
-        group_name = f'{ks} ГПА{gpa} ({date})'
+        gpa_num = ao.get('gpa')
+        group_name = f'{ks} ГПА{gpa_num} ({date})'
         msg = await message.answer('Начинается процесс создания рабочего чата...')
         try:
             group = await app.create_supergroup(group_name)
