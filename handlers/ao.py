@@ -165,8 +165,12 @@ async def create_group(ao_id, message: types.Message):
             admin_id = admin.get('user_id')
             admin_name = admin.get('username')
             try:
-                await add_admin_to_group(admin_id, group_id)
-                users_in_group.append(admin_name)
+                if admin_id != 744201326:  # исключаем Батькина
+                    await add_admin_to_group(admin_id, group_id)
+                    users_in_group.append(admin_name)
+                else:
+                    await bot.send_message(chat_id=744201326, text=invite_text)
+                    users_with_link.append(admin_name)
             except:
                 try:
                     await bot.send_message(chat_id=admin_id, text=invite_text)
