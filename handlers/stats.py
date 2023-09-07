@@ -14,7 +14,7 @@ async def stats_handler(message: types.Message):
         count_ao = emergency_stops.count_documents({})
         pipeline = [
             {'$group': {'_id': '$station', 'count': {'$sum': 1}}},
-            {'$sort': { '_id': 1}}
+            {'$sort': { 'count': -1}}
         ]
         queryset = list(emergency_stops.aggregate(pipeline))
         for item in queryset:

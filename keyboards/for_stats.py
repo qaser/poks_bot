@@ -7,12 +7,6 @@ def sort_kb(sort_param):
     if sort_param == 'ks':
         keyboard.add(
             InlineKeyboardButton(
-                text=f'{const.SORT_EMOJI} по количеству',
-                callback_data='sort_count'
-            )
-        )
-        keyboard.add(
-            InlineKeyboardButton(
                 text=f'{const.SORT_EMOJI} по типу ГПА',
                 callback_data='sort_gpa'
             )

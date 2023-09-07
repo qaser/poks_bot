@@ -33,47 +33,45 @@ gpa = db['gpa']
 emergency_stops = db['emergency_stops']
 
 
-pipeline = [
-    {'$match': {'ao': {'$exists': 'true'}}},
-    {'$project': {
-        'name_gpa': 1,
-        'numberOfAO': {
-            '$cond': {
-                'if': {'$isArray': "$ao"},
-                'then': { '$size': "$ao" },
-                'else': "NA"
-            }
-        }
-    }
-    },
-    {'$group': {'_id': '$name_gpa', 'count': {'$sum': '$numberOfAO'}}}
-]
+# pipeline = [
+#     {'$match': {'ao': {'$exists': 'true'}}},
+#     {'$project': {
+#         'name_gpa': 1,
+#         'numberOfAO': {
+#             '$cond': {
+#                 'if': {'$isArray': "$ao"},
+#                 'then': { '$size': "$ao" },
+#                 'else': "NA"
+#             }
+#         }
+#     }
+#     },
+#     {'$group': {'_id': '$name_gpa', 'count': {'$sum': '$numberOfAO'}}}
+# ]
 
-qs = gpa.aggregate(pipeline)
-pprint.pprint(list(qs))
+# qs = gpa.aggregate(pipeline)
+# pprint.pprint(list(qs))
 
 
-# def pop_aos():
-#     qs = list(emergency_stops.find({}))
-#     count_old = 0
-#     count_new = 0
-#     for ao in qs:
-#         gpa_inst = gpa.find_one({'ks': ao.get('station'), 'num_gpa': ao.get('gpa')})
-#         if gpa_inst is not None:
-#             ao_list = gpa_inst.get('ao')
-#             if ao_list is not None:
-#                 ao_list.append(ao.get('_id'))
-#                 count_old += 1
-#             else:
-#                 ao_list = []
-#                 count_new += 1
-#             gpa.update_one(
-#                 {'ks': ao.get('station'), 'num_gpa': ao.get('gpa')},
-#                 {'$set': {'ao': ao_list}}
-#             )
-#         else:
-#             continue
-#     print(count_old)
-#     print(count_new)
+def pop_aos():
+    gpa.update_many(
+        {},
+        {'$set': {'ao': []}}
+    )
+    qs = list(emergency_stops.find({}))
+    count = 0
+    for ao in qs:
+        gpa_inst = gpa.find_one({'ks': ao.get('station'), 'num_gpa': ao.get('gpa')})
+        if gpa_inst is not None:
+            ao_list = gpa_inst.get('ao')
+            ao_list.append(ao.get('_id'))
+            gpa.update_one(
+                {'ks': ao.get('station'), 'num_gpa': ao.get('gpa')},
+                {'$set': {'ao': ao_list}}
+            )
+            count += 1
+        else:
+            continue
+    print(count)
 
-# pop_aos()
+pop_aos()

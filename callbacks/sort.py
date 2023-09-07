@@ -8,13 +8,7 @@ from aiogram.utils.exceptions import MessageNotModified
 
 async def sort_stats(call: types.CallbackQuery):
     _, sort_param = call.data.split('_')
-    if sort_param == 'ks':
-        pipeline = [
-            {'$group': {'_id': '$station', 'count': {'$sum': 1}}},
-            {'$sort': { '_id': 1}}
-        ]
-        queryset = list(emergency_stops.aggregate(pipeline))
-    elif sort_param == 'gpa':
+    if sort_param == 'gpa':
         pipeline = [
             {'$match': {'ao': {'$exists': 'true'}}},
             {'$project': {
@@ -28,7 +22,8 @@ async def sort_stats(call: types.CallbackQuery):
                 }
             }
             },
-            {'$group': {'_id': '$name_gpa', 'count': {'$sum': '$numberOfAO'}}}
+            {'$group': {'_id': '$name_gpa', 'count': {'$sum': '$numberOfAO'}}},
+            {'$sort': { 'count': -1}}
         ]
         queryset = list(gpa.aggregate(pipeline))
     else:
@@ -42,19 +37,21 @@ async def sort_stats(call: types.CallbackQuery):
     for item in queryset:
         name = item.get('_id')
         count = item.get('count')
-        station_text = f'{name}: {count}\n'
-        res_text = f'{res_text}{station_text}'
+        stats_text = f'{name}: <b>{count}</b>\n'
+        res_text = f'{res_text}{stats_text}'
     summary_text = f'Всего ботом учтено АО(ВНО): {count_ao}\n\n{res_text}'
     try:
         await call.message.edit_text(
             summary_text,
-            reply_markup=kb.sort_kb(sort_param)
+            reply_markup=kb.sort_kb(sort_param),
+            parse_mode=types.ParseMode.HTML
         )
     except MessageNotModified:
         summary_text = f'Ботом учтено АО(ВНО): {count_ao}\n\n{res_text}'
         await call.message.edit_text(
             summary_text,
-            reply_markup=kb.sort_kb(sort_param)
+            reply_markup=kb.sort_kb(sort_param),
+            parse_mode=types.ParseMode.HTML
         )
 
 
