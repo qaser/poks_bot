@@ -17,7 +17,7 @@ async def mail_handler(message: types.Message):
         admin = admins.find_one({'user_id': user_id})
         email = admin.get('mail')
         if email is not None:
-            create_summary_excel('week')
+            create_summary_excel('month')
             msg = await message.answer('Запрос получен, ожидайте')
             time.sleep(5.0)
             await send_email(emails=[email], user_id=admin.get('user_id'))

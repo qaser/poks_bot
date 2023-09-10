@@ -54,43 +54,39 @@ def create_summary_excel(period):
         column_dimensions = worksheet.column_dimensions[column_letter]
         column_dimensions.width = column_width
         worksheet.row_dimensions[row_num].height = 30
-    for ks in const.KS:
-        # нерешенные вопросы и решенные в течение этой недели
-        if period == 'week':
-            now = dt.datetime.now()
-            previous_week = now - dt.timedelta(days=7)
-            title = 'Отчет по проблемным вопросам филиалов по направлению ПОпоЭКС за неделю'
-            pipeline = {'$or': [
-                {'ks': ks, 'status': {'$in': ['inwork', 'create']}},
-                {'ks': ks, 'status': 'finish', 'date': {"$lte": now, "$gte": previous_week}}
-            ]}
-        elif period == 'month':
-            title = 'Отчет по проблемным вопросам филиалов по направлению ПОпоЭКС'
-            pipeline = {'ks': ks, 'status': {'$in': ['inwork', 'create', 'rework', 'finish', 'delete']}}
-        queryset = list(petitions.find(pipeline).sort([('ks', 1), ('status', 1), ('directions', 1)]))
-        num_petitions = len(queryset)
-        if num_petitions == 0:
-            continue
-        for num, pet in enumerate(queryset):
-            row_num += 1
-            status = pet.get('status')
-            color = const.PETITION_COLOR[status]
-            row = [
-                str(num + 1),
-                ks,
-                const.DIRECTIONS_CODES[pet.get('direction')],
-                pet.get('date').strftime('%d.%m.%Y %H:%M'),
-                pet.get('text'),
-                const.PETITION_STATUS[status][0]
-            ]
-            for col_num, cell_value in enumerate(row, 1):
-                cell = worksheet.cell(row=row_num, column=col_num)
-                worksheet.row_dimensions[row_num].height = 50
-                cell.value = cell_value
-                cell.alignment = wrapped_alignment
-                if col_num == len(row):
-                    cell_color = PatternFill(start_color=color, end_color=color, fill_type='solid')
-                    cell.fill = cell_color
-                cell.border = thin_border
+    # нерешенные вопросы и решенные в течение этой недели
+    if period == 'week':
+        now = dt.datetime.now()
+        previous_week = now - dt.timedelta(days=7)
+        title = 'Отчет по проблемным вопросам филиалов по направлению ПОпоЭКС за неделю'
+        pipeline = {'$or': [
+            {'status': {'$in': ['inwork', 'create']}},
+            {'status': 'finish', 'date': {"$lte": now, "$gte": previous_week}}
+        ]}
+    elif period == 'month':
+        title = 'Отчет по проблемным вопросам филиалов по направлению ПОпоЭКС'
+        pipeline = {'status': {'$in': ['inwork', 'create', 'rework', 'finish', 'delete']}}
+    queryset = list(petitions.find(pipeline).sort([('ks', 1), ('status', 1), ('directions', 1)]))
+    for num, pet in enumerate(queryset):
+        row_num += 1
+        status = pet.get('status')
+        color = const.PETITION_COLOR[status]
+        row = [
+            str(num + 1),
+            pet.get('ks'),
+            const.DIRECTIONS_CODES[pet.get('direction')],
+            pet.get('date').strftime('%d.%m.%Y %H:%M'),
+            pet.get('text'),
+            const.PETITION_STATUS[status][0]
+        ]
+        for col_num, cell_value in enumerate(row, 1):
+            cell = worksheet.cell(row=row_num, column=col_num)
+            worksheet.row_dimensions[row_num].height = 50
+            cell.value = cell_value
+            cell.alignment = wrapped_alignment
+            if col_num == len(row):
+                cell_color = PatternFill(start_color=color, end_color=color, fill_type='solid')
+                cell.fill = cell_color
+            cell.border = thin_border
     path = f'static/docs_email/Сводный перечень вопросов.xlsx'
     workbook.save(path)
