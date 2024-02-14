@@ -4,10 +4,17 @@ from aiogram.types.message import ContentType
 
 import utils.constants as const
 from config.bot_config import bot
-from config.mongo_config import admins, archive, groups
+from config.mongo_config import admins, archive, groups, giga_chats
 from config.telegram_config import MY_TELEGRAM_ID
 from handlers.emergency_stop import admin_check
 from utils.decorators import superuser_check
+from langchain.schema import HumanMessage, SystemMessage, AIMessage
+from langchain.chat_models.gigachat import GigaChat
+from config.giga_chat_config import GIGA_CHAT_TOKEN
+
+
+chat_instance = GigaChat(credentials=GIGA_CHAT_TOKEN, verify_ssl_certs=False)
+ACTIVATE_MSG = 'Ты бот-консультант по техническим вопросам, который помогает специалисту решать различные проблемы.'
 
 
 # обработка команды /reset - сброс клавиатуры и состояния
@@ -129,16 +136,39 @@ async def archive_messages(message: types.Message):
             caption=message.chat.full_name
         )
     if message.text:
-        data = archive.find_one({'_id': chat})
-        if data is None:
-            archive.insert_one({'_id': chat, 'messages': [message.text]})
-        else:
-            data.get('messages').append(message.text)
-            archive.update_one(
-                {'_id': chat},
-                {'$set': {'messages': data.get('messages')}},
-                upsert=False
+        chat_type = message.chat.type
+        if chat_type == 'private':
+            user_id = message.chat.id
+            giga_chat = giga_chats.find_one({'user_id': user_id})
+            messages = giga_chat['messages'] if giga_chat is not None else [('system', ACTIVATE_MSG)]
+            messages.append(('user', message.text))
+            context_msgs = []
+            for msg in messages:
+                if msg[0] == 'system':
+                    context_msgs.append(SystemMessage(content=msg[1]))
+                elif msg[0] == 'user':
+                    context_msgs.append(HumanMessage(content=msg[1]))
+                elif msg[0] == 'ai':
+                    context_msgs.append(AIMessage(content=msg[1]))
+            res = chat_instance(context_msgs)
+            messages.append(('ai', res.content))
+            giga_chats.update_one(
+                {'user_id': user_id},
+                {'$set': {'messages': messages}},
+                upsert=True
             )
+            await message.answer(res.content)
+        else:
+            data = archive.find_one({'_id': chat})
+            if data is None:
+                archive.insert_one({'_id': chat, 'messages': [message.text]})
+            else:
+                data.get('messages').append(message.text)
+                archive.update_one(
+                    {'_id': chat},
+                    {'$set': {'messages': data.get('messages')}},
+                    upsert=False
+                )
 
 
 # обработка команды /admins

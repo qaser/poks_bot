@@ -160,6 +160,7 @@ if __name__ == '__main__':
     register_callbacks_answer(dp)
     register_callbacks_group(dp)
     register_callbacks_sort(dp)
+
     executor.start_polling(
         dp,
         skip_updates=True,
