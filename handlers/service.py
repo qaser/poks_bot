@@ -14,7 +14,7 @@ from config.giga_chat_config import GIGA_CHAT_TOKEN
 
 
 chat_instance = GigaChat(credentials=GIGA_CHAT_TOKEN, verify_ssl_certs=False)
-ACTIVATE_MSG = 'Ты бот-консультант по техническим вопросам, который помогает специалисту решать различные проблемы.'
+ACTIVATE_MSG = 'Ты бот-консультант отдела ПОКС, который помогает специалисту решать различные технические проблемы.'
 
 
 # обработка команды /reset - сброс клавиатуры и состояния
