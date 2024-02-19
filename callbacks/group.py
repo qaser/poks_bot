@@ -18,7 +18,7 @@ async def create_group(call: types.CallbackQuery):
         group_creator, g_link = group_link
         g_username = admins.find_one({'user_id': group_creator}).get('username')
         await call.message.answer(
-            f'Рабочая группа уже создана специалистом ПОпоЭКС: {g_username}\n{g_link}'
+            f'Рабочая группа уже создана специалистом ПОКС: {g_username}\n{g_link}'
         )
     else:
         user = pet.get('user_id')

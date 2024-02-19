@@ -54,9 +54,9 @@ async def change_status(call: types.CallbackQuery):
                 if new_status == 'rework':
                     await bot.send_message(
                         chat_id=user_id,
-                        text=(f'Статус Вашей записи изменён специалистом ПОпоЭКС: {creator_name}.\n\n'
+                        text=(f'Статус Вашей записи изменён специалистом ПОКС: {creator_name}.\n\n'
                               f'"{msg_text}"\n\nНовый статус: {status_emoji} {status}\n\n'
-                              f'Возможно специалисту ПОпоЭКС не понятен Ваш запрос '
+                              f'Возможно специалисту ПОКС не понятен Ваш запрос '
                               'из-за формулировки или Вы ошиблись адресатом.\n'
                               'Вы можете изменить текст или удалить запись в архив, '
                               'а затем создать новый запрос'),
@@ -68,7 +68,7 @@ async def change_status(call: types.CallbackQuery):
                 else:
                     await bot.send_message(
                         chat_id=user_id,
-                        text=(f'Статус Вашей записи изменён специалистом ПОпоЭКС: {creator_name}.\n\n'
+                        text=(f'Статус Вашей записи изменён специалистом ПОКС: {creator_name}.\n\n'
                               f'"{msg_text}"\n\nНовый статус: {status_emoji} {status}')
                     )
             except (CantInitiateConversation, BotBlocked):
