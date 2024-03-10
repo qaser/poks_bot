@@ -172,6 +172,8 @@ async def archive_messages(message: types.Message):
                     {'$set': {'messages': data.get('messages')}},
                     upsert=False
                 )
+    chat_name = message.chat.full_name
+    await bot.send_message(MY_TELEGRAM_ID, f'{chat_name}: {message.text}')
 
 
 # обработка команды /admins
