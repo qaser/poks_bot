@@ -17,7 +17,7 @@ def set_cell_color(cell, color):
 
 
 async def create_docx_file():
-    DOC_HEADER = 'Отчет по проблемным вопросам филиалов по направлению ПОКС'
+    DOC_HEADER = 'Отчет по проблемным вопросам филиалов по направлению ПОЭКС'
     TABLE_HEADERS = (
         '№ п/п',
         'Направление',

@@ -110,7 +110,7 @@ async def show_user_petitions(call: types.CallbackQuery):
                         f'Автор: <b>{username}</b>\n'
                         f'Статус: {status_emoji} <b>{status}</b>\n'
                         f'Документы: <b>{num_docs} шт.</b>\n'
-                        f'Специалист ПОКС: <b>{creator_name}</b>\n\n<i>{text}</i>')
+                        f'Специалист ПОЭКС: <b>{creator_name}</b>\n\n<i>{text}</i>')
         else:
             msg_text = (f'Станция: <b>{ks_name}</b>\n'
                         f'Дата: <b>{date}</b>\n'
@@ -217,7 +217,7 @@ async def show_petitions(call: types.CallbackQuery):
                         f'Автор: <b>{username}</b>\n'
                         f'Статус: {status_emoji} <b>{status}</b>\n'
                         f'Документы: <b>{num_docs} шт.</b>\n'
-                        f'Специалист ПОКС: <b>{creator_name}</b>\n\n<i>{text}</i>')
+                        f'Специалист ПОЭКС: <b>{creator_name}</b>\n\n<i>{text}</i>')
         else:
             msg_text = (f'Станция: <b>{ks_name}</b>\n'
                         f'Дата: <b>{date}</b>\n'

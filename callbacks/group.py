@@ -7,7 +7,7 @@ from pyrogram.types import ChatPrivileges
 from config.bot_config import bot
 from config.mongo_config import admins, petitions, users
 from config.pyrogram_config import app
-from config.telegram_config import MY_TELEGRAM_ID
+from config.telegram_config import MY_TELEGRAM_ID, BOT_ID
 
 
 async def create_group(call: types.CallbackQuery):
@@ -18,7 +18,7 @@ async def create_group(call: types.CallbackQuery):
         group_creator, g_link = group_link
         g_username = admins.find_one({'user_id': group_creator}).get('username')
         await call.message.answer(
-            f'Рабочая группа уже создана специалистом ПОКС: {g_username}\n{g_link}'
+            f'Рабочая группа уже создана специалистом ПОЭКС: {g_username}\n{g_link}'
         )
     else:
         user = pet.get('user_id')
@@ -105,7 +105,24 @@ async def create_group(call: types.CallbackQuery):
                 {'$set': {'group_link': (user_id, link.invite_link)}}
             )
             await msg.edit_text(link.invite_link)
-            await app.send_message(group_id, text=f'Тема разговора:\n\n"{log}"')
+            await app.promote_chat_member(
+                chat_id=group_id,
+                user_id=BOT_ID,
+                privileges=ChatPrivileges(
+                    can_manage_chat=True,
+                    can_delete_messages=True,
+                    can_manage_video_chats=True,
+                    can_restrict_members=True,
+                    can_promote_members=True,
+                    can_change_info=True,
+                    can_post_messages=True,
+                    can_edit_messages=True,
+                    can_invite_users=True,
+                    can_pin_messages=True,
+                    is_anonymous=False
+                )
+            )
+            await bot.send_message(group_id, text=f'Тема разговора:\n\n"{log}"')
             try:
                 await app.leave_chat(group_id)
                 await bot.send_message(

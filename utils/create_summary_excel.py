@@ -36,9 +36,9 @@ def create_summary_excel(period):
     worksheet.merge_cells(start_column=1, start_row=1, end_column=len(columns), end_row=1)
     title_cell = worksheet.cell(row=1, column=1)
     if period == 'week':
-        title = 'Отчет по проблемным вопросам филиалов по направлению ПОКС за неделю'
+        title = 'Отчет по проблемным вопросам филиалов по направлению ПОЭКС за неделю'
     elif period == 'month':
-        title = 'Сводный отчет по проблемным вопросам филиалов по направлению ПОКС'
+        title = 'Сводный отчет по проблемным вопросам филиалов по направлению ПОЭКС'
     title_cell.value = title
     title_cell.alignment = centered_alignment
     title_cell.font = header_font
@@ -58,13 +58,13 @@ def create_summary_excel(period):
     if period == 'week':
         now = dt.datetime.now()
         previous_week = now - dt.timedelta(days=7)
-        title = 'Отчет по проблемным вопросам филиалов по направлению ПОКС за неделю'
+        title = 'Отчет по проблемным вопросам филиалов по направлению ПОЭКС за неделю'
         pipeline = {'$or': [
             {'status': {'$in': ['inwork', 'create']}},
             {'status': 'finish', 'date': {"$lte": now, "$gte": previous_week}}
         ]}
     elif period == 'month':
-        title = 'Отчет по проблемным вопросам филиалов по направлению ПОКС'
+        title = 'Отчет по проблемным вопросам филиалов по направлению ПОЭКС'
         pipeline = {'status': {'$in': ['inwork', 'create', 'rework', 'finish', 'delete']}}
     queryset = list(petitions.find(pipeline).sort([('ks', 1), ('status', 1), ('directions', 1)]))
     for num, pet in enumerate(queryset):
