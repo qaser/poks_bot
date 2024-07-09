@@ -191,7 +191,7 @@ async def create_group(ao_id, message: types.Message):
                 try:
                     await bot.send_message(chat_id=admin_id, text=invite_text)
                     users_with_link.append(admin_name)
-                except (BotBlocked, CantInitiateConversation):
+                except:
                     users_not_available.append(admin_name)
                     pass
         ks_users = list(users.find({'ks': ks}))
@@ -205,7 +205,7 @@ async def create_group(ao_id, message: types.Message):
                 try:
                     await bot.send_message(chat_id=user_id, text=invite_text)
                     users_with_link.append(user_name)
-                except (BotBlocked, CantInitiateConversation):
+                except:
                     users_not_available.append(user_name)
                     pass
         in_group_text = ', '.join(users_in_group) if len(users_in_group) > 0 else 'отсутствуют'
