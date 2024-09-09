@@ -23,14 +23,15 @@
 # #     date = f'{day}.{month}.{year}'
 # #     print(date)
 
-# import pymongo
-# import pprint
+import pymongo
+import pprint
 
-# # Create the client
-# client = pymongo.MongoClient('localhost', 27017)
-# db = client['poks_bot_db']
-# gpa = db['gpa']
-# emergency_stops = db['emergency_stops']
+# Create the client
+client = pymongo.MongoClient('localhost', 27017)
+db = client['poks_bot_db']
+gpa = db['gpa']
+emergency_stops = db['emergency_stops']
+msgs = db['msgs']
 
 
 # # pipeline = [
@@ -75,3 +76,6 @@
 #     print(count)
 
 # pop_aos()
+
+queryset = list(msgs.find({}))
+print(queryset)

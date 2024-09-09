@@ -1,7 +1,7 @@
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from scheduler.scheduler_funcs import (send_backups, send_mail_summary,
-                                       send_remainder,
+                                       send_remainder, clear_msgs,
                                        send_task_users_reminder)
 from utils.constants import TIME_ZONE
 
@@ -16,6 +16,14 @@ def scheduler_jobs():
         day_of_week='mon-sun',
         hour=18,
         minute=0,
+        timezone=TIME_ZONE
+    )
+    scheduler.add_job(
+        clear_msgs,
+        'cron',
+        day_of_week='mon-sun',
+        hour=17,
+        minute=50,
         timezone=TIME_ZONE
     )
     scheduler.add_job(

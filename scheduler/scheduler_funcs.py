@@ -4,18 +4,29 @@ import logging
 import os
 from time import sleep
 
-from aiogram.utils.exceptions import ChatNotFound, MigrateToChat, Unauthorized
+from aiogram.utils.exceptions import (ChatNotFound, MigrateToChat,
+                                      Unauthorized, MessageCantBeDeleted)
 from pymongo.errors import DuplicateKeyError
 
 import utils.constants as const
 from config.bot_config import bot
 from config.mail_config import IMAP_MAIL_SERVER, MAIL_LOGIN, MAIL_PASS, ADMIN_EMAIL
-from config.mongo_config import admins, groups, users
+from config.mongo_config import admins, groups, users, msgs
 from config.telegram_config import MY_TELEGRAM_ID
 from utils.create_summary_excel import create_summary_excel
 from utils.get_mail import get_letters
 from utils.send_email import send_email
 from utils.backup_db import send_dbs_mail
+
+
+async def clear_msgs():
+    queryset = list(msgs.find({}))
+    for msg in queryset:
+        try:
+            await bot.delete_message(chat_id=int(msg['chat_id']), message_id=msg['msg_id'])
+        except MessageCantBeDeleted:
+            pass
+        msgs.delete_one({'chat_id': msg['chat_id'], 'message_id': msg['msg_id']})
 
 
 async def send_remainder():
@@ -30,7 +41,8 @@ async def send_remainder():
         id = group.get('_id')
         name = group.get('group_name')
         try:
-            await bot.send_message(chat_id=int(id), text=const.GROUP_REMAINDER)
+            msg = await bot.send_message(chat_id=int(id), text=const.GROUP_REMAINDER)
+            msgs.insert_one({'msg_id': msg.message_id, 'chat_id': id})
             await bot.send_message(
                 chat_id=MY_TELEGRAM_ID,
                 text=f'Группе "{name}" отправлено напоминание'
