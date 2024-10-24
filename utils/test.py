@@ -98,7 +98,7 @@ def find_gpa():
             continue
 
 
-find_gpa()
+# find_gpa()
 
 # date_reg = re.compile(r'\d\d\.\d\d\.(\d\d\d\d|\d\d)')
 
@@ -124,6 +124,7 @@ def migration_emergency_stops():
         except:
             emergency_stops.delete_one({'ks': es['station'], 'num_gpa': es['gpa']})
         group_name = f'{es["station"]} ГПА{es["gpa"]} {agr["name_gpa"]} ({es["date"]})'
+        print(group_name)
         check = groups.find_one({'group_name': group_name})
         if check is not None:
             groups.update_one(
