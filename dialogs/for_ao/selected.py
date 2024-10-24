@@ -56,7 +56,6 @@ async def on_confirm(callback, widget, manager: DialogManager):
 
 
 async def create_group(manager, ao_id, mark):
-    # context = manager.current_context()
     ao = emergency_stops.find_one({'_id': ao_id})
     await app.connect()
     ks = ao.get('station')
@@ -113,60 +112,60 @@ async def create_group(manager, ao_id, mark):
             MY_TELEGRAM_ID,
             text=f'Бот не смог войти в группу {group_name}\n\n{e}'
         )
-    # admin_users = list(admins.find({}))
-    # invite_text = f'Вас приглашают в чат для расследования АО(ВНО): {link.invite_link}'
-    # users_in_group = []
-    # users_with_link = []
-    # users_not_available = []
-    # for admin in admin_users:
-    #     admin_id = admin.get('user_id')
-    #     admin_name = admin.get('username')
-    #     try:
-    #         if admin_id != 744201326:  # исключаем Батькина
-    #             await add_admin_to_group(admin_id, group_id)
-    #             users_in_group.append(admin_name)
-    #         else:
-    #             await bot.send_message(chat_id=744201326, text=invite_text)
-    #             users_with_link.append(admin_name)
-    #     except:
-    #         try:
-    #             await bot.send_message(chat_id=admin_id, text=invite_text)
-    #             users_with_link.append(admin_name)
-    #         except:
-    #             users_not_available.append(admin_name)
-    #             pass
-    # ks_users = list(users.find({'ks': ks}))
-    # for user in ks_users:
-    #     user_id = user.get('user_id')
-    #     user_name = user.get('username')
-    #     try:
-    #         await app.add_chat_members(group_id, user_id)
-    #         users_in_group.append(user_name)
-    #     except:
-    #         try:
-    #             await bot.send_message(chat_id=user_id, text=invite_text)
-    #             users_with_link.append(user_name)
-    #         except:
-    #             users_not_available.append(user_name)
-    #             pass
-    # in_group_text = ', '.join(users_in_group) if len(users_in_group) > 0 else 'отсутствуют'
-    # with_link_text = ', '.join(users_with_link) if len(users_with_link) > 0 else 'отсутствуют'
-    # not_available_text = ', '.join(users_not_available) if len(users_not_available) > 0 else 'отсутствуют'
-    # resume_text=(f'Добавлены в группу:\n{in_group_text}\n\n'
-    #       f'Получили ссылки:\n{with_link_text}\n\n'
-    #       f'Недоступны:\n{not_available_text}')
-    # try:
-    #     await app.leave_chat(group_id)
-    # except:
-    #     await bot.send_message(
-    #         MY_TELEGRAM_ID,
-    #         text=f'Почему-то я не покинул группу {group_name}'
-    #     )
-    # try:
-    #     await bot.send_message(chat_id=OTKAZ_GROUP_ID, text=link.invite_link)
-    # except Exception as error:
-    #     await bot.send_message(MY_TELEGRAM_ID, text=error)
-    # await bot.send_message(MY_TELEGRAM_ID, text=f'Создана группа {group_name}')
+    admin_users = list(admins.find({}))
+    invite_text = f'Вас приглашают в чат для расследования АО(ВНО): {link.invite_link}'
+    users_in_group = []
+    users_with_link = []
+    users_not_available = []
+    for admin in admin_users:
+        admin_id = admin.get('user_id')
+        admin_name = admin.get('username')
+        try:
+            if admin_id != 744201326:  # исключаем Батькина
+                await add_admin_to_group(admin_id, group_id)
+                users_in_group.append(admin_name)
+            else:
+                await bot.send_message(chat_id=744201326, text=invite_text)
+                users_with_link.append(admin_name)
+        except:
+            try:
+                await bot.send_message(chat_id=admin_id, text=invite_text)
+                users_with_link.append(admin_name)
+            except:
+                users_not_available.append(admin_name)
+                pass
+    ks_users = list(users.find({'ks': ks}))
+    for user in ks_users:
+        user_id = user.get('user_id')
+        user_name = user.get('username')
+        try:
+            await app.add_chat_members(group_id, user_id)
+            users_in_group.append(user_name)
+        except:
+            try:
+                await bot.send_message(chat_id=user_id, text=invite_text)
+                users_with_link.append(user_name)
+            except:
+                users_not_available.append(user_name)
+                pass
+    in_group_text = ', '.join(users_in_group) if len(users_in_group) > 0 else 'отсутствуют'
+    with_link_text = ', '.join(users_with_link) if len(users_with_link) > 0 else 'отсутствуют'
+    not_available_text = ', '.join(users_not_available) if len(users_not_available) > 0 else 'отсутствуют'
+    resume_text=(f'Добавлены в группу:\n{in_group_text}\n\n'
+          f'Получили ссылки:\n{with_link_text}\n\n'
+          f'Недоступны:\n{not_available_text}')
+    try:
+        await app.leave_chat(group_id)
+    except:
+        await bot.send_message(
+            MY_TELEGRAM_ID,
+            text=f'Почему-то я не покинул группу {group_name}'
+        )
+    try:
+        await bot.send_message(chat_id=OTKAZ_GROUP_ID, text=link.invite_link)
+    except Exception as error:
+        await bot.send_message(MY_TELEGRAM_ID, text=error)
+    await bot.send_message(MY_TELEGRAM_ID, text=f'Создана группа {group_name}')
     post = await bot.send_message(
         chat_id=group_id,
         text=const.MANUAL,
@@ -181,7 +180,7 @@ async def create_group(manager, ao_id, mark):
         await send_chat_links(agr, group_id, ao_id)
     if mark == 'dialog':
         context = manager.current_context()
-        # context.dialog_data.update(resume_text=resume_text)
+        context.dialog_data.update(resume_text=resume_text)
         await manager.switch_to(Ao.ao_finish)
     await app.disconnect()
 
