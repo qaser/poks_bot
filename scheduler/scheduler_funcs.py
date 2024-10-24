@@ -4,8 +4,7 @@ import logging
 import os
 from time import sleep
 
-from aiogram.utils.exceptions import (ChatNotFound, MigrateToChat,
-                                      Unauthorized, MessageCantBeDeleted)
+from aiogram.exceptions import AiogramError
 from pymongo.errors import DuplicateKeyError
 
 import utils.constants as const
@@ -24,7 +23,7 @@ async def clear_msgs():
     for msg in queryset:
         try:
             await bot.delete_message(chat_id=int(msg['chat_id']), message_id=msg['msg_id'])
-        except MessageCantBeDeleted:
+        except AiogramError:
             pass
         msgs.delete_one({'chat_id': msg['chat_id'], 'message_id': msg['msg_id']})
 
@@ -48,41 +47,8 @@ async def send_remainder():
                 text=f'Группе "{name}" отправлено напоминание'
             )
             count_groups = count_groups + 1
-        except MigrateToChat as err:
-            groups.delete_one({'_id': id})
-            try:
-                groups.insert_one(
-                    {
-                        '_id': err.migrate_to_chat_id,
-                        'group_name': group.get('group_name'),
-                        'sub_banned': 'false',
-                    }
-                )
-            except DuplicateKeyError as e:
-                logging.exception(f'Исключение сработало {e}')
-                pass
-            try:
-                await bot.send_message(
-                    chat_id=err.migrate_to_chat_id,
-                    text=const.GROUP_REMAINDER
-                )
-                await bot.send_message(
-                    chat_id=MY_TELEGRAM_ID,
-                    text=f'Группе "{name}" отправлено напоминание'
-                )
-                count_groups = count_groups + 1
-            except (ChatNotFound, Unauthorized):
-                groups.delete_one({'_id': err.migrate_to_chat_id})
-                await bot.send_message(
-                    chat_id=MY_TELEGRAM_ID,
-                    text=f'Группа "{name}" удалена или удален бот'
-                )
-        except (ChatNotFound, Unauthorized) as err:
-            groups.delete_one({'_id': id})
-            await bot.send_message(
-                chat_id=MY_TELEGRAM_ID,
-                text=f'Группа "{name}" удалена или удален бот'
-            )
+        except AiogramError:
+            pass
     await bot.send_message(
         chat_id=MY_TELEGRAM_ID,
         text=('Задача рассылки уведомлений завершена.\n'
@@ -125,7 +91,7 @@ async def send_backups():
     # backup_dir = f'C:\Dev\poks_bot\\var\\backups\mongobackups\{cur_date}'
     backup_dir = f'../../../var/backups/mongobackups/{cur_date}'
     for db_name in os.listdir(backup_dir):
-        if db_name in ['poks_bot_db', 'ozp_bot', 'tehnika_bot_db', 'quiz_db']:
+        if db_name in ['poks_bot_db', 'tehnika_bot_db', 'quiz_db']:
             # backup_path = f'{backup_dir}\{db_name}'
             backup_path = f'{backup_dir}/{db_name}'
             emails = [ADMIN_EMAIL]

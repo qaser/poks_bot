@@ -1,26 +1,33 @@
-from aiogram import Dispatcher, types
-from aiogram.dispatcher import FSMContext
-from aiogram.dispatcher.filters.state import State, StatesGroup
+from aiogram import F, Router
+from aiogram import types
+from aiogram.filters import Command
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import State, StatesGroup
 
 import utils.constants as const
-from config.bot_config import bot, dp
+from config.bot_config import bot
 from config.mongo_config import admins
 from config.telegram_config import MY_TELEGRAM_ID
+from aiogram.types import ReplyKeyboardRemove
+from aiogram.utils.keyboard import ReplyKeyboardBuilder
 
+
+router = Router()
 
 class Admin(StatesGroup):
     waiting_directions = State()
     waiting_confirm = State()
 
 
-@dp.message_handler(commands=['admin'])
+@router.message(Command('admin'))
 async def dir_choose(message: types.Message, state: FSMContext):
     if message.chat.type == 'private':
-        keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
-        keyboard.add(f'{const.DONE_EMOJI} Завершить выбор')
-        keyboard.add(f'{const.SCROLL_EMOJI} Выбрать все направления')
+        kb = ReplyKeyboardBuilder()
+        kb.button(text='Завершить выбор')
+        kb.button(text='Выбрать все направления')
         for dir in const.DIRECTIONS_CODES.values():
-            keyboard.add(dir)
+            kb.button(text=dir)
+        kb.adjust(1)
         await message.answer(
             text=(
                 'Выберите направления. Возможен множественный выбор.\n'
@@ -28,21 +35,22 @@ async def dir_choose(message: types.Message, state: FSMContext):
                 'Для выбора сразу всех направлений нажмите кнопку "Выбрать все направления"\n\n'
                 'Если Вы проходите повторную регистрацию, то вводите все необходимые направления'
             ),
-            reply_markup=keyboard,
+            reply_markup=kb.as_markup(resize_keyboard=True),
         )
         await message.delete()
         await state.update_data(dirs=[])
-        await Admin.waiting_directions.set()
+        await state.set_state(Admin.waiting_directions)
     else:
         await message.delete()
 
 
+@router.message(Admin.waiting_directions)
 async def create_dir_list(message: types.Message, state: FSMContext):
     dir_names = const.DIRECTIONS_CODES.values()
-    if message.text.lower() == f'{const.SCROLL_EMOJI} выбрать все направления':
+    if message.text.lower() == f'выбрать все направления':
         dirs = list(const.DIRECTIONS_CODES.keys())
         await state.update_data(dirs=dirs)
-    elif message.text.lower() != f'{const.DONE_EMOJI} завершить выбор':
+    elif message.text.lower() != f'завершить выбор':
         if message.text not in dir_names:
             await message.answer(
                 'Пожалуйста, выберите направление, используя список ниже.'
@@ -70,9 +78,11 @@ async def create_dir_list(message: types.Message, state: FSMContext):
         if len(dirs) == 0:
             await message.answer('Необходимо выбрать минимум одно направление')
             return
-    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    keyboard.add('Нет', 'Да')
+    keyboard = ReplyKeyboardBuilder()
+    keyboard.button(text='Нет')
+    keyboard.button(text='Да')
     text_dirs = ''
+    keyboard.adjust(2)
     for i in dirs:
         name = const.DIRECTIONS_CODES.get(i)
         text_dirs = '{}\n    {}'.format(text_dirs, name)
@@ -82,11 +92,12 @@ async def create_dir_list(message: types.Message, state: FSMContext):
             f'{text_dirs}'
             '\n\nСохранить?'
         ),
-        reply_markup=keyboard,
+        reply_markup=keyboard.as_markup(resize_keyboard=True),
     )
-    await Admin.waiting_confirm.set()
+    await state.set_state(Admin.waiting_confirm)
 
 
+@router.message(Admin.waiting_confirm)
 async def admin_save(message: types.Message, state: FSMContext):
     if message.text.lower() not in ['нет', 'да']:
         await message.answer(
@@ -104,9 +115,9 @@ async def admin_save(message: types.Message, state: FSMContext):
         )
         await message.answer(
             'Администратор добавлен',
-            reply_markup=types.ReplyKeyboardRemove()
+            reply_markup=ReplyKeyboardRemove()
         )
-        await state.finish()
+        await state.clear()
         await bot.send_message(
             chat_id=MY_TELEGRAM_ID,
             text=f'Добавлен администратор, {user.full_name}'
@@ -114,11 +125,6 @@ async def admin_save(message: types.Message, state: FSMContext):
     else:
         await message.answer(
             'Данные не сохранены, если необходимо заново пройти регистрацию нажмите /admin',
-            reply_markup=types.ReplyKeyboardRemove()
+            reply_markup=ReplyKeyboardRemove()
         )
-        await state.finish()
-
-
-def register_handlers_admin(dp: Dispatcher):
-    dp.register_message_handler(create_dir_list, state=Admin.waiting_directions)
-    dp.register_message_handler(admin_save, state=Admin.waiting_confirm)
+        await state.clear()

@@ -1,322 +1,150 @@
+import re
 import datetime as dt
-from time import sleep
 
-from aiogram import Dispatcher, types
-from aiogram.dispatcher import FSMContext
-from aiogram.dispatcher.filters.state import State, StatesGroup
-from aiogram.utils.exceptions import BotBlocked, CantInitiateConversation
-from pyrogram.types import ChatPrivileges, ChatPermissions
-from config.telegram_config import MY_TELEGRAM_ID, BOT_ID, OTDEL_ID
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from config.bot_config import bot, dp
-from config.mongo_config import emergency_stops, users, admins, gpa
-from config.pyrogram_config import app
-from utils.constants import KS
-from utils.decorators import admin_check
+from aiogram import F, Router
+from bson import ObjectId
+from config.bot_config import bot
+from aiogram.filters import Command
+from aiogram.types import Message
+from aiogram_dialog import Dialog, DialogManager, StartMode
 
+from dialogs.for_ao import windows
+from dialogs.for_ao.states import Ao
+from dialogs.for_ao.selected import create_group
+from config.telegram_config import MY_TELEGRAM_ID
+from config.mongo_config import gpa, emergency_stops
 
-class Ao(StatesGroup):
-    waiting_station_name = State()
-    waiting_gpa_number = State()
-    waiting_confirm = State()
-
-
-# команда /ao - входная точка для оповещения аварийного останова
-@admin_check
-@dp.message_handler(commands=['es'])
-async def emergency_start(message: types.Message):
-    if message.chat.type == 'private':
-        keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
-        for station in KS:
-            keyboard.add(station)
-        await message.answer(
-            text=(
-                'Выберите компрессорную станцию, '
-                'на которой произошёл аварийный останов'
-            ),
-            reply_markup=keyboard
-        )
-        await message.delete()
-        await Ao.waiting_station_name.set()
+SERVICE_MSG = ('Кто-то ввёл данные в группу "Отказы", '
+               'но бот не смог ему отправить сообщение')
+BAD_BOT_MSG = 'Бот не смог определить ГПА по сообщению в группе "Отказы"'
+GPA_DETECT_TEXT = ('Автоматическое определение ГПА для создания '
+                   'группы расследования отказа:')
 
 
-async def station_name(message: types.Message, state: FSMContext):
-    if message.text not in KS:
-        await message.answer(
-            'Пожалуйста, выберите КС, используя список ниже. '
-            'Я не работаю с другими объектами кроме тех, что в списке.'
-        )
-        return
-    else:
-        await state.update_data(station=message.text)
-        await message.answer(
-            text='Введите номер ГПА',
-            reply_markup=types.ReplyKeyboardRemove()
-        )
-        await Ao.next()
+router = Router()
+
+dialog =  Dialog(
+    windows.stations_window(),
+    windows.shops_window(),
+    windows.gpa_window(),
+    windows.ao_confirm_window(),
+    windows.finish_window(),
+)
 
 
-async def gpa_number(message: types.Message, state: FSMContext):
-    await state.update_data(gpa_num=message.text)
-    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    keyboard.add('Нет', 'Да')
-    data = await state.get_data()
-    station = data['station']
-    gpa_num = data['gpa_num']
+@router.message(Command('ao'))
+async def ao_request(message: Message, dialog_manager: DialogManager):
+    await message.delete()
+    # Important: always set `mode=StartMode.RESET_STACK` you don't want to stack dialogs
+    await dialog_manager.start(Ao.select_station, mode=StartMode.RESET_STACK)
+
+
+@router.message(F.chat.id == -1001902490328)
+async def auto_otkaz_detect(message: Message):
+    gpa_num_find = re.compile(r'№(\d\d|\d\d\d)')
+    date_find = re.compile(r'\d\d\.\d\d\.(\d\d\d\d|\d\d)')
+    lpu_find = re.compile(r'\w+ое\sЛПУМГ|\w+-\w+ое\sЛПУМГ')
+    ks_find = re.compile(r'\w+ая|\w+ая')
+    date = date_find.search(message.text)
+    num_gpa = gpa_num_find.search(message.text)
+    lpu = lpu_find.search(message.text)
+    ks = ks_find.search(message.text)
     try:
-        gpa_instance = gpa.find_one({'ks': station, 'num_gpa': gpa_num})
-        gpa_name = gpa_instance.get('name_gpa')
-        await state.update_data(gpa_id=gpa_instance.get('_id'))
-        gpa_text = f' (по моим данным это {gpa_name})'
-    except:
-        gpa_text = ''
-    await message.answer(
-        text=f'Вы выбрали "{station}"\nГПА{gpa_num}{gpa_text}.\nВсё верно?',
-        reply_markup=keyboard,
+        lpu_name = lpu.group()
+    except AttributeError:
+        lpu_name = None
+    try:
+        ks = f'{ks.group()} КС'
+    except AttributeError:
+        ks = None
+    try:
+        day, month, year = date.group().split('.')
+        year = f'20{year}' if len(year) == 2 else year
+        date = f'{day}.{month}.{year}'
+    except AttributeError:
+        date = dt.datetime.now().strftime('%d.%m.%Y')
+    try:
+        num_gpa = num_gpa.group()
+    except AttributeError:
+        num_gpa = None
+    if lpu_name is not None and num_gpa is not None:
+        queryset = list(gpa.find({'lpu': lpu_name, 'num_gpa': num_gpa[1:]}))
+        if len(queryset) > 1 and ks is not None:
+            gpa_instance = gpa.find_one({'lpu': lpu_name, 'num_gpa': num_gpa[1:], 'ks': ks})
+            if gpa_instance is not None:
+                await send_autodetect_message(message, gpa_instance)
+        elif len(queryset) == 1:
+            gpa_instance = queryset[0]
+            await send_autodetect_message(message, gpa_instance)
+        else:
+            await bot.send_message(MY_TELEGRAM_ID, f'{BAD_BOT_MSG}\n\n{message.text}')
+    elif ks is not None and num_gpa is not None:
+        gpa_instance = gpa.find_one({'ks': ks, 'num_gpa': num_gpa[1:]})
+        if gpa_instance is not None:
+            await send_autodetect_message(message, gpa_instance)
+        else:
+            await bot.send_message(MY_TELEGRAM_ID, f'{BAD_BOT_MSG}\n\n{message.text}')
+    else:
+        await bot.send_message(MY_TELEGRAM_ID, f'{BAD_BOT_MSG}\n\n{message.text}')
+
+
+async def send_autodetect_message(message, agr):
+    station = agr['ks']
+    gpa_num = agr['num_gpa']
+    name_gpa = agr['name_gpa']
+    ao_count = emergency_stops.count_documents({'gpa_id': agr['_id']})
+    kb = InlineKeyboardBuilder()
+    kb.button(
+        text='Ввести данные вручную',
+        callback_data='create_manual_none'
     )
-    await Ao.next()
-
-
-async def confirmation(message: types.Message, state: FSMContext):
-    if message.text.lower() not in ['нет', 'да']:
-        await message.answer(
-            'Пожалуйста, выберите ответ, используя клавиатуру ниже.'
+    kb.button(
+        text=f'Создать группу для ГПА №{gpa_num}',
+        callback_data=f'create_auto_{str(agr["_id"])}'
+    )
+    kb.adjust(1)
+    try:
+        await bot.send_message(
+            chat_id=message.from_user.id,
+            text=(f'{GPA_DETECT_TEXT}\n\n<b>{station}</b>\n<b>ГПА №{gpa_num}</b>\n\n'
+                f'Согласно БД это: {name_gpa}\nКоличество зарегистрированных '
+                f'АО (ВНО): {ao_count}\nСоздать группу для проведения '
+                'расследования отказа этого ГПА?\nВы можете отказаться и ввести '
+                'данные ГПА вручную.'),
+            parse_mode='HTML',
+            reply_markup=kb.as_markup()
         )
-        return
-    if message.text.lower() == 'да':
+    except:
+        await bot.send_message(MY_TELEGRAM_ID, SERVICE_MSG)
+
+
+@router.callback_query(F.data.startswith('create'))
+async def choose_mode(callback):
+    _, choose, gpa_id = callback.data.split('_')
+    if choose == 'auto':
+        gpa_instance = gpa.find_one({'_id': ObjectId(gpa_id)})
+        station = gpa_instance['ks']
+        gpa_num = gpa_instance['num_gpa']
         date = dt.datetime.today().strftime('%d.%m.%Y')
-        data = await state.get_data()
         ao_id = emergency_stops.insert_one(
             {
                 'date': date,
-                'station': data['station'],
-                'gpa': data['gpa_num'],
+                'station': station,
+                'gpa': gpa_num,
+                'gpa_id': ObjectId(gpa_id)
             }
         ).inserted_id
         try:
-            gpa_id = data['gpa_id']
-            gpa_instance = gpa.find({'_id': gpa_id})
-            ao_list = gpa_instance.get('ao')
-            if gpa_instance is not None:
-                ao_list.append(ao_id)
-            else:
-                ao_list = []
-            gpa.update_one({'_id': gpa_id}, {'$set': {'ao': ao_list}})
+            await create_group(None, ao_id, 'auto')
+        except:
+            await callback.message.answer('Создать группу автоматически не удалось, нажмите /ao')
+            emergency_stops.delete_one({'_id': ao_id})
+        try:
+            await callback.message.delete()
         except:
             pass
-        await state.finish()
-        await message.answer(
-            text=f'Принято',
-            reply_markup=types.ReplyKeyboardRemove()
-        )
-        await create_group(ao_id, message)
-    else:
-        await message.answer(
-            ('Данные не сохранены.\n'
-             'Если необходимо повторить команду - нажмите /es'),
-            reply_markup=types.ReplyKeyboardRemove()
-        )
-        await state.finish()
-
-
-async def create_group(ao_id, message: types.Message):
-    ao = emergency_stops.find_one({'_id': ao_id})
-    async with app:
-        ks = ao.get('station')
-        date = ao.get('date')
-        gpa_num = ao.get('gpa')
-        agr = gpa.find_one({'ks': ks, 'num_gpa': gpa_num})
-        gpa_name = agr.get('name_gpa') if agr is not None else ''
-        group_name = f'{ks} ГПА{gpa_num} {gpa_name} ({date})'
-        msg = await message.answer('Начинается процесс создания рабочего чата...')
-        try:
-            group = await app.create_supergroup(group_name)
-            await bot.send_message(MY_TELEGRAM_ID, text=f'Создана группа {group_name}')
-        except Exception as err:
-            await msg.edit_text(
-                'Возникли проблемы при создании группы, повторите попытку позже'
-            )
-            await bot.send_message(
-                MY_TELEGRAM_ID,
-                text=f'Проблема при создании группы "{group_name}"\n\n{err}'
-            )
-        await msg.edit_text('Группа создана.\nИдет процесс приглашения пользователей...')
-        group_id = group.id
-        await app.set_chat_protected_content(chat_id=group_id, enabled=True)
-        await app.set_chat_permissions(
-            chat_id=group_id,
-            permissions=ChatPermissions(
-                can_send_messages=True,
-                can_send_media_messages=True,
-                can_send_other_messages=True,
-                can_send_polls=True,
-                can_add_web_page_previews=True,
-                can_change_info=True,
-                can_invite_users=True,
-                can_pin_messages=True
-            )
-        )
-        try:
-            link = await app.create_chat_invite_link(group_id)
-            await bot.send_message(MY_TELEGRAM_ID, text=f'Ссылка для группы "{group_name}" создана')
-        except Exception as error:
-            await bot.send_message(
-                MY_TELEGRAM_ID,
-                text=f'Ссылка для группы "{group_name}" не создана\n\n{error}'
-            )
-        try:
-            await add_admin_to_group(BOT_ID, group_id)
-            await bot.send_message(MY_TELEGRAM_ID, text=f'Бот в группе {group_name}')
-        except Exception as e:
-            await bot.send_message(
-                MY_TELEGRAM_ID,
-                text=f'Бот не смог войти в группу {group_name}\n\n{e}'
-            )
-        admin_users = list(admins.find({}))
-        invite_text = f'Вас приглашают в чат для расследования АО(ВНО): {link.invite_link}'
-        users_in_group = []
-        users_with_link = []
-        users_not_available = []
-        for admin in admin_users:
-            admin_id = admin.get('user_id')
-            admin_name = admin.get('username')
-            try:
-                if admin_id != 744201326:  # исключаем Батькина
-                    await add_admin_to_group(admin_id, group_id)
-                    users_in_group.append(admin_name)
-                else:
-                    await bot.send_message(chat_id=744201326, text=invite_text)
-                    users_with_link.append(admin_name)
-            except:
-                try:
-                    await bot.send_message(chat_id=admin_id, text=invite_text)
-                    users_with_link.append(admin_name)
-                except:
-                    users_not_available.append(admin_name)
-                    pass
-        ks_users = list(users.find({'ks': ks}))
-        for user in ks_users:
-            user_id = user.get('user_id')
-            user_name = user.get('username')
-            try:
-                await app.add_chat_members(group_id, user_id)
-                users_in_group.append(user_name)
-            except:
-                try:
-                    await bot.send_message(chat_id=user_id, text=invite_text)
-                    users_with_link.append(user_name)
-                except:
-                    users_not_available.append(user_name)
-                    pass
-        in_group_text = ', '.join(users_in_group) if len(users_in_group) > 0 else 'отсутствуют'
-        with_link_text = ', '.join(users_with_link) if len(users_with_link) > 0 else 'отсутствуют'
-        not_available_text = ', '.join(users_not_available) if len(users_not_available) > 0 else 'отсутствуют'
-        await msg.edit_text(
-            text=(f'Добавлены в группу:\n{in_group_text}\n\n'
-                  f'Получили ссылки:\n{with_link_text}\n\n'
-                  f'Недоступны:\n{not_available_text}')
-        )
-        await message.answer(link.invite_link)
-        try:
-            await app.leave_chat(group_id)
-            await bot.send_message(
-                MY_TELEGRAM_ID,
-                text=f'Я покинул группу {group_name}'
-            )
-        except:
-            await bot.send_message(
-                MY_TELEGRAM_ID,
-                text=f'Почему-то я не покинул группу {group_name}'
-            )
-        try:
-            await bot.send_message(chat_id=OTDEL_ID, text=link.invite_link)
-        except Exception as error:
-            await bot.send_message(MY_TELEGRAM_ID, text=error)
-
-
-async def add_admin_to_group(user_id, group_id):
-    await app.promote_chat_member(
-        chat_id=group_id,
-        user_id=user_id,
-        privileges=ChatPrivileges(
-            can_manage_chat=True,
-            can_delete_messages=True,
-            can_manage_video_chats=True,
-            can_restrict_members=True,
-            can_promote_members=True,
-            can_change_info=True,
-            can_post_messages=True,
-            can_edit_messages=True,
-            can_invite_users=True,
-            can_pin_messages=True,
-            is_anonymous=False
-        )
-    )
-
-
-@dp.message_handler(commands=['copy'])
-async def hash_users(message: types.Message):
-    await message.delete()
-    async with app:
-        try:
-            await app.promote_chat_member(
-                chat_id=message.chat.id,
-                user_id=MY_TELEGRAM_ID,
-                privileges=ChatPrivileges(
-                    can_manage_chat=True,
-                    can_delete_messages=True,
-                    can_manage_video_chats=True,
-                    can_restrict_members=True,
-                    can_promote_members=True,
-                    can_change_info=True,
-                    can_post_messages=True,
-                    can_edit_messages=True,
-                    can_invite_users=True,
-                    can_pin_messages=True,
-                    is_anonymous=True
-                )
-            )
-        except Exception as e:
-            await bot.send_message(MY_TELEGRAM_ID, text=e)
-        try:
-            await app.set_chat_protected_content(
-                chat_id=message.chat.id,
-                enabled=False
-            )
-            msg = await message.answer('30', disable_notification=True)
-            for sec in range(29, 0, -2):
-                await msg.edit_text(sec)
-                sleep(2)
-        except Exception as err:
-            await bot.send_message(MY_TELEGRAM_ID, text=err)
-        try:
-            await app.set_chat_protected_content(
-                chat_id=message.chat.id,
-                enabled=True
-            )
-        except Exception as error:
-            await bot.send_message(MY_TELEGRAM_ID, text=error)
-        try:
-            await msg.delete()
-        except:
-            pass
-        try:
-            await app.leave_chat(message.chat.id)
-        except Exception as er:
-            await bot.send_message(MY_TELEGRAM_ID, text=er)
-
-
-
-def register_handlers_ao(dp: Dispatcher):
-    dp.register_message_handler(
-        station_name,
-        state=Ao.waiting_station_name
-    )
-    dp.register_message_handler(
-        gpa_number,
-        state=Ao.waiting_gpa_number
-    )
-    dp.register_message_handler(
-        confirmation,
-        state=Ao.waiting_confirm
-    )
+    elif choose == 'manual':
+        await callback.message.delete()
+        await callback.message.answer('Для создания группы расследования нажмите /ao')
