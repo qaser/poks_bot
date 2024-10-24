@@ -124,10 +124,10 @@ def migration_emergency_stops():
         except:
             emergency_stops.delete_one({'ks': es['station'], 'num_gpa': es['gpa']})
         ks = es["station"]
-        gpa_name = agr["name_gpa"]
         date = es["date"]
+        gpa_num = es["gpa"]
         try:
-            gpa_num = es["gpa"]
+            gpa_name = agr["name_gpa"]
             group_name = f'{ks} ГПА{gpa_num} {gpa_name} ({date})'
             check = groups.find_one({'group_name': group_name})
             if check is not None:
