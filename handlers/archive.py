@@ -1,5 +1,6 @@
 from aiogram import F, Router
 from aiogram.types import Message, FSInputFile
+import pprint
 
 from config.bot_config import bot
 from config.mongo_config import archive
@@ -11,6 +12,7 @@ router = Router()
 @router.message(F.content_type.in_({'text', 'video', 'photo', 'document'}))
 async def archive_messages(message: Message):
     chat = message.chat.id
+    # pprint.pprint(message)
     if message.photo:
         await bot.send_photo(
             MY_TELEGRAM_ID,
