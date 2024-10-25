@@ -1,6 +1,5 @@
 from aiogram import F, Router
-from aiogram.types import Message, FSInputFile
-import pprint
+from aiogram.types import Message
 
 from config.bot_config import bot
 from config.mongo_config import archive
@@ -12,7 +11,7 @@ router = Router()
 @router.message(F.content_type.in_({'text', 'video', 'photo', 'document'}))
 async def archive_messages(message: Message):
     chat = message.chat.id
-    # pprint.pprint(message)
+    thread = message.message_thread_id
     if message.photo:
         await bot.send_photo(
             MY_TELEGRAM_ID,
@@ -23,13 +22,13 @@ async def archive_messages(message: Message):
         await bot.send_document(
             MY_TELEGRAM_ID,
             document=getattr(message, 'document').file_id,
-            caption=message.chat.full_name
+            caption=f'{message.chat.full_name} {thread}'
         )
     if message.video:
         await bot.send_video(
             MY_TELEGRAM_ID,
             video=getattr(message, 'video').file_id,
-            caption=message.chat.full_name
+            caption=f'{message.chat.full_name} {thread}'
         )
     if message.text:
         data = archive.find_one({'_id': chat})
@@ -43,4 +42,4 @@ async def archive_messages(message: Message):
                 upsert=False
             )
         chat_name = message.chat.full_name
-        await bot.send_message(MY_TELEGRAM_ID, f'{chat_name}: {message.text}')
+        await bot.send_message(MY_TELEGRAM_ID, f'{chat_name} {thread}: {message.text}')
