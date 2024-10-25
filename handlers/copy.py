@@ -17,6 +17,10 @@ router = Router()
 @router.message(Command('copy'))
 async def hash_users(message: Message):
     await message.delete()
+    try:
+        app.disconnect()
+    except:
+        pass
     await app.connect()
     try:
         await app.promote_chat_member(
@@ -37,6 +41,7 @@ async def hash_users(message: Message):
             )
         )
     except Exception as e:
+        pass
         await bot.send_message(MY_TELEGRAM_ID, text=e)
     try:
         await app.set_chat_protected_content(
@@ -48,7 +53,7 @@ async def hash_users(message: Message):
             await msg.edit_text(str(sec))
             sleep(2)
     except Exception as err:
-        print(err)
+        pass
         # await bot.send_message(MY_TELEGRAM_ID, text=err)
     try:
         await app.set_chat_protected_content(
@@ -56,7 +61,7 @@ async def hash_users(message: Message):
             enabled=True
         )
     except Exception as error:
-        print(error)
+        pass
         # await bot.send_message(MY_TELEGRAM_ID, text=error)
     try:
         await msg.delete()
@@ -65,6 +70,6 @@ async def hash_users(message: Message):
     try:
         await app.leave_chat(message.chat.id)
     except Exception as er:
-        print(er)
+        pass
         # await bot.send_message(MY_TELEGRAM_ID, text=er)
     await app.disconnect()
