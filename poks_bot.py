@@ -13,7 +13,7 @@ import utils.constants as const
 
 from config.mongo_config import groups
 from config.telegram_config import MY_TELEGRAM_ID
-from handlers import ao, copy, admin, registration, service, archive, time
+from handlers import ao, copy, admin, registration, service, archive
 from pyrogram import utils
 
 from scheduler.scheduler_funcs import (send_backups, send_mail_summary,
@@ -129,7 +129,7 @@ async def main():
         ao.router,
         copy.router,
         admin.router,
-        time.router,
+        # time.router,
         registration.router,
         ao.dialog,
         archive.router
