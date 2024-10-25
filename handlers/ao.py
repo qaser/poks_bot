@@ -15,6 +15,8 @@ from dialogs.for_ao.states import Ao
 from dialogs.for_ao.selected import create_group
 from config.telegram_config import MY_TELEGRAM_ID
 from config.mongo_config import gpa, emergency_stops
+from utils.utils import check_ks
+
 
 SERVICE_MSG = ('Кто-то ввёл данные в группу "Отказы", '
                'но бот не смог ему отправить сообщение')
@@ -41,7 +43,7 @@ async def ao_request(message: Message, dialog_manager: DialogManager):
     await dialog_manager.start(Ao.select_station, mode=StartMode.RESET_STACK)
 
 
-@router.message(F.chat.id == -1001856019654)  # для pusha
+# @router.message(F.chat.id == -1001856019654)  # для pusha
 # @router.message(F.chat.id == -1001902490328)
 async def auto_otkaz_detect(message: Message):
     gpa_num_find = re.compile(r'№(\d\d|\d\d\d)')
@@ -58,6 +60,7 @@ async def auto_otkaz_detect(message: Message):
         lpu_name = None
     try:
         ks = f'{ks.group()} КС'
+        ks = check_ks(ks)
     except AttributeError:
         ks = None
     try:

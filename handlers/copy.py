@@ -18,7 +18,7 @@ router = Router()
 async def hash_users(message: Message):
     await message.delete()
     try:
-        app.disconnect()
+        await app.disconnect()
     except:
         pass
     await app.connect()

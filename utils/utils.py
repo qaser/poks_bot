@@ -1,5 +1,4 @@
 from aiogram import types
-from aiogram.utils.exceptions import CantInitiateConversation, BotBlocked
 
 import keyboards.for_petition as kb
 import utils.constants as const
@@ -39,5 +38,13 @@ async def send_petition_to_admins(ks, date, username, msg_text, pet_id, dir):
                     parse_mode=types.ParseMode.HTML,
                     reply_markup=kb.status_kb(pet_id, 'create', num_docs)
                 )
-            except (CantInitiateConversation, BotBlocked):
+            except:
                 continue
+
+
+def check_ks(ks):  # проверка на наличие буквы ё
+    if ks == 'Приозёрная КС':
+        return 'Приозерная КС'
+    elif ks == 'Таёжная КС':
+        return 'Таежная КС'
+    return ks

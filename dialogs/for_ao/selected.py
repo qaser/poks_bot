@@ -58,7 +58,7 @@ async def on_confirm(callback, widget, manager: DialogManager):
 async def create_group(manager, ao_id, mark):
     ao = emergency_stops.find_one({'_id': ao_id})
     try:
-        app.disconnect()
+        await app.disconnect()
     except:
         pass
     await app.connect()

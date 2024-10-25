@@ -2,6 +2,7 @@ import re
 import datetime as dt
 import pymongo
 import pprint
+from dateutil.relativedelta import relativedelta
 
 # # Create the client
 client = pymongo.MongoClient('localhost', 27017)
@@ -9,6 +10,7 @@ db = client['poks_bot_db']
 gpa = db['gpa']
 emergency_stops = db['emergency_stops']
 groups = db['groups']
+оperating_time = db['operating_time']
 # msgs = db['msgs']
 
 KS = [
@@ -32,14 +34,14 @@ KS = [
     'Пелымская КС',
     'Перегребненская КС',
     'Правохеттинская КС',
-    'Приозерная КС',
+    'Приозерная КС',  #
     'Приполярная КС',
     'Пунгинская КС',
     'Пуровская КС',
     'Сорумская КС',
     'Сосновская КС',
     'Сосьвинская КС',
-    'Таежная КС',
+    'Таежная КС',  #
     'Ужгородская КС',
     'Узюм-Юганская КС',
     'Уренгойская КС',
@@ -49,7 +51,8 @@ KS = [
 ]  #  всего 34 шт.
 
 MSGS = [
-    '«Ново-Пелымская»: ГПА 41 - 516 ГПА 42 - 521 ГПА 51 - 720 ГПА 52 - 613 ГПА 54 - 550 ГПА 61 - 621 ГПА 62 - 673 ГПА 64 - 621',
+    'fdjfhkvhk',
+    '«Ново-Пелымская»: ГПА41 - 516 ГПА42 - 521 ГПА 51 - 720 ГПА 52 - 613 ГПА 54 - 550 ГПА 61 - 621 ГПА 62 - 673 ГПА 64 - 621',
     '«Октябрьская»: ГПА  71 - 645 ГПА  74 - 720 ГПА  81 - 638 ГПА  84 - 720 ГПА  91 - 696 ГПА  94 - 697 ГПА 101 - 113 ГПА 104 - 634',
     'КС "Приозёрная": ГПА 24 - 0 ГПА 31 - 0 ГПА 34 - 0 ГПА 51 - 0 ГПА 54 - 0 ГПА 61 - 0 ГПА 64 - 0 ГПА 71 - 0 ГПА 74 - 0 ГПА 84 - 0 ГПА 91 - 0 ГПА 94 - 0',
     'КС Верхнеказымская: - ГПА 61 - 257 - ГПА 64 - 257',
@@ -59,6 +62,7 @@ MSGS = [
     'КС Карпинская: -ГПА52-резерв (ВТД ТТ КЦ-5 до 29.11.2024) -ГПА54-резерв (ВТД ТТ КЦ-5 до 29.11.2024) -ГПА62-работа -ГПА64 -резерв по режиму (подготовка к ППР КЦ-6 план 02.10.2024-07.10.2024)',
 ]
 
+
 def find_gpa():
     gpa_num_find = re.compile(r'№(\d\d|\d\d\d)')
     ks_find = re.compile(r'\w+ая|\w+-\w+ая')
@@ -67,10 +71,38 @@ def find_gpa():
         find_gpa = re.findall('ГПА\s*\d+\s*-\s*\d+', msg)
         if len(find_gpa) > 0:
             ks = ks_find.search(msg)
-            # if ks in KS:
-            print(dir(ks), find_gpa)
+            ks = f'{ks.group()} КС' if ks is not None else ''
+            ks = check_ks(ks)
+            if ks in KS:
+                print(ks, find_gpa)
+                for agr in find_gpa:
+                    num_gpa, work_time = agr.replace(' ', '').split('-')
+                    num_gpa = num_gpa[3:]
+                    print(num_gpa, work_time)
+                    gpa_instance = gpa.find_one({'ks': ks, 'num_gpa': str(num_gpa)})
+                    gpa_id = gpa_instance['_id']
+                    gpa.update_one({'_id': gpa_id}, {'$set': {'iskra_comp': True}})
+                    date = dt.datetime.now()
+                    previous_month = date - relativedelta(months=1)
+                    оperating_time.update_one(
+                        {'gpa_id': gpa_id},
+                        {'$set': {
+                            'reg_date': date,
+                            'work_time': int(work_time),
+                            'month': previous_month.month,
+                            'year': previous_month.year,
+                        }},
+                        upsert=True
+                    )
 
-find_gpa()
+def check_ks(ks):  # проверка на наличие буквы ё
+    if ks == 'Приозёрная КС':
+        return 'Приозерная КС'
+    elif ks == 'Таёжная КС':
+        return 'Таежная КС'
+    return ks
+
+# find_gpa()
 
 SPCH = {
     'Ново-Пелымская КС': [41, 42, 51, 52, 54, 61, 62, 64],
