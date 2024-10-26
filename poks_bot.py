@@ -18,7 +18,7 @@ from pyrogram import utils
 
 from scheduler.scheduler_funcs import (send_backups, send_mail_summary,
                                        send_remainder, clear_msgs,
-                                       send_task_users_reminder)
+                                       send_work_time_reminder)
 
 
 def get_peer_type_new(peer_id: int) -> str:
@@ -87,6 +87,14 @@ async def main():
         day_of_week='mon-sun',
         hour=17,
         minute=55,
+        timezone=const.TIME_ZONE
+    )
+    scheduler.add_job(
+        send_work_time_reminder,
+        'cron',
+        day='1',
+        hour=8,
+        minute=0,
         timezone=const.TIME_ZONE
     )
     # scheduler.add_job(

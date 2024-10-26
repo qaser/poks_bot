@@ -43,4 +43,4 @@ async def archive_messages(message: Message):
                 upsert=False
             )
         chat_name = message.chat.full_name
-        await bot.send_message(MY_TELEGRAM_ID, f'{chat_name} {thread}: {message.text}')
+        await bot.send_message(MY_TELEGRAM_ID, f'{chat_name} {message.chat.id} {thread}: {message.text}')

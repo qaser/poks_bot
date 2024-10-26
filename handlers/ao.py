@@ -43,7 +43,7 @@ async def ao_request(message: Message, dialog_manager: DialogManager):
     await dialog_manager.start(Ao.select_station, mode=StartMode.RESET_STACK)
 
 
-# @router.message(F.chat.id == -1001856019654)  # для pusha
+@router.message(F.chat.id == -1001856019654)  # для pusha
 # @router.message(F.chat.id == -1001902490328)
 async def auto_otkaz_detect(message: Message):
     gpa_num_find = re.compile(r'№(\d\d|\d\d\d)')

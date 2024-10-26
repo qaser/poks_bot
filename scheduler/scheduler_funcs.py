@@ -96,3 +96,7 @@ async def send_backups():
             backup_path = f'{backup_dir}/{db_name}'
             emails = [ADMIN_EMAIL]
             await send_dbs_mail(emails, db_name, backup_path)
+
+
+async def send_work_time_reminder():
+    pass
