@@ -9,6 +9,7 @@ from aiogram.types import Message
 
 from config.telegram_config import MY_TELEGRAM_ID
 from config.mongo_config import gpa, оperating_time
+from handlers.archive import archive_messages
 from utils.utils import check_ks
 import utils.constants as const
 
@@ -58,3 +59,5 @@ async def parse_operating_time(message: Message):
                       'грамматическая ошибка в названии КС'),
                 disable_notification=True
             )
+    else:
+        await archive_messages(message)
