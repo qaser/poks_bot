@@ -15,6 +15,7 @@ from dialogs.for_ao.states import Ao
 from dialogs.for_ao.selected import create_group
 from config.telegram_config import MY_TELEGRAM_ID
 from config.mongo_config import gpa, emergency_stops
+from handlers.archive import archive_messages
 from utils.utils import check_ks
 
 
@@ -46,6 +47,7 @@ async def ao_request(message: Message, dialog_manager: DialogManager):
 @router.message(F.chat.id == -1001856019654)  # для pusha
 # @router.message(F.chat.id == -1002345179040)
 async def auto_otkaz_detect(message: Message):
+    await archive_messages(message)
     gpa_num_find = re.compile(r'№(\d*)')
     date_find = re.compile(r'\d\d\.\d\d\.(\d\d\d\d|\d\d)')
     lpu_find = re.compile(r'\w+ое\sЛПУМГ|\w+-\w+ое\sЛПУМГ')

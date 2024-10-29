@@ -20,6 +20,7 @@ router = Router()
 @router.message(F.chat.id == -1001908010022 and F.message_thread_id == 216)  # для pusha
 # @router.message(F.chat.id == -1002345179040 and F.message_thread_id == 3)
 async def parse_operating_time(message: Message):
+    await archive_messages(message)
     ks_find = re.compile(r'\w+ая|\w+-\w+ая')
     msg = message.text.replace(u'\xa0', u' ')
     find_gpa = re.findall('ГПА\s*\d+\s*-\s*\d+', msg)
@@ -59,5 +60,3 @@ async def parse_operating_time(message: Message):
                       'грамматическая ошибка в названии КС'),
                 disable_notification=True
             )
-    else:
-        await archive_messages(message)

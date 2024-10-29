@@ -51,7 +51,6 @@ async def hash_users(message: Message):
             await msg.edit_text(str(sec))
             sleep(2)
     except Exception as err:
-        print(err)
         await bot.send_message(MY_TELEGRAM_ID, text='Не получилось снять с группы защиту')
     try:
         await app.set_chat_protected_content(
