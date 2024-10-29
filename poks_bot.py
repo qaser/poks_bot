@@ -9,6 +9,7 @@ from aiogram_dialog import setup_dialogs
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from config.bot_config import bot, dp
+from config.pyrogram_config import app
 import utils.constants as const
 
 from config.mongo_config import groups
@@ -143,6 +144,7 @@ async def main():
         archive.router
     )
     setup_dialogs(dp)
+    await app.start()
     await dp.start_polling(bot)
 
 
