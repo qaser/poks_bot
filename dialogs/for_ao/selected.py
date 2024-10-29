@@ -58,10 +58,9 @@ async def on_confirm(callback, widget, manager: DialogManager):
 async def create_group(manager, ao_id, mark):
     ao = emergency_stops.find_one({'_id': ao_id})
     try:
-        await app.disconnect()
+        await app.start()
     except:
         pass
-    await app.connect()
     ks = ao.get('station')
     date = ao.get('date')
     gpa_num = ao.get('gpa')
@@ -73,10 +72,10 @@ async def create_group(manager, ao_id, mark):
     group_name = f'{ks} ГПА{gpa_num} {gpa_name} ({date})'
     try:
         group = await app.create_supergroup(group_name)
-    except Exception as err:
+    except Exception:
         await bot.send_message(
             MY_TELEGRAM_ID,
-            text=f'Проблема при создании группы "{group_name}"\n\n{err}'
+            text=f'Проблема при создании группы "{group_name}"'
         )
     group_id = group.id
     groups.insert_one(
@@ -104,17 +103,17 @@ async def create_group(manager, ao_id, mark):
     )
     try:
         link = await app.create_chat_invite_link(group_id)
-    except Exception as error:
+    except Exception:
         await bot.send_message(
             MY_TELEGRAM_ID,
-            text=f'Ссылка для группы "{group_name}" не создана\n\n{error}'
+            text=f'Ссылка для группы "{group_name}" не создана'
         )
     try:
         await add_admin_to_group(BOT_ID, group_id)
-    except Exception as e:
+    except Exception:
         await bot.send_message(
             MY_TELEGRAM_ID,
-            text=f'Бот не смог войти в группу {group_name}\n\n{e}'
+            text=f'Бот не смог войти в группу {group_name}'
         )
     admin_users = list(admins.find({}))
     invite_text = f'Вас приглашают в чат для расследования АО(ВНО): {link.invite_link}'
@@ -160,6 +159,8 @@ async def create_group(manager, ao_id, mark):
           f'Недоступны:\n{not_available_text}')
     try:
         await app.leave_chat(group_id)
+        calibrate_msg = await app.send_message(chat_id=group_id, text='Калибровка канала')
+        await app.delete_messages(group_id, calibrate_msg.id)
     except:
         await bot.send_message(
             MY_TELEGRAM_ID,
@@ -167,8 +168,8 @@ async def create_group(manager, ao_id, mark):
         )
     try:
         await bot.send_message(chat_id=OTKAZ_GROUP_ID, text=link.invite_link)
-    except Exception as error:
-        await bot.send_message(MY_TELEGRAM_ID, text=error)
+    except Exception:
+        await bot.send_message(MY_TELEGRAM_ID, text='Не отправлена ссылка в группу "Отказы"')
     await bot.send_message(MY_TELEGRAM_ID, text=f'Создана группа {group_name}')
     post = await bot.send_message(
         chat_id=group_id,
@@ -186,7 +187,6 @@ async def create_group(manager, ao_id, mark):
         context = manager.current_context()
         context.dialog_data.update(resume_text=resume_text)
         await manager.switch_to(Ao.ao_finish)
-    await app.disconnect()
 
 
 async def send_chat_links(agr, group_id, ao_id):

@@ -18,10 +18,9 @@ router = Router()
 async def hash_users(message: Message):
     await message.delete()
     try:
-        await app.disconnect()
+        await app.start()
     except:
         pass
-    await app.connect()
     try:
         await app.promote_chat_member(
             chat_id=message.chat.id,
@@ -37,11 +36,10 @@ async def hash_users(message: Message):
                 can_edit_messages=True,
                 can_invite_users=True,
                 can_pin_messages=True,
-                is_anonymous=True
+                # is_anonymous=True
             )
         )
     except Exception as e:
-        # pass
         await bot.send_message(MY_TELEGRAM_ID, text='Не получилось добавиться в группу для копирования')
     try:
         await app.set_chat_protected_content(
@@ -53,7 +51,7 @@ async def hash_users(message: Message):
             await msg.edit_text(str(sec))
             sleep(2)
     except Exception as err:
-        # pass
+        print(err)
         await bot.send_message(MY_TELEGRAM_ID, text='Не получилось снять с группы защиту')
     try:
         await app.set_chat_protected_content(
@@ -61,7 +59,6 @@ async def hash_users(message: Message):
             enabled=True
         )
     except Exception as error:
-        # pass
         await bot.send_message(MY_TELEGRAM_ID, text='Не получилось установить на группу защиту')
     try:
         await msg.delete()
@@ -69,7 +66,5 @@ async def hash_users(message: Message):
         pass
     try:
         await app.leave_chat(message.chat.id)
-    except Exception as er:
+    except Exception:
         pass
-        # await bot.send_message(MY_TELEGRAM_ID, text=er)
-    await app.disconnect()

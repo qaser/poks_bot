@@ -44,7 +44,7 @@ async def ao_request(message: Message, dialog_manager: DialogManager):
 
 
 @router.message(F.chat.id == -1001856019654)  # для pusha
-# @router.message(F.chat.id == -1001902490328)
+# @router.message(F.chat.id == -1002345179040)
 async def auto_otkaz_detect(message: Message):
     gpa_num_find = re.compile(r'№(\d\d|\d\d\d)')
     date_find = re.compile(r'\d\d\.\d\d\.(\d\d\d\d|\d\d)')
