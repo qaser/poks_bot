@@ -64,7 +64,7 @@ async def hash_users(message: Message):
         await msg.delete()
     except:
         pass
-    try:
-        await app.leave_chat(message.chat.id)
-    except Exception:
-        pass
+    # try:
+    #     await app.leave_chat(message.chat.id)
+    # except Exception:
+    #     pass

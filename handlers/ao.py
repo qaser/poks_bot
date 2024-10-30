@@ -44,7 +44,7 @@ async def ao_request(message: Message, dialog_manager: DialogManager):
     await dialog_manager.start(Ao.select_station, mode=StartMode.RESET_STACK)
 
 
-@router.message(F.chat.id == -1001856019654)  # для pusha
+# @router.message(F.chat.id == -1001856019654)  # для pusha
 # @router.message(F.chat.id == -1002345179040)
 async def auto_otkaz_detect(message: Message):
     await archive_messages(message)

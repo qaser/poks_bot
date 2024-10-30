@@ -83,3 +83,16 @@ async def check_admins(message: Message):
         text=f'{res_text}\n{summary}',
         parse_mode='HTML'
     )
+
+
+# обработка команды /links
+@router.message(Command('links'))
+async def check_groups(message: Message):
+    queryset = list(groups.find({'sub_banned': 'false'}))
+    print(queryset)
+    for link in queryset:
+        try:
+            invite_link = await bot.create_chat_invite_link(chat_id=link['_id'])
+            await bot.send_message(MY_TELEGRAM_ID, invite_link.invite_link)
+        except Exception as e:
+            print(e)
