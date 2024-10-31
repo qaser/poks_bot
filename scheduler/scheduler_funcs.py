@@ -9,14 +9,15 @@ from pymongo.errors import DuplicateKeyError
 
 import utils.constants as const
 from config.bot_config import bot
-from config.mail_config import IMAP_MAIL_SERVER, MAIL_LOGIN, MAIL_PASS, ADMIN_EMAIL
-from config.mongo_config import admins, groups, users, msgs
-from config.telegram_config import EXPLOIT_GROUP_ID, MY_TELEGRAM_ID, SPCH_THREAD_ID
+from config.mail_config import (ADMIN_EMAIL, IMAP_MAIL_SERVER, MAIL_LOGIN,
+                                MAIL_PASS)
+from config.mongo_config import admins, groups, msgs, users
+from config.telegram_config import (EXPLOIT_GROUP_ID, MY_TELEGRAM_ID,
+                                    SPCH_THREAD_ID)
+from utils.backup_db import send_dbs_mail
 from utils.create_summary_excel import create_summary_excel
 from utils.get_mail import get_letters
 from utils.send_email import send_email
-from utils.backup_db import send_dbs_mail
-
 
 SPCH_TIME_WORK_MSG = ('В срок до 12:00 текущего дня прошу выложить фактическую наработку за прошедший месяц.\n\n'
                       'Пример:\n\nКС «Примерная»:\nГПА 12 - 720\nГПА 24 - 9\n\n'

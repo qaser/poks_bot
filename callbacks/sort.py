@@ -1,9 +1,9 @@
 from aiogram import Dispatcher, types
 from aiogram.dispatcher.filters import Text
-
-from config.mongo_config import emergency_stops, gpa
-import keyboards.for_stats as kb
 from aiogram.utils.exceptions import MessageNotModified
+
+import keyboards.for_stats as kb
+from config.mongo_config import emergency_stops, gpa
 
 
 async def sort_stats(call: types.CallbackQuery):

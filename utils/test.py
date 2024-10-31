@@ -1,7 +1,8 @@
-import re
 import datetime as dt
-import pymongo
 import pprint
+import re
+
+import pymongo
 
 # # Create the client
 client = pymongo.MongoClient('localhost', 27017)

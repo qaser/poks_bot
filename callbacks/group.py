@@ -7,7 +7,7 @@ from pyrogram.types import ChatPrivileges
 from config.bot_config import bot
 from config.mongo_config import admins, petitions, users
 from config.pyrogram_config import app
-from config.telegram_config import MY_TELEGRAM_ID, BOT_ID
+from config.telegram_config import BOT_ID, MY_TELEGRAM_ID
 
 
 async def create_group(call: types.CallbackQuery):

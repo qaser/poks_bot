@@ -1,7 +1,8 @@
-import re
 import datetime as dt
-import pymongo
 import pprint
+import re
+
+import pymongo
 from dateutil.relativedelta import relativedelta
 
 # # Create the client
@@ -116,3 +117,23 @@ SPCH = {
     'Лялинская КС': [51, 54],
     'Ягельная КС': [21, 24, 31, 34, 41, 44, 51, 54, 64, 81, 84, 101, 104],
 }
+
+
+# pipeline = [
+#     {'$match': {'iskra_comp': True}},
+#     {'$lookup': {'from': "operating_time", "let": {'id': "$_id"},} },
+#     {'$group': {'_id': '$ks', 'gpa_ids': {'$push': {"$toString": "$_id"}}}},
+#     {'$setWindowFields': {'sortBy': {'_id': 1}, 'output': {'index': {'$documentNumber': {}}}}},
+# ]
+
+pipeline = [
+    {'$lookup': {'from': 'operating_time', 'localField': '_id', 'foreignField': 'gpa_id', 'as': 'working_data'}},
+    {'$unwind': '$working_data'},
+    {'$match': {'working_data.year': 2024, 'working_data.month': 10}},
+    {'$group': {'_id': '$ks', 'gpa_ids': {'$push': {"$toString": "$_id"}}}},
+    {'$project': {'_id': 0, 'ks': '$_id', 'gpa_ids': 1}},
+    {'$setWindowFields': {'sortBy': {'ks': 1}, 'output': {'index': {'$documentNumber': {}}}}},
+]
+
+queryset = gpa.aggregate(pipeline)
+print(list(queryset))

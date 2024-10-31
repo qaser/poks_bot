@@ -24,6 +24,7 @@
 #     print(date)
 
 import pymongo
+
 '''
 структура данных ELECTRICS
     'class_code': код класса

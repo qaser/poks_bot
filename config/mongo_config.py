@@ -17,7 +17,7 @@ equip = db['equip']
 gpa = db['gpa']
 giga_chats = db['giga_chats']
 msgs = db['msgs']
-оperating_time = db['operating_time']
+operating_time = db['operating_time']
 
 
 '''

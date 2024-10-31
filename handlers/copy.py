@@ -1,14 +1,12 @@
 from time import sleep
+
 from aiogram import Router
-
-from aiogram.types import Message
 from aiogram.filters import Command
-
-from config.telegram_config import MY_TELEGRAM_ID
+from aiogram.types import Message
 
 from config.bot_config import bot
 from config.pyrogram_config import app
-
+from config.telegram_config import MY_TELEGRAM_ID
 
 router = Router()
 

@@ -3,7 +3,7 @@ from collections import Counter
 from aiogram_dialog import DialogManager
 from bson.objectid import ObjectId
 
-from config.mongo_config import emergency_stops, users, admins, gpa
+from config.mongo_config import admins, emergency_stops, gpa, users
 from utils.constants import KS
 
 

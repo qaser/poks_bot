@@ -1,8 +1,8 @@
-from aiogram_dialog.widgets.kbd import (Button, Column, Group, Select,
-                                        Radio, Row, ScrollingGroup)
+from aiogram_dialog.widgets.kbd import (Button, Column, Group, Radio, Row,
+                                        ScrollingGroup, Select)
 from aiogram_dialog.widgets.text import Const, Format
 
-from config.mongo_config import emergency_stops, users, admins, gpa
+from config.mongo_config import admins, emergency_stops, gpa, users
 
 from . import selected
 

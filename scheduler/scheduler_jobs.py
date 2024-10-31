@@ -1,7 +1,7 @@
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from scheduler.scheduler_funcs import (send_backups, send_mail_summary,
-                                       send_remainder, clear_msgs,
+from scheduler.scheduler_funcs import (clear_msgs, send_backups,
+                                       send_mail_summary, send_remainder,
                                        send_task_users_reminder)
 from utils.constants import TIME_ZONE
 

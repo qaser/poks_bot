@@ -1,18 +1,14 @@
-from aiogram import F, Router
-from aiogram import types
+from aiogram import F, Router, types
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-
-from config.bot_config import bot
-from config.telegram_config import MY_TELEGRAM_ID
 from aiogram.types import ReplyKeyboardRemove
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
 
 from config.bot_config import bot, dp
 from config.mongo_config import users
+from config.telegram_config import MY_TELEGRAM_ID
 from utils.constants import KS, PROF_USERS
-
 
 router = Router()
 

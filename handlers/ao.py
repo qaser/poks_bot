@@ -1,21 +1,19 @@
-import re
 import datetime as dt
-
+import re
 
 from aiogram import F, Router
-from config.bot_config import bot
 from aiogram.filters import Command
 from aiogram.types import Message
 from aiogram_dialog import Dialog, DialogManager, StartMode
 
-from dialogs.for_ao import windows
-from dialogs.for_ao.states import Ao
-from dialogs.for_ao.selected import create_group
+from config.bot_config import bot
+from config.mongo_config import emergency_stops, gpa
 from config.telegram_config import MY_TELEGRAM_ID
-from config.mongo_config import gpa, emergency_stops
+from dialogs.for_ao import windows
+from dialogs.for_ao.selected import create_group
+from dialogs.for_ao.states import Ao
 from handlers.archive import archive_messages
 from utils.utils import check_ks
-
 
 SERVICE_MSG = ('Кто-то ввёл данные в группу "Отказы", '
                'но бот не смог ему отправить сообщение')

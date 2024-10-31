@@ -5,7 +5,6 @@ from config.bot_config import bot
 from config.mongo_config import archive
 from config.telegram_config import MY_TELEGRAM_ID
 
-
 router = Router()
 
 @router.message(F.content_type.in_({'text', 'video', 'photo', 'document'}))

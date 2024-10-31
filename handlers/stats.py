@@ -1,9 +1,9 @@
 from aiogram import Dispatcher, types
 
+import keyboards.for_stats as kb
 from config.bot_config import dp
 from config.mongo_config import emergency_stops
 from utils.decorators import admin_check
-import keyboards.for_stats as kb
 
 
 @admin_check

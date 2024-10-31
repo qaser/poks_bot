@@ -3,7 +3,7 @@ from aiogram import types
 import keyboards.for_petition as kb
 import utils.constants as const
 from config.bot_config import bot
-from config.mongo_config import admins, users, docs
+from config.mongo_config import admins, docs, users
 
 
 def get_creator(user_id):

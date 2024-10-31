@@ -2,6 +2,7 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 import utils.constants as const
 
+
 def sort_kb(sort_param):
     keyboard = InlineKeyboardMarkup()
     if sort_param == 'ks':

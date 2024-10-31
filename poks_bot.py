@@ -7,18 +7,16 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, ReplyKeyboardRemove
 from aiogram_dialog import setup_dialogs
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-
-from config.bot_config import bot, dp
-from config.pyrogram_config import app
-import utils.constants as const
-
-from config.mongo_config import groups
-from config.telegram_config import MY_TELEGRAM_ID
-from handlers import ao, copy, admin, registration, service, archive, time
 from pyrogram import utils
 
-from scheduler.scheduler_funcs import (send_backups, send_mail_summary,
-                                       send_remainder, clear_msgs,
+import utils.constants as const
+from config.bot_config import bot, dp
+from config.mongo_config import groups
+from config.pyrogram_config import app
+from config.telegram_config import MY_TELEGRAM_ID
+from handlers import admin, ao, archive, copy, iskra, registration, service
+from scheduler.scheduler_funcs import (clear_msgs, send_backups,
+                                       send_mail_summary, send_remainder,
                                        send_work_time_reminder)
 
 
@@ -138,7 +136,7 @@ async def main():
         ao.router,
         copy.router,
         admin.router,
-        time.router,
+        iskra.router,
         registration.router,
         ao.dialog,
         archive.router

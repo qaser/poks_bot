@@ -2,12 +2,12 @@ from aiogram_dialog import Window
 from aiogram_dialog.widgets.kbd import (Back, Button, Cancel, CurrentPage,
                                         Group, NextPage, PrevPage, Row, Select)
 from aiogram_dialog.widgets.text import Const, Format
-from config.pyrogram_config import app
 
 import utils.constants as texts
+from config.pyrogram_config import app
+from dialogs.for_ao.states import Ao
 
 from . import getters, keyboards, selected
-from dialogs.for_ao.states import Ao
 
 ID_SCROLL_PAGER = 'stations_pager'
 STATIONS_TEXT = 'Выберите компрессорную станцию, на которой произошёл отказ'
