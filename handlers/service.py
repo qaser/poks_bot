@@ -3,9 +3,10 @@ from aiogram.filters import Command
 from aiogram.types import Message, FSInputFile
 
 from config.bot_config import bot
-from config.mongo_config import archive, groups, admins
+from config.mongo_config import groups, admins
 from config.telegram_config import MY_TELEGRAM_ID
 from utils import constants as const
+from config.pyrogram_config import app
 
 
 router = Router()
@@ -24,6 +25,7 @@ async def stop_subscribe(message: Message):
         )
         await message.answer('Напоминания для этой группы отключены')
     await message.delete()
+
 
 
 # включение рассылки уведомлений

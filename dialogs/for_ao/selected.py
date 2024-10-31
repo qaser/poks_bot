@@ -1,11 +1,8 @@
 import datetime as dt
-import asyncio
 
-from bson import ObjectId
 from aiogram_dialog import DialogManager, StartMode
 from dialogs.for_ao.states import Ao
 from config.pyrogram_config import app
-from pyrogram import idle
 from pyrogram.types import ChatPrivileges, ChatPermissions
 from config.bot_config import bot
 from config.telegram_config import MY_TELEGRAM_ID, BOT_ID, OTKAZ_GROUP_ID
@@ -103,14 +100,14 @@ async def create_group(manager, ao_id, mark):
     )
     try:
         link = await app.create_chat_invite_link(group_id)
-    except Exception:
+    except:
         await bot.send_message(
             MY_TELEGRAM_ID,
             text=f'Ссылка для группы "{group_name}" не создана'
         )
     try:
         await add_admin_to_group(BOT_ID, group_id)
-    except Exception:
+    except:
         await bot.send_message(
             MY_TELEGRAM_ID,
             text=f'Бот не смог войти в группу {group_name}'
@@ -159,8 +156,6 @@ async def create_group(manager, ao_id, mark):
           f'Недоступны:\n{not_available_text}')
     try:
         await app.leave_chat(group_id)
-        calibrate_msg = await app.send_message(chat_id=group_id, text='Калибровка канала')
-        await app.delete_messages(group_id, calibrate_msg.id)
     except:
         await bot.send_message(
             MY_TELEGRAM_ID,
@@ -168,7 +163,7 @@ async def create_group(manager, ao_id, mark):
         )
     try:
         await bot.send_message(chat_id=OTKAZ_GROUP_ID, text=link.invite_link)
-    except Exception:
+    except:
         await bot.send_message(MY_TELEGRAM_ID, text='Не отправлена ссылка в группу "Отказы"')
     await bot.send_message(MY_TELEGRAM_ID, text=f'Создана группа {group_name}')
     post = await bot.send_message(

@@ -1,10 +1,8 @@
 import re
 import datetime as dt
 
-from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from aiogram import F, Router
-from bson import ObjectId
 from config.bot_config import bot
 from aiogram.filters import Command
 from aiogram.types import Message
@@ -112,63 +110,3 @@ async def prepare_to_create_group(agr):
         await create_group(None, ao_id, 'auto')
     except:
         emergency_stops.delete_one({'_id': ao_id})
-
-
-# async def send_autodetect_message(message, agr):
-#     station = agr['ks']
-#     gpa_num = agr['num_gpa']
-#     name_gpa = agr['name_gpa']
-#     ao_count = emergency_stops.count_documents({'gpa_id': agr['_id']})
-#     kb = InlineKeyboardBuilder()
-#     kb.button(
-#         text='Ввести данные вручную',
-#         callback_data='create_manual_none'
-#     )
-#     kb.button(
-#         text=f'Создать группу для ГПА №{gpa_num}',
-#         callback_data=f'create_auto_{str(agr["_id"])}'
-#     )
-#     kb.adjust(1)
-#     try:
-#         await bot.send_message(
-#             chat_id=message.from_user.id,
-#             text=(f'{GPA_DETECT_TEXT}\n\n<b>{station}</b>\n<b>ГПА №{gpa_num}</b>\n\n'
-#                 f'Согласно БД это: {name_gpa}\nКоличество зарегистрированных '
-#                 f'АО (ВНО): {ao_count}\nСоздать группу для проведения '
-#                 'расследования отказа этого ГПА?\nВы можете отказаться и ввести '
-#                 'данные ГПА вручную.'),
-#             parse_mode='HTML',
-#             reply_markup=kb.as_markup()
-#         )
-#     except:
-#         await bot.send_message(MY_TELEGRAM_ID, SERVICE_MSG)
-
-
-# @router.callback_query(F.data.startswith('create'))
-# async def choose_mode(callback):
-#     _, choose, gpa_id = callback.data.split('_')
-#     if choose == 'auto':
-#         gpa_instance = gpa.find_one({'_id': ObjectId(gpa_id)})
-#         station = gpa_instance['ks']
-#         gpa_num = gpa_instance['num_gpa']
-#         date = dt.datetime.today().strftime('%d.%m.%Y')
-#         ao_id = emergency_stops.insert_one(
-#             {
-#                 'date': date,
-#                 'station': station,
-#                 'gpa': gpa_num,
-#                 'gpa_id': ObjectId(gpa_id)
-#             }
-#         ).inserted_id
-#         try:
-#             await create_group(None, ao_id, 'auto')
-#         except:
-#             await callback.message.answer('Создать группу автоматически не удалось, нажмите /ao')
-#             emergency_stops.delete_one({'_id': ao_id})
-#         try:
-#             await callback.message.delete()
-#         except:
-#             pass
-#     elif choose == 'manual':
-#         await callback.message.delete()
-#         await callback.message.answer('Для создания группы расследования нажмите /ao')

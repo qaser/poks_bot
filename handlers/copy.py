@@ -8,7 +8,6 @@ from config.telegram_config import MY_TELEGRAM_ID
 
 from config.bot_config import bot
 from config.pyrogram_config import app
-from pyrogram.types import ChatPrivileges
 
 
 router = Router()
@@ -16,32 +15,17 @@ router = Router()
 
 @router.message(Command('copy'))
 async def hash_users(message: Message):
+    group_id = message.chat.id
     await message.delete()
     try:
         await app.start()
     except:
         pass
-    # try:
-    #     await bot.promote_chat_member(
-    #         chat_id=message.chat.id,
-    #         user_id=MY_TELEGRAM_ID,
-    #         # privileges=ChatPrivileges(
-    #         can_manage_chat=True,
-    #         can_delete_messages=True,
-    #         can_manage_video_chats=True,
-    #         can_restrict_members=True,
-    #         can_promote_members=True,
-    #         can_change_info=True,
-    #         can_post_messages=True,
-    #         can_edit_messages=True,
-    #         can_invite_users=True,
-    #         can_pin_messages=True,
-    #         is_anonymous=False
-    #         # )
-    #     )
-    # except Exception as e:
-    #     await bot.send_message(MY_TELEGRAM_ID, text='Не получилось добавиться в группу для копирования')
-    #     print(e)
+    try:
+        link = await app.create_chat_invite_link(group_id)
+        await app.join_chat(link.invite_link)
+    except:
+        pass
     try:
         await app.set_chat_protected_content(
             chat_id=message.chat.id,
@@ -51,20 +35,24 @@ async def hash_users(message: Message):
         for sec in range(29, 0, -2):
             await msg.edit_text(str(sec))
             sleep(2)
-    except Exception as err:
+    except:
         await bot.send_message(MY_TELEGRAM_ID, text='Не получилось снять с группы защиту')
     try:
         await app.set_chat_protected_content(
             chat_id=message.chat.id,
             enabled=True
         )
-    except Exception as error:
+    except:
         await bot.send_message(MY_TELEGRAM_ID, text='Не получилось установить на группу защиту')
     try:
         await msg.delete()
     except:
         pass
-    # try:
-    #     await app.leave_chat(message.chat.id)
-    # except Exception:
-    #     pass
+    try:
+        await app.leave_chat(message.chat.id)
+    except Exception:
+        pass
+    try:
+        await bot.send_message(MY_TELEGRAM_ID, 'нажата кнопка /copy')
+    except:
+        pass
