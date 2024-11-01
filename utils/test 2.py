@@ -132,7 +132,8 @@ pipeline = [
     {'$match': {'working_data.year': 2024, 'working_data.month': 10}},
     {'$group': {'_id': '$ks', 'gpa_ids': {'$push': {"$toString": "$_id"}}}},
     {'$project': {'_id': 0, 'ks': '$_id', 'gpa_ids': 1}},
-    {'$setWindowFields': {'sortBy': {'ks': 1}, 'output': {'index': {'$documentNumber': {}}}}},
+    {'$sort': {'ks': 1}}
+    # {'$setWindowFields': {'sortBy': {'ks': 1}, 'output': {'index': {'$documentNumber': {}}}}},
 ]
 
 queryset = gpa.aggregate(pipeline)

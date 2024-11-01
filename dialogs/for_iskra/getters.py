@@ -15,13 +15,13 @@ async def get_last_report(dialog_manager: DialogManager, **middleware_data):
     date = dt.datetime.now()
     prev_month = date - relativedelta(months=1)
     pipeline = [
-    {'$lookup': {'from': 'operating_time', 'localField': '_id', 'foreignField': 'gpa_id', 'as': 'working_data'}},
-    {'$unwind': '$working_data'},
-    {'$match': {'working_data.year': 2024, 'working_data.month': 10}},
-    # {'$group': {'_id': '$ks', 'gpa_ids': {'$push': {"$toString": "$_id"}}}},
-    {'$group': {'_id': '$ks', 'gpa_ids': {'$push': "$_id"}}},
-    {'$project': {'_id': 0, 'ks': '$_id', 'gpa_ids': 1}},
-    {'$setWindowFields': {'sortBy': {'ks': 1}, 'output': {'index': {'$documentNumber': {}}}}},
+        {'$lookup': {'from': 'operating_time', 'localField': '_id', 'foreignField': 'gpa_id', 'as': 'working_data'}},
+        {'$unwind': '$working_data'},
+        {'$match': {'working_data.year': 2024, 'working_data.month': 10}},
+        # {'$group': {'_id': '$ks', 'gpa_ids': {'$push': {"$toString": "$_id"}}}},
+        {'$group': {'_id': '$ks', 'gpa_ids': {'$push': "$_id"}}},
+        {'$project': {'_id': 0, 'ks': '$_id', 'gpa_ids': 1}},
+        # {'$setWindowFields': {'sortBy': {'ks': 1}, 'output': {'index': {'$documentNumber': {}}}}},
     ]
     queryset = list(gpa.aggregate(pipeline))
     # print(queryset)
