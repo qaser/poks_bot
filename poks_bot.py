@@ -139,6 +139,7 @@ async def main():
         iskra.router,
         registration.router,
         ao.dialog,
+        iskra.dialog,
         archive.router
     )
     setup_dialogs(dp)

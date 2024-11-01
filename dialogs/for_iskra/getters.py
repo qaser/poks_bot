@@ -1,72 +1,64 @@
-# from collections import Counter
-# import datetime as dt
+from collections import Counter
+import datetime as dt
 
-# from aiogram_dialog import DialogManager
-# from bson.objectid import ObjectId
-# from dateutil.relativedelta import relativedelta
+from aiogram_dialog import DialogManager
+from bson.objectid import ObjectId
+from dateutil.relativedelta import relativedelta
 
-# from config.mongo_config import admins, emergency_stops, gpa, users, operating_time
-# from utils.constants import KS
+from config.mongo_config import admins, emergency_stops, gpa, users, operating_time
+from utils import constants as const
 
 
-# async def get_last_report(dialog_manager: DialogManager, **middleware_data):
-#     # user_id = dialog_manager.event.from_user.id
-#     context = dialog_manager.current_context()
-#     date = dt.datetime.now()
-#     prev_month = date - relativedelta(months=1)
-#     pipeline = [
-#         {
-#             '$lookup': {
-#                 'from': 'operating_time',
-#                 'localField': '_id',
-#                 'foreignField': 'gpa_id',
-#                 'as': 'work_data'
-#             }
-#         },
-#         {'$unwind': '$working_data'},
-#         {'$match': {'work_data.year': prev_month.year, 'work_data.month': prev_month.month}},
-#         # {'$group': {'_id': '$ks', 'gpa_ids': {'$push': {"$toString": "$_id"}}}},
-#         {'$group': {'_id': '$ks', 'gpa_ids': {'$push': "$_id"}}},
-#         {'$project': {'_id': 0, 'ks': '$_id', 'gpa_ids': 1}},
-#         {'$setWindowFields': {'sortBy': {'ks': 1}, 'output': {'index': {'$documentNumber': {}}}}},
-#     ]
-#     queryset = list(gpa.aggregate(pipeline))
-#     saved_index = context.dialog_data.get('index_num')
-#     index_num = 0 if saved_index is None else saved_index
-#     ks_count = len(queryset)
-#     index_sum = len(queryset)
-#     if index_sum > 0:
-#         context.dialog_data.update(index_sum=index_sum)
-#         context.dialog_data.update(index_num=index_num)
-#         ks = queryset[index_num]
-#         gpa_ids = ks['gpa_ids']
-#         sum_time = 0
-#         nav_is_on = True if index_sum > 1 else False
-#         for gpa_id in gpa_ids:
-#             w_time = operating_time.find_one({'gpa_id': gpa_id})['price']
-#             amount_price = price * i['amount']
-#             cart_price += amount_price
-#         data = {
-#             'cart_price': cart_price,
-#             'pos_num': pos_num + 1,
-#             'pos_sum': pos_sum,
-#             'date': positions[pos_num]['datetime'].strftime('%d.%m.%Y'),
-#             'product': prod['title'],
-#             'size': prod['size'],
-#             'color': positions[pos_num]['color'],
-#             'amount': positions[pos_num]['amount'],
-#             'price': prod['price'],
-#             'full_price': positions[pos_num]['full_price'],
-#             'nav_is_on': nav_is_on,
-#             'cart_not_empty': True,
-#             'cart_is_empty': False
-#         }
-#     else:
-#         data = {
-#             'cart_not_empty': False,
-#             'cart_is_empty': True
-#         }
-#     return data
+async def get_last_report(dialog_manager: DialogManager, **middleware_data):
+    # user_id = dialog_manager.event.from_user.id
+    context = dialog_manager.current_context()
+    date = dt.datetime.now()
+    prev_month = date - relativedelta(months=1)
+    pipeline = [
+    {'$lookup': {'from': 'operating_time', 'localField': '_id', 'foreignField': 'gpa_id', 'as': 'working_data'}},
+    {'$unwind': '$working_data'},
+    {'$match': {'working_data.year': 2024, 'working_data.month': 10}},
+    # {'$group': {'_id': '$ks', 'gpa_ids': {'$push': {"$toString": "$_id"}}}},
+    {'$group': {'_id': '$ks', 'gpa_ids': {'$push': "$_id"}}},
+    {'$project': {'_id': 0, 'ks': '$_id', 'gpa_ids': 1}},
+    {'$setWindowFields': {'sortBy': {'ks': 1}, 'output': {'index': {'$documentNumber': {}}}}},
+    ]
+    queryset = list(gpa.aggregate(pipeline))
+    # print(queryset)
+    saved_index = context.dialog_data.get('index_num')
+    index_num = 0 if saved_index is None else saved_index
+    index_sum = len(queryset)
+    if index_sum > 0:
+        context.dialog_data.update(index_sum=index_sum)
+        context.dialog_data.update(index_num=index_num)
+        ks_data = queryset[index_num]
+        gpa_ids = ks_data['gpa_ids']
+        sum_time = 0
+        report_text = ''
+        nav_is_on = True if index_sum > 1 else False
+        for gpa_id in gpa_ids:
+            w_time = operating_time.find_one({'gpa_id': gpa_id})['work_time']
+            num_gpa = gpa.find_one({'_id': gpa_id}).get('num_gpa')
+            report_text = f'{report_text}\nГПА {num_gpa} - {w_time}'
+            sum_time += w_time
+        data = {
+            'month': const.MONTHS_NAMES[str(prev_month.month)],
+            'year': prev_month.year,
+            'index_num': index_num + 1,
+            'index_sum': index_sum,
+            'report_text': report_text,
+            'ks': ks_data['ks'],
+            'sum_time': sum_time,
+            'nav_is_on': nav_is_on,
+            'report_not_empty': True,
+            'report_is_empty': False
+        }
+    else:
+        data = {
+            'report_not_empty': False,
+            'report_is_empty': True
+        }
+    return data
 
 
 # async def get_shops(dialog_manager: DialogManager, **middleware_data):

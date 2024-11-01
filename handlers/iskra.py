@@ -12,30 +12,30 @@ from config.bot_config import bot
 from config.mongo_config import gpa, operating_time
 from config.telegram_config import MY_TELEGRAM_ID
 from dialogs.for_iskra import windows
-# from dialogs.for_iskra.states import Iskra
+from dialogs.for_iskra.states import Iskra
 from handlers.archive import archive_messages
 from utils.utils import check_ks
 
 router = Router()
 
-# dialog =  Dialog(
-#     windows.category_window(),
-#     windows.main_report_window(),
-#     windows.select_year_window(),
-#     windows.select_month_window(),
-#     windows.display_mode_window(),
-#     windows.ks_report_window(),
-#     windows.select_ks_window(),
-#     windows.select_gpa_window(),
-#     windows.gpa_report_window(),
-# )
+dialog =  Dialog(
+    windows.category_window(),
+    windows.main_report_window(),
+    # windows.select_year_window(),
+    # windows.select_month_window(),
+    # windows.display_mode_window(),
+    # windows.ks_report_window(),
+    # windows.select_ks_window(),
+    # windows.select_gpa_window(),
+    # windows.gpa_report_window(),
+)
 
 
-# @router.message(Command('iskra'))
-# async def ao_request(message: Message, dialog_manager: DialogManager):
-#     await message.delete()
-#     # Important: always set `mode=StartMode.RESET_STACK` you don't want to stack dialogs
-#     await dialog_manager.start(Iskra.select_category, mode=StartMode.RESET_STACK)
+@router.message(Command('iskra'))
+async def ao_request(message: Message, dialog_manager: DialogManager):
+    await message.delete()
+    # Important: always set `mode=StartMode.RESET_STACK` you don't want to stack dialogs
+    await dialog_manager.start(Iskra.select_category, mode=StartMode.RESET_STACK)
 
 
 @router.message(F.chat.id == -1001908010022 and F.message_thread_id == 216)  # для pusha

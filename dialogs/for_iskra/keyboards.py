@@ -1,47 +1,47 @@
-# from aiogram_dialog.widgets.kbd import (Button, Column, Group, Radio, Row,
-#                                         ScrollingGroup, Select)
-# from aiogram_dialog.widgets.text import Const, Format
+from aiogram_dialog.widgets.kbd import (Button, Column, Group, Radio, Row,
+                                        ScrollingGroup, Select)
+from aiogram_dialog.widgets.text import Const, Format
 
-# from config.mongo_config import admins, emergency_stops, gpa, users
+from config.mongo_config import admins, emergency_stops, gpa, users
 
-# from . import selected
+from . import selected
 
-# SCROLLING_HEIGHT = 6
-
-
-# def categories():
-#     return Column(
-#         Button(
-#             Const('⏳ Последние данные'),
-#             'last_time',
-#             on_click=selected.on_last_work_time
-#         ),
-#         Button(
-#             Const('📈 Выбрать по дате'),
-#             'choose_date',
-#             on_click=selected.on_select_year,
-#         ),
-#     )
+SCROLLING_HEIGHT = 6
 
 
-# def nav_menu():
-#     return Row(
-#         Button(
-#             Const('⬅️'),
-#             id='prev',
-#             on_click=selected.ks_prev
-#         ),
-#         Button(
-#             Format('{pos_num}/{pos_sum}'),
-#             id='pager',
-#         ),
-#         Button(
-#             Const('➡️'),
-#             id='next',
-#             on_click=selected.ks_next
-#         ),
-#         when='nav_is_on'
-#     )
+def categories():
+    return Column(
+        Button(
+            Const('⏳ Последние данные'),
+            'last_time',
+            on_click=selected.on_last_work_time
+        ),
+        # Button(
+        #     Const('📈 Выбрать по дате'),
+        #     'choose_date',
+        #     on_click=selected.on_select_year,
+        # ),
+    )
+
+
+def ks_nav_menu():
+    return Row(
+        Button(
+            Const('⬅️'),
+            id='prev',
+            on_click=selected.ks_prev
+        ),
+        Button(
+            Format('{index_num}/{index_sum}'),
+            id='pager',
+        ),
+        Button(
+            Const('➡️'),
+            id='next',
+            on_click=selected.ks_next
+        ),
+        when='nav_is_on'
+    )
 
 
 # def paginated_stations(id_pager, on_click):
