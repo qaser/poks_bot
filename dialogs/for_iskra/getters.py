@@ -21,6 +21,7 @@ async def get_last_report(dialog_manager: DialogManager, **middleware_data):
         # {'$group': {'_id': '$ks', 'gpa_ids': {'$push': {"$toString": "$_id"}}}},
         {'$group': {'_id': '$ks', 'gpa_ids': {'$push': "$_id"}}},
         {'$project': {'_id': 0, 'ks': '$_id', 'gpa_ids': 1}},
+        {'$sort': {'ks': 1}}
         # {'$setWindowFields': {'sortBy': {'ks': 1}, 'output': {'index': {'$documentNumber': {}}}}},
     ]
     queryset = list(gpa.aggregate(pipeline))
