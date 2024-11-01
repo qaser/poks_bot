@@ -1,5 +1,6 @@
 import datetime as dt
 import re
+from time import sleep
 
 from aiogram import F, Router
 from aiogram.filters import Command
@@ -9,11 +10,14 @@ from dateutil.relativedelta import relativedelta
 
 import utils.constants as const
 from config.bot_config import bot
+from config.mail_config import SPCH_REPORT_MAIL
 from config.mongo_config import gpa, operating_time
 from config.telegram_config import MY_TELEGRAM_ID
 from dialogs.for_iskra import windows
 from dialogs.for_iskra.states import Iskra
 from handlers.archive import archive_messages
+from utils.create_iskra_report_excel import create_report_excel
+from utils.send_email import send_email
 from utils.utils import check_ks
 
 router = Router()
@@ -32,10 +36,29 @@ dialog =  Dialog(
 
 
 @router.message(Command('iskra'))
-async def ao_request(message: Message, dialog_manager: DialogManager):
+async def operating_time_request(message: Message, dialog_manager: DialogManager):
     await message.delete()
     # Important: always set `mode=StartMode.RESET_STACK` you don't want to stack dialogs
     await dialog_manager.start(Iskra.select_category, mode=StartMode.RESET_STACK)
+
+
+@router.message(Command('iskra_mail'))
+async def mail_request(message: Message):
+    date = dt.datetime.now()
+    prev_month = date - relativedelta(months=1)
+    pipeline = [
+        {'$lookup': {'from': 'operating_time', 'localField': '_id', 'foreignField': 'gpa_id', 'as': 'working_data'}},
+        {'$unwind': '$working_data'},
+        {'$match': {'working_data.year': prev_month.year, 'working_data.month': prev_month.month}},
+        {'$group': {'_id': '$ks', 'gpa_ids': {'$push': "$_id"}}},
+        {'$project': {'_id': 0, 'ks': '$_id', 'gpa_ids': 1}},
+        {'$sort': {'ks': 1}}
+    ]
+    queryset = list(gpa.aggregate(pipeline))
+    f_path = create_report_excel(queryset, prev_month)
+    sleep(5.0)
+    await send_email([SPCH_REPORT_MAIL], f_path, user_id=MY_TELEGRAM_ID)
+
 
 
 @router.message(F.chat.id == -1001908010022 and F.message_thread_id == 216)  # для pusha
@@ -78,6 +101,7 @@ async def parse_operating_time(message: Message):
         else:
             await message.answer(
                 text=('Информация о наработке не принята, вероятно '
-                      'грамматическая ошибка в названии КС'),
+                      'грамматическая ошибка в названии КС.\n'
+                      'Отправьте новое сообщение с наработкой'),
                 disable_notification=True
             )

@@ -10,7 +10,7 @@ from config.mail_config import MAIL_LOGIN, MAIL_PASS, PORT, SMTP_MAIL_SERVER
 from config.telegram_config import MY_TELEGRAM_ID
 
 
-async def send_email(emails, user_id=MY_TELEGRAM_ID):
+async def send_email(emails, f_path, user_id=MY_TELEGRAM_ID, ):
     # формируем тело письма
     msg = MIMEMultipart()
     msg["From"] = MAIL_LOGIN
@@ -18,7 +18,6 @@ async def send_email(emails, user_id=MY_TELEGRAM_ID):
     msg["Date"] = formatdate(localtime=True)
     msg.attach(MIMEText(const.MAIL_TEXT))
     msg["To"] = ', '.join(emails)
-    f_path = 'static/docs_email/Сводный перечень вопросов.xlsx'
     try:
         with open(f_path, 'rb') as f:
             part = MIMEApplication(f.read(), Name=f_path)

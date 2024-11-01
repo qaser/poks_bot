@@ -1,11 +1,12 @@
-from collections import Counter
 import datetime as dt
+from collections import Counter
 
 from aiogram_dialog import DialogManager
 from bson.objectid import ObjectId
 from dateutil.relativedelta import relativedelta
 
-from config.mongo_config import admins, emergency_stops, gpa, users, operating_time
+from config.mongo_config import (admins, emergency_stops, gpa, operating_time,
+                                 users)
 from utils import constants as const
 
 
@@ -17,15 +18,12 @@ async def get_last_report(dialog_manager: DialogManager, **middleware_data):
     pipeline = [
         {'$lookup': {'from': 'operating_time', 'localField': '_id', 'foreignField': 'gpa_id', 'as': 'working_data'}},
         {'$unwind': '$working_data'},
-        {'$match': {'working_data.year': 2024, 'working_data.month': 10}},
-        # {'$group': {'_id': '$ks', 'gpa_ids': {'$push': {"$toString": "$_id"}}}},
+        {'$match': {'working_data.year': prev_month.year, 'working_data.month': prev_month.month}},
         {'$group': {'_id': '$ks', 'gpa_ids': {'$push': "$_id"}}},
         {'$project': {'_id': 0, 'ks': '$_id', 'gpa_ids': 1}},
         {'$sort': {'ks': 1}}
-        # {'$setWindowFields': {'sortBy': {'ks': 1}, 'output': {'index': {'$documentNumber': {}}}}},
     ]
     queryset = list(gpa.aggregate(pipeline))
-    # print(queryset)
     saved_index = context.dialog_data.get('index_num')
     index_num = 0 if saved_index is None else saved_index
     index_sum = len(queryset)
