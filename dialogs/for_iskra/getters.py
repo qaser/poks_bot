@@ -36,7 +36,9 @@ async def get_last_report(dialog_manager: DialogManager, **middleware_data):
         report_text = ''
         nav_is_on = True if index_sum > 1 else False
         for gpa_id in gpa_ids:
-            w_time = operating_time.find_one({'gpa_id': gpa_id})['work_time']
+            w_time = operating_time.find_one(
+                {'gpa_id': gpa_id, 'month': prev_month.month, 'year': prev_month.year}
+            )['work_time']
             num_gpa = gpa.find_one({'_id': gpa_id}).get('num_gpa')
             report_text = f'{report_text}\nГПА {num_gpa} - {w_time}'
             sum_time += w_time
@@ -60,11 +62,19 @@ async def get_last_report(dialog_manager: DialogManager, **middleware_data):
     return data
 
 
-# async def get_shops(dialog_manager: DialogManager, **middleware_data):
-#     context = dialog_manager.current_context()
-#     station = context.dialog_data['station']
-#     queryset = gpa.find({'ks': station}).distinct('num_shop')
-#     return {'shops': queryset}
+async def get_years(dialog_manager: DialogManager, **middleware_data):
+    # context = dialog_manager.current_context()
+    # station = context.dialog_data['station']
+    years = operating_time.distinct('year')
+    return {'years': years}
+
+
+async def get_months(dialog_manager: DialogManager, **middleware_data):
+    context = dialog_manager.current_context()
+    year = context.dialog_data['year']
+    months = operating_time.distinct('month', {'year': int(year)})
+    print(months)
+    return {'months': [const.MONTHS_NAMES[str(m)] for m in months]}
 
 
 # async def get_gpa(dialog_manager: DialogManager, **middleware_data):

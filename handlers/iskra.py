@@ -25,8 +25,9 @@ router = Router()
 dialog =  Dialog(
     windows.category_window(),
     windows.main_report_window(),
-    # windows.select_year_window(),
-    # windows.select_month_window(),
+    windows.mail_send_window(),
+    windows.select_year_window(),
+    windows.select_month_window(),
     # windows.display_mode_window(),
     # windows.ks_report_window(),
     # windows.select_ks_window(),
@@ -37,7 +38,8 @@ dialog =  Dialog(
 
 @router.message(Command('iskra'))
 async def operating_time_request(message: Message, dialog_manager: DialogManager):
-    await message.delete()
+    # print(message)
+    # await message.delete()
     # Important: always set `mode=StartMode.RESET_STACK` you don't want to stack dialogs
     await dialog_manager.start(Iskra.select_category, mode=StartMode.RESET_STACK)
 
@@ -62,7 +64,7 @@ async def mail_request(message: Message):
 
 
 @router.message(F.chat.id == -1001908010022 and F.message_thread_id == 216)  # для pusha
-# @router.message(F.chat.id == -1002345179040 and F.message_thread_id == 3)
+# @router.message(F.chat.id == -1002275406614 and F.message_thread_id == None)
 async def parse_operating_time(message: Message):
     await archive_messages(message)
     ks_find = re.compile(r'\w+ая|\w+-\w+ая')

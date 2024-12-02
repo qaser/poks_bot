@@ -1,11 +1,14 @@
+import datetime as dt
+
 from aiogram_dialog import Window
 from aiogram_dialog.widgets.kbd import (Back, Button, Cancel, CurrentPage,
                                         Group, NextPage, PrevPage, Row, Select)
-from aiogram_dialog.widgets.text import Const, Format
+from aiogram_dialog.widgets.text import Const, Format, Multi
 
 import utils.constants as texts
 from config.pyrogram_config import app
 from dialogs.for_iskra.states import Iskra
+from dateutil.relativedelta import relativedelta
 
 from . import getters, keyboards, selected
 
@@ -14,12 +17,13 @@ STATIONS_TEXT = 'Выберите компрессорную станцию, н�
 SHOPS_TEXT = 'Выберите номер компрессорного цеха, на котором произошёл отказ'
 GPA_TEXT = 'Выберите номер ГПА'
 FINISH_TEXT = 'Группа создана'
+REPORT_IS_EMPTY = 'Данных за прошедший месяц еще нет, выберите в меню другой период'
 
 
 async def exit_click(callback, button, dialog_manager):
     try:
         await dialog_manager.done()
-        # await callback.message.delete()
+        await callback.message.delete()
     except:
         pass
 
@@ -35,14 +39,51 @@ def category_window():
 
 def main_report_window():
     return Window(
-        Format('Информация о наработке ГПА за {month} {year}г.\n'),
-        Format('<b>{ks}</b>'),
-        Format('{report_text}\n'),
-        Format('Суммарная наработка по КС: <b>{sum_time} ч.</b>'),
+        Const(REPORT_IS_EMPTY, when='report_is_empty'),
+        Multi(
+            Format('Информация о наработке ГПА за {month} {year}г.\n'),
+            Format('<b>{ks}</b>'),
+            Format('{report_text}\n'),
+            Format('Суммарная наработка по КС: <b>{sum_time} ч.</b>'),
+            sep='\n',
+            when='report_not_empty'
+        ),
         keyboards.ks_nav_menu(),
+        Button(
+            Const('Отправить по email'),
+            on_click=selected.send_report,
+            id='report_email',
+            when='report_not_empty'
+        ),
         Back(Const(texts.BACK_BUTTON)),
         state=Iskra.show_main_report,
         getter=getters.get_last_report,
+    )
+
+
+def mail_send_window():
+    return Window(
+        Const('Письмо отправлено'),
+        Back(Const(texts.BACK_BUTTON)),
+        state=Iskra.send_mail_done
+    )
+
+
+def select_year_window():
+    return Window(
+        Const('Выберите год'),
+        keyboards.years_btns(selected.on_select_year),
+        getter=getters.get_years,
+        state=Iskra.select_year,
+    )
+
+
+def select_month_window():
+    return Window(
+        Const('Выберите месяц'),
+        keyboards.months_btns(selected.on_select_month),
+        getter=getters.get_months,
+        state=Iskra.select_month,
     )
 
 

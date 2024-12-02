@@ -17,9 +17,9 @@ def categories():
             on_click=selected.on_last_work_time
         ),
         # Button(
-        #     Const('📈 Выбрать по дате'),
+        #     Const('📅 Выбрать по дате'),
         #     'choose_date',
-        #     on_click=selected.on_select_year,
+        #     on_click=selected.on_select_date,
         # ),
     )
 
@@ -41,6 +41,34 @@ def ks_nav_menu():
             on_click=selected.ks_next
         ),
         when='nav_is_on'
+    )
+
+
+def years_btns(on_click):
+    return Group(
+        Select(
+            Format('{item}'),
+            id='s_years',
+            item_id_getter=lambda x: x,
+            items='years',
+            on_click=on_click,
+        ),
+        id='years',
+        width=2
+    )
+
+
+def months_btns(on_click):
+    return Group(
+        Select(
+            Format('{item}'),
+            id='s_months',
+            item_id_getter=lambda x: x,
+            items='months',
+            on_click=on_click,
+        ),
+        id='months',
+        width=2
     )
 
 
