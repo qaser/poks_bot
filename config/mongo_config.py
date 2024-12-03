@@ -18,6 +18,7 @@ gpa = db['gpa']
 giga_chats = db['giga_chats']
 msgs = db['msgs']
 operating_time = db['operating_time']
+otkaz_msgs = db['otkaz_msgs']
 
 
 '''

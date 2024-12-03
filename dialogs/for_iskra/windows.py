@@ -4,11 +4,11 @@ from aiogram_dialog import Window
 from aiogram_dialog.widgets.kbd import (Back, Button, Cancel, CurrentPage,
                                         Group, NextPage, PrevPage, Row, Select)
 from aiogram_dialog.widgets.text import Const, Format, Multi
+from dateutil.relativedelta import relativedelta
 
 import utils.constants as texts
 from config.pyrogram_config import app
 from dialogs.for_iskra.states import Iskra
-from dateutil.relativedelta import relativedelta
 
 from . import getters, keyboards, selected
 

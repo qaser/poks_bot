@@ -1,11 +1,13 @@
 import datetime as dt
+import re
 
 from aiogram_dialog import DialogManager, StartMode
 from pyrogram.types import ChatPermissions, ChatPrivileges
 
 import utils.constants as const
 from config.bot_config import bot
-from config.mongo_config import admins, emergency_stops, gpa, groups, users
+from config.mongo_config import (admins, emergency_stops, gpa, groups,
+                                 otkaz_msgs, users)
 from config.pyrogram_config import app
 from config.telegram_config import BOT_ID, MY_TELEGRAM_ID, OTKAZ_GROUP_ID
 from dialogs.for_ao.states import Ao
@@ -32,6 +34,12 @@ async def on_shop_done(callback, widget, manager: DialogManager, shop):
 async def on_gpa_done(callback, widget, manager: DialogManager, gpa_num):
     context = manager.current_context()
     context.dialog_data.update(gpa=gpa_num)
+    await manager.switch_to(Ao.select_stats)
+
+
+async def on_stats_chosen(callback, widget, manager: DialogManager):
+    context = manager.current_context()
+    context.dialog_data.update(stats_chosen=widget.widget_id)
     await manager.switch_to(Ao.ao_confirm)
 
 
@@ -161,6 +169,8 @@ async def create_group(manager, ao_id, mark):
             MY_TELEGRAM_ID,
             text=f'Почему-то я не покинул группу {group_name}'
         )
+    if mark == 'dialog':
+        await replace_messages(manager)
     try:
         await bot.send_message(chat_id=OTKAZ_GROUP_ID, text=link.invite_link)
     except:
@@ -214,3 +224,34 @@ async def add_admin_to_group(user_id, group_id):
             is_anonymous=False
         )
     )
+
+
+async def replace_messages(manager):
+    context = manager.current_context()
+    stats_chosen = context.dialog_data['stats_chosen']
+    try:
+        msg = otkaz_msgs.find().limit(1).sort([('$natural', -1)])[0]
+    except:
+        pass
+    if stats_chosen == 'stats_enable':
+        date_find = re.compile(r'\d\d\.\d\d\.(\d\d\d\d|\d\d)')
+        time_find = re.compile(r'(\d|\d\d)\:\d\d')
+        try:
+            msg = otkaz_msgs.find().limit(1).sort([('$natural', -1)])[0]
+            date_text = date_find.search(msg['text']).group()
+            result = re.sub(date_text, f'<b><u>{date_text}</u></b>', msg['text'])
+            otkaz_msgs.update_one({'_id': msg['_id']}, {'$set': {'text': result}})
+        except:
+            pass
+        try:
+            msg = otkaz_msgs.find().limit(1).sort([('$natural', -1)])[0]
+            time_text = time_find.search(msg['text']).group()
+            result = re.sub(time_text, f'<b><u>{time_text}</u></b>', msg['text'])
+            otkaz_msgs.update_one({'_id': msg['_id']}, {'$set': {'text': result}})
+        except:
+            pass
+    try:
+        await bot.send_message(chat_id=OTKAZ_GROUP_ID, text=msg['text'], parse_mode='HTML')
+        await bot.delete_message(chat_id=OTKAZ_GROUP_ID, message_id=msg['msg_id'])
+    except:
+        pass

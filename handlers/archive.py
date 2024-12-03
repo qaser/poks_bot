@@ -1,6 +1,7 @@
 from aiogram import F, Router
 from aiogram.types import Message
 
+from html import escape
 from config.bot_config import bot
 from config.mongo_config import archive
 from config.telegram_config import MY_TELEGRAM_ID
@@ -42,4 +43,9 @@ async def archive_messages(message: Message):
                 upsert=False
             )
         chat_name = message.chat.full_name
-        await bot.send_message(MY_TELEGRAM_ID, f'{chat_name} {message.chat.id} {thread}: {message.text}')
+        msg_text = escape(message.text)
+        await bot.send_message(
+            chat_id=MY_TELEGRAM_ID,
+            text=f'{chat_name} {message.chat.id} {thread}: {msg_text}',
+            parse_mode='HTML'
+        )

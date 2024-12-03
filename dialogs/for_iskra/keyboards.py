@@ -16,11 +16,11 @@ def categories():
             'last_time',
             on_click=selected.on_last_work_time
         ),
-        # Button(
-        #     Const('📅 Выбрать по дате'),
-        #     'choose_date',
-        #     on_click=selected.on_select_date,
-        # ),
+        Button(
+            Const('📅 Выбрать по дате'),
+            'choose_date',
+            on_click=selected.on_select_date,
+        ),
     )
 
 

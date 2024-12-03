@@ -137,5 +137,9 @@ pipeline = [
     # {'$setWindowFields': {'sortBy': {'ks': 1}, 'output': {'index': {'$documentNumber': {}}}}},
 ]
 
-queryset = gpa.aggregate(pipeline)
-print(list(queryset))
+# queryset = gpa.aggregate(pipeline)
+# print(list(queryset))
+
+
+msg = оperating_time.find().limit(1).sort([('$natural',-1)])
+print(msg[0])

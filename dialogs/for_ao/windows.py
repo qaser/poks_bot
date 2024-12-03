@@ -14,6 +14,7 @@ STATIONS_TEXT = 'Выберите компрессорную станцию, н�
 SHOPS_TEXT = 'Выберите номер компрессорного цеха, на котором произошёл отказ'
 GPA_TEXT = 'Выберите номер ГПА'
 FINISH_TEXT = 'Группа создана'
+STATS_TEXT = 'Данный отказ учитывается в статистике наработки на отказ?'
 
 
 async def exit_click(callback, button, dialog_manager):
@@ -56,6 +57,27 @@ def gpa_window():
         Back(Const(texts.BACK_BUTTON)),
         state=Ao.select_gpa,
         getter=getters.get_gpa,
+    )
+
+
+def stats_choose_window():
+    return Window(
+        Const(STATS_TEXT),
+        Row(
+            Button(
+                Const('❌ Нет'),
+                'stats_disable',
+                on_click=selected.on_stats_chosen,
+            ),
+            Button(
+                Const('✔️ Да'),
+                'stats_enable',
+                on_click=selected.on_stats_chosen,
+            ),
+            id='stats_choose_btns'
+        ),
+        Back(Const(texts.BACK_BUTTON)),
+        state=Ao.select_stats,
     )
 
 

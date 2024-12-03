@@ -48,6 +48,24 @@ MSGS = [
     'Правохеттинское ЛПУМГ, ГПА№64, в 1:50 АО - помпаж двигателя (ложное).',
 ]
 
+# for msg in MSGS:
+#     date_find = re.compile(r'\d\d\.\d\d\.(\d\d\d\d|\d\d)')
+#     time_find = re.compile(r'(\d|\d\d)\:\d\d')
+#     try:
+#         date_text = date_find.search(msg).group()
+#         time_text = time_find.search(msg).group()
+#     except:
+#         pass
+#     try:
+#         result = re.sub(date_text, f'<b><u>{date_text}</u></b>', msg)
+#     except:
+#         pass
+#     try:
+#         result = re.sub(time_text, f'<b><u>{time_text}</u></b>', result)
+#     except:
+#         pass
+#     print(result)
+
 def find_gpa():
     gpa_num_find = re.compile(r'№(\d*)')
     date_find = re.compile(r'\d\d\.\d\d\.(\d\d\d\d|\d\d)')
