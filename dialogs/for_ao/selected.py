@@ -251,6 +251,10 @@ async def replace_messages(manager):
         except:
             pass
     try:
+        msg = otkaz_msgs.find().limit(1).sort([('$natural', -1)])[0]
+    except:
+        pass
+    try:
         await bot.send_message(chat_id=OTKAZ_GROUP_ID, text=msg['text'], parse_mode='HTML')
         await bot.delete_message(chat_id=OTKAZ_GROUP_ID, message_id=msg['msg_id'])
     except:
