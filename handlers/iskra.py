@@ -4,7 +4,7 @@ from time import sleep
 
 from aiogram import F, Router
 from aiogram.filters import Command
-from aiogram.types import Message
+from aiogram.types import Message, ReactionTypeEmoji
 from aiogram_dialog import Dialog, DialogManager, StartMode
 from dateutil.relativedelta import relativedelta
 
@@ -28,11 +28,7 @@ dialog =  Dialog(
     windows.mail_send_window(),
     windows.select_year_window(),
     windows.select_month_window(),
-    # windows.display_mode_window(),
-    # windows.ks_report_window(),
-    # windows.select_ks_window(),
-    # windows.select_gpa_window(),
-    # windows.gpa_report_window(),
+    windows.ks_report_window(),
 )
 
 
@@ -63,9 +59,9 @@ async def mail_request(message: Message):
 
 
 
-@router.message(F.chat.id == -1001908010022 and F.message_thread_id == 216)  # для pusha
-# @router.message(F.chat.id == -1002275406614 and F.message_thread_id == None)
-async def parse_operating_time(message: Message):
+# @router.message(F.chat.id == -1001908010022 and F.message_thread_id == 216)  # для pusha
+@router.message(F.chat.id == -1002275406614 and F.message_thread_id == None)
+async def parse_operating_data(message: Message):
     await archive_messages(message)
     ks_find = re.compile(r'\w+ая|\w+-\w+ая')
     msg = message.text.replace(u'\xa0', u' ')
@@ -96,10 +92,13 @@ async def parse_operating_time(message: Message):
                         }},
                         upsert=True
                     )
-            await message.answer(
-                text='Информация о наработке принята',
-                disable_notification=True
-            )
+            try:
+                await message.react([ReactionTypeEmoji(emoji='👍')])
+            except:
+                await message.answer(
+                    text='Информация о наработке принята',
+                    disable_notification=True
+                )
         else:
             await message.answer(
                 text=('Информация о наработке не принята, вероятно '

@@ -1,8 +1,5 @@
-from aiogram_dialog.widgets.kbd import (Button, Column, Group, Radio, Row,
-                                        ScrollingGroup, Select)
+from aiogram_dialog.widgets.kbd import Button, Column, Group, Row, Select
 from aiogram_dialog.widgets.text import Const, Format
-
-from config.mongo_config import admins, emergency_stops, gpa, users
 
 from . import selected
 
@@ -61,14 +58,34 @@ def years_btns(on_click):
 def months_btns(on_click):
     return Group(
         Select(
-            Format('{item}'),
+            Format('{item[0]}'),
             id='s_months',
-            item_id_getter=lambda x: x,
+            item_id_getter=lambda x: x[1],
             items='months',
             on_click=on_click,
         ),
         id='months',
         width=2
+    )
+
+
+def custom_ks_nav_menu():
+    return Row(
+        Button(
+            Const('⬅️'),
+            id='prev',
+            on_click=selected.custom_ks_prev
+        ),
+        Button(
+            Format('{index_num}/{index_sum}'),
+            id='pager',
+        ),
+        Button(
+            Const('➡️'),
+            id='next',
+            on_click=selected.custom_ks_next
+        ),
+        when='nav_is_on'
     )
 
 

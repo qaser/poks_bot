@@ -11,12 +11,9 @@ from pyrogram import utils
 
 import utils.constants as const
 from config.bot_config import bot, dp
-from config.mongo_config import groups
 from config.pyrogram_config import app
-from config.telegram_config import MY_TELEGRAM_ID
 from handlers import admin, ao, archive, copy, iskra, registration, service
-from scheduler.scheduler_funcs import (clear_msgs, send_backups,
-                                       send_mail_summary, send_remainder,
+from scheduler.scheduler_funcs import (clear_msgs, send_backups, send_remainder,
                                        send_work_time_reminder)
 
 

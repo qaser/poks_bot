@@ -4,11 +4,9 @@ from time import sleep
 from aiogram_dialog import DialogManager, StartMode
 from dateutil.relativedelta import relativedelta
 
-import utils.constants as const
-from config.bot_config import bot
 from config.mail_config import SPCH_REPORT_MAIL
-from config.mongo_config import admins, emergency_stops, gpa, groups, users
-from config.telegram_config import BOT_ID, MY_TELEGRAM_ID
+from config.mongo_config import gpa
+from config.telegram_config import MY_TELEGRAM_ID
 from dialogs.for_iskra.states import Iskra
 from utils.create_iskra_report_excel import create_report_excel
 from utils.send_email import send_email
@@ -72,4 +70,23 @@ async def on_select_year(callback, widget, manager: DialogManager, year):
 async def on_select_month(callback, widget, manager: DialogManager, month):
     context = manager.current_context()
     context.dialog_data.update(month=month)
-    # await manager.switch_to(Iskra.select_month)
+    context.dialog_data.update(index_num=0)
+    await manager.switch_to(Iskra.show_ks_report)
+
+
+async def custom_ks_next(callback, widget, manager: DialogManager):
+    context = manager.current_context()
+    saved_index = int(context.dialog_data['index_num'])
+    index_sum = int(context.dialog_data['index_sum']) - 1
+    new_index = saved_index + 1 if saved_index < index_sum else 0
+    context.dialog_data.update(index_num=new_index)
+    await manager.switch_to(Iskra.show_ks_report)
+
+
+async def custom_ks_prev(callback, widget, manager: DialogManager):
+    context = manager.current_context()
+    saved_index = int(context.dialog_data['index_num'])
+    index_sum = int(context.dialog_data['index_sum']) - 1
+    new_index = saved_index - 1 if saved_index > 0 else index_sum
+    context.dialog_data.update(index_num=new_index)
+    await manager.switch_to(Iskra.show_ks_report)
