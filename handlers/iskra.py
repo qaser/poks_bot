@@ -59,8 +59,8 @@ async def mail_request(message: Message):
 
 
 
-# @router.message(F.chat.id == -1001908010022 and F.message_thread_id == 216)  # для pusha
-@router.message(F.chat.id == -1002275406614 and F.message_thread_id == None)
+@router.message(F.chat.id == -1001908010022 and F.message_thread_id == 216)  # для pusha
+# @router.message(F.chat.id == -1002275406614 and F.message_thread_id == None)
 async def parse_operating_data(message: Message):
     print('dsds')
     await archive_messages(message)
