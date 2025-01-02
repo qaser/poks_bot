@@ -62,6 +62,7 @@ async def mail_request(message: Message):
 # @router.message(F.chat.id == -1001908010022 and F.message_thread_id == 216)  # для pusha
 @router.message(F.chat.id == -1002275406614 and F.message_thread_id == None)
 async def parse_operating_data(message: Message):
+    print('dsds')
     await archive_messages(message)
     ks_find = re.compile(r'\w+ая|\w+-\w+ая')
     msg = message.text.replace(u'\xa0', u' ')
@@ -80,6 +81,7 @@ async def parse_operating_data(message: Message):
                     gpa.update_one({'_id': gpa_id}, {'$set': {'iskra_comp': True}})
                     date = dt.datetime.now()
                     previous_month = date - relativedelta(months=1)
+                    print(previous_month)
                     operating_time.update_one(
                         {
                             'gpa_id': gpa_id,
