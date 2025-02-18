@@ -1,5 +1,6 @@
-
+import re
 from html import escape
+import datetime as dt
 
 from aiogram import F, Router
 from aiogram.filters import Command
@@ -8,7 +9,7 @@ from aiogram_dialog import Dialog, DialogManager, StartMode
 
 from config.bot_config import bot
 from config.mongo_config import emergency_stops, gpa, otkaz_msgs
-from config.telegram_config import MY_TELEGRAM_ID
+from config.telegram_config import MY_TELEGRAM_ID, OTKAZ_GROUP_ID
 from dialogs.for_ao import windows
 from dialogs.for_ao.selected import create_group
 from dialogs.for_ao.states import Ao
@@ -42,12 +43,23 @@ async def ao_request(message: Message, dialog_manager: DialogManager):
     await dialog_manager.start(Ao.select_station, mode=StartMode.RESET_STACK)
 
 
-@router.message(F.chat.id == -1001856019654)  # для pusha
-# @router.message(F.chat.id == -1002275406614)
-async def auto_otkaz_detect(message: Message):
-    msg_text = escape(message.text)
-    otkaz_msgs.insert_one({'msg_id': message.message_id, 'text': msg_text})
-    await archive_messages(message)
+@router.message(Command('fix'))
+async def delete_msgs(message: Message):
+    await bot.delete_messages(
+        chat_id=OTKAZ_GROUP_ID,
+        message_ids=[1425, 1426, 1428, 1429]
+    )
+
+
+
+
+
+# @router.message(F.chat.id == -1001856019654)  # для pusha
+# @router.message(F.chat.id == -1002275406614 and F.message_thread_id == None)
+# async def auto_otkaz_detect(message: Message):
+#     msg_text = escape(message.text)
+#     otkaz_msgs.insert_one({'msg_id': message.message_id, 'text': msg_text})
+#     await archive_messages(message)
 #     gpa_num_find = re.compile(r'№(\d*)')
 #     date_find = re.compile(r'\d\d\.\d\d\.(\d\d\d\d|\d\d)')
 #     lpu_find = re.compile(r'\w+ое\sЛПУМГ|\w+-\w+ое\sЛПУМГ')
