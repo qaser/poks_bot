@@ -54,12 +54,12 @@ async def delete_msgs(message: Message):
 
 
 
-# @router.message(F.chat.id == -1001856019654)  # для pusha
+@router.message(F.chat.id == -1001856019654)  # для pusha
 # @router.message(F.chat.id == -1002275406614 and F.message_thread_id == None)
-# async def auto_otkaz_detect(message: Message):
-#     msg_text = escape(message.text)
-#     otkaz_msgs.insert_one({'msg_id': message.message_id, 'text': msg_text})
-#     await archive_messages(message)
+async def auto_otkaz_detect(message: Message):
+    msg_text = escape(message.text)
+    otkaz_msgs.insert_one({'msg_id': message.message_id, 'text': msg_text})
+    await archive_messages(message)
 #     gpa_num_find = re.compile(r'№(\d*)')
 #     date_find = re.compile(r'\d\d\.\d\d\.(\d\d\d\d|\d\d)')
 #     lpu_find = re.compile(r'\w+ое\sЛПУМГ|\w+-\w+ое\sЛПУМГ')
