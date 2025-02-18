@@ -47,7 +47,7 @@ async def ao_request(message: Message, dialog_manager: DialogManager):
 async def delete_msgs(message: Message):
     await bot.delete_messages(
         chat_id=OTKAZ_GROUP_ID,
-        message_ids=[1425, 1426, 1428, 1429]
+        message_ids=[1430]
     )
 
 
