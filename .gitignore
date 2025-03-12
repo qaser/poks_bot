@@ -5,6 +5,9 @@ venv/
 .venv/
 .env
 
+*.rdb
+*.gz
+
 __pycache__/
 *.py[cod]
 
