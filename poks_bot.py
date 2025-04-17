@@ -12,7 +12,9 @@ from pyrogram import utils
 import utils.constants as const
 from config.bot_config import bot, dp
 from config.pyrogram_config import app
-from handlers import admin, ao, archive, copy, iskra, registration, service
+from config.mongo_config import admins
+from middlewares.admin_check import AdminCheckMiddleware
+from handlers import ao, archive, copy, iskra, service
 from scheduler.scheduler_funcs import (clear_msgs, send_backups, send_remainder,
                                        send_work_time_reminder)
 
@@ -40,7 +42,19 @@ async def reset_handler(message: Message, state: FSMContext):
 
 @dp.message(Command('help'))
 async def help_handler(message: Message):
-    await message.answer(const.HELP_USER)
+    await message.answer(const.HELP_ADMIN)
+
+
+@dp.message(Command('admin'))
+async def admin_handler(message: Message):
+    user = message.from_user
+    admins.update_one(
+        {'user_id': user.id},
+        {'$set': {'directions': ['gpa'], 'username': user.full_name}},
+        upsert=True
+    )
+    await message.answer('Администратор добавлен')
+    await message.delete()
 
 
 @dp.message(Command('start'))
@@ -68,6 +82,7 @@ async def delete_service_pinned_message(message: Message):
 
 
 async def main():
+    dp.message.middleware(AdminCheckMiddleware())
     scheduler = AsyncIOScheduler()
     scheduler.add_job(
         send_remainder,
@@ -93,32 +108,6 @@ async def main():
         minute=0,
         timezone=const.TIME_ZONE
     )
-    # scheduler.add_job(
-    #     send_mail_summary,
-    #     'cron',
-    #     day_of_week='mon',
-    #     hour=8,
-    #     minute=30,
-    #     timezone=const.TIME_ZONE,
-    #     args=['week']
-    # )
-    # scheduler.add_job(
-    #     send_mail_summary,
-    #     'cron',
-    #     day=1,
-    #     hour=8,
-    #     minute=31,
-    #     timezone=const.TIME_ZONE,
-    #     args=['month']
-    # )
-    # scheduler.add_job(
-    #     send_task_users_reminder,
-    #     'cron',
-    #     day_of_week='wed',
-    #     hour=10,
-    #     minute=15,
-    #     timezone=const.TIME_ZONE
-    # )
     scheduler.add_job(
         send_backups,
         'cron',
@@ -129,15 +118,13 @@ async def main():
     )
     scheduler.start()
     dp.include_routers(
-        service.router,
-        ao.router,
         copy.router,
-        admin.router,
+        service.router,
         iskra.router,
-        registration.router,
+        ao.router,
+        archive.router,
         ao.dialog,
         iskra.dialog,
-        archive.router
     )
     setup_dialogs(dp)
     await app.start()

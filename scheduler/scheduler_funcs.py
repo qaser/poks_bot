@@ -15,7 +15,6 @@ from config.mongo_config import admins, groups, msgs, users
 from config.telegram_config import (EXPLOIT_GROUP_ID, MY_TELEGRAM_ID,
                                     SPCH_THREAD_ID)
 from utils.backup_db import send_dbs_mail
-from utils.create_summary_excel import create_summary_excel
 from utils.get_mail import get_letters
 from utils.send_email import send_email
 
@@ -82,14 +81,6 @@ async def check_mailbox():
     status, res = imap.login(username, mail_pass)
     if status == 'OK' and imap:
         await get_letters(imap)
-
-
-async def send_mail_summary(period):
-    queryset = list(admins.find({}))
-    emails = list(set([admin.get('mail') for admin in queryset if admin.get('mail') is not None]))
-    create_summary_excel(period)
-    sleep(5.0)
-    await send_email(emails, user_id=MY_TELEGRAM_ID)
 
 
 async def send_backups():

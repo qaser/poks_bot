@@ -10,7 +10,6 @@ router = Router()
 
 @router.message(F.content_type.in_({'text', 'video', 'photo', 'document'}))
 async def archive_messages(message: Message):
-    # print(message.message_thread_id, message.chat.id)
     chat = message.chat.id
     thread = message.message_thread_id
     if message.photo:

@@ -34,9 +34,7 @@ dialog =  Dialog(
 
 @router.message(Command('iskra'))
 async def operating_time_request(message: Message, dialog_manager: DialogManager):
-    # print(message)
-    # await message.delete()
-    # Important: always set `mode=StartMode.RESET_STACK` you don't want to stack dialogs
+    await message.delete()
     await dialog_manager.start(Iskra.select_category, mode=StartMode.RESET_STACK)
 
 
