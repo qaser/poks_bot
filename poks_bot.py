@@ -14,7 +14,7 @@ from config.bot_config import bot, dp
 from config.pyrogram_config import app
 from config.mongo_config import admins
 from middlewares.admin_check import AdminCheckMiddleware
-from handlers import ao, archive, copy, iskra, service
+from handlers import ao, archive, copy, iskra, service, groups
 from scheduler.scheduler_funcs import (clear_msgs, send_backups, send_remainder,
                                        send_work_time_reminder)
 
@@ -122,9 +122,11 @@ async def main():
         service.router,
         iskra.router,
         ao.router,
+        groups.router,
         archive.router,
         ao.dialog,
         iskra.dialog,
+        groups.dialog
     )
     setup_dialogs(dp)
     await app.start()

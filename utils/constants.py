@@ -2,6 +2,9 @@ from datetime import timedelta, timezone
 
 import emoji
 
+
+SCROLLING_HEIGHT = 6
+
 NEXT_BUTTON = 'Продолжить 🔜'
 BACK_BUTTON = '🔙 Назад'
 EXIT_BUTTON = '🔚 Выход'
