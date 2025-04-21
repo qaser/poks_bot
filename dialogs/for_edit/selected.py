@@ -45,7 +45,7 @@ async def delete_group_members(group_id):
     for user_id in user_ids:
         try:
             await app.kick_chat_member(group_id, user_id)
-            await asyncio.sleep(0.5)  # Чтобы не получить FloodWait
+            await asyncio.sleep(1)  # Чтобы не получить FloodWait
         except Exception as e:
             pass
 
@@ -55,5 +55,4 @@ async def get_all_members(app, chat_id):
     members = []
     async for member in app.get_chat_members(chat_id):
         members.append(member.user.id)
-        print(members)
     return members
