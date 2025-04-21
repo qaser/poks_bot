@@ -1,5 +1,6 @@
 import datetime as dt
 import re
+import asyncio
 
 from aiogram_dialog import DialogManager, StartMode
 from pyrogram.types import ChatPermissions, ChatPrivileges
@@ -7,7 +8,7 @@ from pyrogram.types import ChatPermissions, ChatPrivileges
 import utils.constants as const
 from config.bot_config import bot
 from config.mongo_config import (admins, emergency_stops, gpa, groups,
-                                 otkaz_msgs, users)
+                                 otkaz_msgs)
 from config.pyrogram_config import app
 from config.telegram_config import BOT_ID, MY_TELEGRAM_ID, OTKAZ_GROUP_ID
 from dialogs.for_ao.states import Ao
@@ -129,40 +130,24 @@ async def create_group(manager, ao_id, mark):
     invite_text = f'Вас приглашают в чат для расследования АО(ВНО): {link.invite_link}'
     users_in_group = []
     users_with_link = []
-    users_not_available = []
     for admin in admin_users:
         admin_id = admin.get('user_id')
         admin_name = admin.get('username')
         try:
             await add_admin_to_group(admin_id, group_id)
             users_in_group.append(admin_name)
+            # Задержка 2 секунды между добавлениями
+            await asyncio.sleep(1)
         except:
             try:
                 await bot.send_message(chat_id=admin_id, text=invite_text)
                 users_with_link.append(admin_name)
             except:
-                users_not_available.append(admin_name)
-                pass
-    ks_users = list(users.find({'ks': ks}))
-    for user in ks_users:
-        user_id = user.get('user_id')
-        user_name = user.get('username')
-        try:
-            await app.add_chat_members(group_id, user_id)
-            users_in_group.append(user_name)
-        except:
-            try:
-                await bot.send_message(chat_id=user_id, text=invite_text)
-                users_with_link.append(user_name)
-            except:
-                users_not_available.append(user_name)
                 pass
     in_group_text = ', '.join(users_in_group) if len(users_in_group) > 0 else 'отсутствуют'
     with_link_text = ', '.join(users_with_link) if len(users_with_link) > 0 else 'отсутствуют'
-    not_available_text = ', '.join(users_not_available) if len(users_not_available) > 0 else 'отсутствуют'
     resume_text=(f'Добавлены в группу:\n{in_group_text}\n\n'
-                 f'Получили ссылки:\n{with_link_text}\n\n'
-                 f'Недоступны:\n{not_available_text}')
+                 f'Получили ссылки:\n{with_link_text}')
     try:
         await app.leave_chat(group_id)
     except:
