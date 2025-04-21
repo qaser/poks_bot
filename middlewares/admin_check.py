@@ -15,17 +15,32 @@ class AdminCheckMiddleware(BaseMiddleware):
         event: TelegramObject,
         data: Dict[str, Any]
     ) -> Any:
+        # Пропускаем всё, что не является сообщением
         if not isinstance(event, Message):
             return await handler(event, data)
+
+        # Пропускаем сообщения без текста (фото, документы и т.д.)
         if not event.text:
             return await handler(event, data)
-        command_parts = event.text.split()
-        if not command_parts:
+
+        # Разбиваем текст на части для проверки команды
+        parts = event.text.split()
+        if not parts:  # На всякий случай, если пустой текст
             return await handler(event, data)
-        command = command_parts[0].split('@')[0].lower()
-        if command in self.PUBLIC_COMMANDS:
+
+        first_word = parts[0].split('@')[0].lower()  # Убираем mention бота если есть
+
+        # Если это не команда (не начинается с /) - пропускаем
+        if not first_word.startswith('/'):
             return await handler(event, data)
+
+        # Если это публичная команда - пропускаем
+        if first_word in self.PUBLIC_COMMANDS:
+            return await handler(event, data)
+
+        # Проверяем права для всех остальных команд
         admin = admins.find_one({'user_id': event.from_user.id})
         if not admin:
             return
+
         return await handler(event, data)

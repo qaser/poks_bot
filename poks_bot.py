@@ -11,10 +11,11 @@ from pyrogram import utils
 
 import utils.constants as const
 from config.bot_config import bot, dp
+from config.telegram_config import MY_TELEGRAM_ID
 from config.pyrogram_config import app
 from config.mongo_config import admins
 from middlewares.admin_check import AdminCheckMiddleware
-from handlers import ao, archive, copy, iskra, service, groups
+from handlers import administrators, ao, archive, copy, iskra, service, groups, edit
 from scheduler.scheduler_funcs import (clear_msgs, send_backups, send_remainder,
                                        send_work_time_reminder)
 
@@ -48,12 +49,16 @@ async def help_handler(message: Message):
 @dp.message(Command('admin'))
 async def admin_handler(message: Message):
     user = message.from_user
-    admins.update_one(
+    administrators.update_one(
         {'user_id': user.id},
         {'$set': {'directions': ['gpa'], 'username': user.full_name}},
         upsert=True
     )
     await message.answer('Администратор добавлен')
+    await bot.send_message(
+        MY_TELEGRAM_ID,
+        f'Добавлен администратор {user.full_name}'
+    )
     await message.delete()
 
 
@@ -123,10 +128,14 @@ async def main():
         iskra.router,
         ao.router,
         groups.router,
+        edit.router,
+        administrators.router,
+        administrators.dialog,
         archive.router,
         ao.dialog,
         iskra.dialog,
-        groups.dialog
+        groups.dialog,
+        edit.dialog,
     )
     setup_dialogs(dp)
     await app.start()

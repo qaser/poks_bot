@@ -120,7 +120,12 @@ async def create_group(manager, ao_id, mark):
             MY_TELEGRAM_ID,
             text=f'Бот не смог войти в группу {group_name}'
         )
-    admin_users = list(admins.find({}))
+    admin_users = list(admins.find({
+        "$and": [
+            {"$or": [{"sub": True}, {"sub": {"$exists": False}}]},
+            {"user_id": {"$ne": int(MY_TELEGRAM_ID)}}
+        ]
+    }))
     invite_text = f'Вас приглашают в чат для расследования АО(ВНО): {link.invite_link}'
     users_in_group = []
     users_with_link = []
@@ -129,12 +134,8 @@ async def create_group(manager, ao_id, mark):
         admin_id = admin.get('user_id')
         admin_name = admin.get('username')
         try:
-            if admin_id != 744201326:  # исключаем Батькина
-                await add_admin_to_group(admin_id, group_id)
-                users_in_group.append(admin_name)
-            else:
-                await bot.send_message(chat_id=744201326, text=invite_text)
-                users_with_link.append(admin_name)
+            await add_admin_to_group(admin_id, group_id)
+            users_in_group.append(admin_name)
         except:
             try:
                 await bot.send_message(chat_id=admin_id, text=invite_text)
@@ -160,8 +161,8 @@ async def create_group(manager, ao_id, mark):
     with_link_text = ', '.join(users_with_link) if len(users_with_link) > 0 else 'отсутствуют'
     not_available_text = ', '.join(users_not_available) if len(users_not_available) > 0 else 'отсутствуют'
     resume_text=(f'Добавлены в группу:\n{in_group_text}\n\n'
-          f'Получили ссылки:\n{with_link_text}\n\n'
-          f'Недоступны:\n{not_available_text}')
+                 f'Получили ссылки:\n{with_link_text}\n\n'
+                 f'Недоступны:\n{not_available_text}')
     try:
         await app.leave_chat(group_id)
     except:
@@ -170,9 +171,11 @@ async def create_group(manager, ao_id, mark):
             text=f'Почему-то я не покинул группу {group_name}'
         )
     if mark == 'dialog':
+        context = manager.current_context()
+        context.dialog_data.update(group_id=group_id)
         await replace_messages(manager)
     try:
-        await bot.send_message(chat_id=OTKAZ_GROUP_ID, text=link.invite_link)
+        msg_link = await bot.send_message(chat_id=OTKAZ_GROUP_ID, text=link.invite_link)
     except:
         await bot.send_message(MY_TELEGRAM_ID, text='Не отправлена ссылка в группу "Отказы"')
     await bot.send_message(MY_TELEGRAM_ID, text=f'Создана группа {group_name}')
@@ -191,6 +194,13 @@ async def create_group(manager, ao_id, mark):
     if mark == 'dialog':
         context = manager.current_context()
         context.dialog_data.update(resume_text=resume_text)
+        otkaz_msgs.insert_one(
+            {
+                'msg_id': msg_link.message_id,
+                'text': link.invite_link,
+                'group_id': int(group_id)
+            }
+        )
         await manager.switch_to(Ao.ao_finish)
 
 
@@ -229,6 +239,7 @@ async def add_admin_to_group(user_id, group_id):
 async def replace_messages(manager):
     context = manager.current_context()
     stats_chosen = context.dialog_data['stats_chosen']
+    group_id = context.dialog_data['group_id']
     try:
         msg = otkaz_msgs.find().limit(1).sort([('$natural', -1)])[0]
     except:
@@ -255,7 +266,21 @@ async def replace_messages(manager):
     except:
         pass
     try:
-        await bot.send_message(chat_id=OTKAZ_GROUP_ID, text=msg['text'], parse_mode='HTML')
-        await bot.delete_message(chat_id=OTKAZ_GROUP_ID, message_id=msg['msg_id'])
+        new_msg = await bot.send_message(
+            chat_id=OTKAZ_GROUP_ID,
+            text=msg['text'],
+            parse_mode='HTML'
+        )
+        await bot.delete_message(
+            chat_id=OTKAZ_GROUP_ID,
+            message_id=msg['msg_id']
+        )
+        otkaz_msgs.insert_one(
+            {
+                'msg_id': new_msg.message_id,
+                'text': msg['text'],
+                'group_id': int(group_id)
+            }
+        )
     except:
         pass
