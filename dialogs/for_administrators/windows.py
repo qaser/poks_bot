@@ -64,13 +64,13 @@ def single_admin_window():
             when='owner'
         ),
         Button(
-            Const('⏻ Включить автодобавление в группу'),
+            Const('▶ Включить автодобавление в группу'),
             on_click=selected.update_admin_sub,
             id='sub',
             when='sub_off'
         ),
         Button(
-            Const('⏻ Выключить автодобавление в группу'),
+            Const('⊘ Выключить автодобавление в группу'),
             on_click=selected.update_admin_sub,
             id='unsub',
             when='sub_on'

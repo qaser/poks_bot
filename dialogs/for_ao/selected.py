@@ -136,7 +136,7 @@ async def create_group(manager, ao_id, mark):
         try:
             await add_admin_to_group(admin_id, group_id)
             users_in_group.append(admin_name)
-            # Задержка 2 секунды между добавлениями
+            # Задержка между добавлениями
             await asyncio.sleep(1)
         except:
             try:
