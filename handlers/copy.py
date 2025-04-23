@@ -27,7 +27,7 @@ async def hash_users(message: Message):
         await app.join_chat(link.invite_link)
         await bot.send_message(MY_TELEGRAM_ID, text='Создана ссылка и я вошел в группу')
     except:
-        pass
+        await bot.send_message(MY_TELEGRAM_ID, text='Cсылка на группу не создана')
     try:
         await app.set_chat_protected_content(
             chat_id=message.chat.id,
