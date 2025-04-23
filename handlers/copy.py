@@ -39,7 +39,6 @@ async def hash_users(message: Message):
             await msg.edit_text(str(sec))
             sleep(2)
     except TelegramBadRequest as err:
-        print(str(err))
         if 'CHAT_NOT_MODIFIED' in str(err):
             await bot.send_message(MY_TELEGRAM_ID, text='Чат не изменён — уже отключена защита.')
             msg = await message.answer('30', disable_notification=True)
@@ -62,7 +61,7 @@ async def hash_users(message: Message):
     except:
         pass
     try:
-        # await app.leave_chat(message.chat.id)
+        await app.leave_chat(message.chat.id)
         await bot.send_message(MY_TELEGRAM_ID, text='Я покинул группу')
     except Exception:
         pass
