@@ -7,6 +7,7 @@ from aiogram.types import Message
 from config.bot_config import bot
 from config.pyrogram_config import app
 from config.telegram_config import MY_TELEGRAM_ID
+from aiogram.exceptions import TelegramBadRequest
 
 router = Router()
 
@@ -26,8 +27,8 @@ async def hash_users(message: Message):
         link = await app.create_chat_invite_link(group_id)
         await app.join_chat(link.invite_link)
         await bot.send_message(MY_TELEGRAM_ID, text='Создана ссылка и я вошел в группу')
-    except:
-        await bot.send_message(MY_TELEGRAM_ID, text='Cсылка на группу не создана')
+    except Exception as err:
+        await bot.send_message(MY_TELEGRAM_ID, text=f'Cсылка на группу не создана. {str(err)}')
     try:
         await app.set_chat_protected_content(
             chat_id=message.chat.id,
@@ -37,8 +38,18 @@ async def hash_users(message: Message):
         for sec in range(29, 0, -2):
             await msg.edit_text(str(sec))
             sleep(2)
-    except:
-        await bot.send_message(MY_TELEGRAM_ID, text='Не получилось снять с группы защиту')
+    except TelegramBadRequest as err:
+        print(str(err))
+        if 'CHAT_NOT_MODIFIED' in str(err):
+            await bot.send_message(MY_TELEGRAM_ID, text='Чат не изменён — уже отключена защита.')
+            msg = await message.answer('30', disable_notification=True)
+            for sec in range(29, 0, -2):
+                await msg.edit_text(str(sec))
+                sleep(2)
+        else:
+            await bot.send_message(MY_TELEGRAM_ID, text='Ошибка при снятии защиты с чата: ' + str(err))
+    except Exception as err:
+        await bot.send_message(MY_TELEGRAM_ID, text=str(err))
     try:
         await app.set_chat_protected_content(
             chat_id=message.chat.id,
@@ -51,7 +62,7 @@ async def hash_users(message: Message):
     except:
         pass
     try:
-        await app.leave_chat(message.chat.id)
+        # await app.leave_chat(message.chat.id)
         await bot.send_message(MY_TELEGRAM_ID, text='Я покинул группу')
     except Exception:
         pass
