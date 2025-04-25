@@ -64,8 +64,8 @@ async def hash_users(message: Message):
     try:
         await app.leave_chat(message.chat.id)
         await bot.send_message(MY_TELEGRAM_ID, text='Я покинул группу')
-    except Exception:
-        pass
+    except Exception as err:
+        await bot.send_message(MY_TELEGRAM_ID, text=str(err))
     try:
         await bot.send_message(MY_TELEGRAM_ID, 'нажата кнопка /copy')
     except:
