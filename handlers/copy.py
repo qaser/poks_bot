@@ -24,7 +24,8 @@ async def hash_users(message: Message):
     except:
         pass
     try:
-        link = await app.create_chat_invite_link(group_id)
+        # link = await app.create_chat_invite_link(group_id)
+        link = await bot.create_chat_invite_link(group_id)
         await app.join_chat(link.invite_link)
         await bot.send_message(MY_TELEGRAM_ID, text='Создана ссылка и я вошел в группу')
     except Exception as err:
