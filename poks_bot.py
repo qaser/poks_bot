@@ -15,7 +15,8 @@ from config.telegram_config import MY_TELEGRAM_ID
 from config.pyrogram_config import app
 from config.mongo_config import admins
 from middlewares.admin_check import AdminCheckMiddleware
-from handlers import administrators, ao, archive, copy, iskra, service, groups, edit
+from handlers import (administrators, ao, archive, copy, iskra,
+                      service, groups, edit, request)
 from scheduler.scheduler_funcs import (clear_msgs, send_backups, send_remainder,
                                        send_work_time_reminder)
 
@@ -130,12 +131,14 @@ async def main():
         groups.router,
         edit.router,
         administrators.router,
+        request.router,
         administrators.dialog,
-        archive.router,
+        request.dialog,
         ao.dialog,
         iskra.dialog,
         groups.dialog,
         edit.dialog,
+        archive.router,
     )
     setup_dialogs(dp)
     await app.start()

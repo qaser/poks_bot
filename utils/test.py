@@ -48,6 +48,9 @@ MSGS = [
     'Правохеттинское ЛПУМГ, ГПА№64, в 1:50 АО - помпаж двигателя (ложное).',
 ]
 
+res = gpa.find({}).distinct('group_gpa')
+print(res)
+
 # for msg in MSGS:
 #     date_find = re.compile(r'\d\d\.\d\d\.(\d\d\d\d|\d\d)')
 #     time_find = re.compile(r'(\d|\d\d)\:\d\d')
@@ -66,61 +69,61 @@ MSGS = [
 #         pass
 #     print(result)
 
-def find_gpa():
-    gpa_num_find = re.compile(r'№(\d*)')
-    date_find = re.compile(r'\d\d\.\d\d\.(\d\d\d\d|\d\d)')
-    lpu_find = re.compile(r'\w+ое\sЛПУМГ|\w+-\w+ое\sЛПУМГ')
-    ks_find = re.compile(r'\w+ая|\w+ая')
-    for msg in MSGS:
-        date = date_find.search(msg)
-        num_gpa = gpa_num_find.search(msg)
-        lpu = lpu_find.search(msg)
-        ks = ks_find.search(msg)
-        try:
-            lpu_name = lpu.group()
-        except AttributeError:
-            lpu_name = None
-        try:
-            ks = f'{ks.group()} КС'
-        except AttributeError:
-            ks = None
-        try:
-            day, month, year = date.group().split('.')
-            year = f'20{year}' if len(year) == 2 else year
-            date = f'{day}.{month}.{year}'
-        except AttributeError:
-            date = dt.datetime.now().strftime('%d.%m.%Y')
-        try:
-            num_gpa = num_gpa.group()
-        except AttributeError:
-            num_gpa = None
-        if lpu_name is not None and num_gpa is not None:
-            queryset = list(gpa.find({'lpu': lpu_name, 'num_gpa': num_gpa[1:]}))
-            print(lpu_name, num_gpa, ks)
-            if len(queryset) > 1 and ks is not None:
-                gpa_instance = gpa.find_one({'lpu': lpu_name, 'num_gpa': num_gpa[1:], 'ks': ks})
-                if gpa_instance is not None:
-                    print('создаем группу 1 уточненно')
-                    continue
-            elif len(queryset) == 1:
-                print('создаем группу 1')
-                continue
-            else:
-                print('ручное создание группы 1')
-                continue
-        elif ks is not None and num_gpa is not None:
-            gpa_instance = gpa.find_one({'ks': ks, 'num_gpa': num_gpa[1:]})
-            if gpa_instance is not None:
-                print('создаем группу 2')
-                continue
-            else:
-                print('ручное создание группы 2')
-                continue
-        else:
-            print('ручное создание группы 2')
-            continue
+# def find_gpa():
+#     gpa_num_find = re.compile(r'№(\d*)')
+#     date_find = re.compile(r'\d\d\.\d\d\.(\d\d\d\d|\d\d)')
+#     lpu_find = re.compile(r'\w+ое\sЛПУМГ|\w+-\w+ое\sЛПУМГ')
+#     ks_find = re.compile(r'\w+ая|\w+ая')
+#     for msg in MSGS:
+#         date = date_find.search(msg)
+#         num_gpa = gpa_num_find.search(msg)
+#         lpu = lpu_find.search(msg)
+#         ks = ks_find.search(msg)
+#         try:
+#             lpu_name = lpu.group()
+#         except AttributeError:
+#             lpu_name = None
+#         try:
+#             ks = f'{ks.group()} КС'
+#         except AttributeError:
+#             ks = None
+#         try:
+#             day, month, year = date.group().split('.')
+#             year = f'20{year}' if len(year) == 2 else year
+#             date = f'{day}.{month}.{year}'
+#         except AttributeError:
+#             date = dt.datetime.now().strftime('%d.%m.%Y')
+#         try:
+#             num_gpa = num_gpa.group()
+#         except AttributeError:
+#             num_gpa = None
+#         if lpu_name is not None and num_gpa is not None:
+#             queryset = list(gpa.find({'lpu': lpu_name, 'num_gpa': num_gpa[1:]}))
+#             print(lpu_name, num_gpa, ks)
+#             if len(queryset) > 1 and ks is not None:
+#                 gpa_instance = gpa.find_one({'lpu': lpu_name, 'num_gpa': num_gpa[1:], 'ks': ks})
+#                 if gpa_instance is not None:
+#                     print('создаем группу 1 уточненно')
+#                     continue
+#             elif len(queryset) == 1:
+#                 print('создаем группу 1')
+#                 continue
+#             else:
+#                 print('ручное создание группы 1')
+#                 continue
+#         elif ks is not None and num_gpa is not None:
+#             gpa_instance = gpa.find_one({'ks': ks, 'num_gpa': num_gpa[1:]})
+#             if gpa_instance is not None:
+#                 print('создаем группу 2')
+#                 continue
+#             else:
+#                 print('ручное создание группы 2')
+#                 continue
+#         else:
+#             print('ручное создание группы 2')
+#             continue
 
-find_gpa()
+# find_gpa()
 
 # date_reg = re.compile(r'\d\d\.\d\d\.(\d\d\d\d|\d\d)')
 

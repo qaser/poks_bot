@@ -19,9 +19,42 @@ giga_chats = db['giga_chats']
 msgs = db['msgs']
 operating_time = db['operating_time']
 otkaz_msgs = db['otkaz_msgs']
+paths = db['paths']
+requests = db['requests']
 
 
 '''
+paths {
+    path_type: ['Стационар_1', 'Стационар_2', 'Авиа', 'Судовые']
+    num_stages: 3,
+    stages {
+        1: id_admin,
+        2: id_admin,
+        3: id_admin
+    }
+}
+
+requests {
+    author: user_id,
+    ks: станция,
+    gpa_id: gpa_id,
+    datetime: datetime,
+    text: text
+    path_id: path_id,
+    stages {
+        1: {
+            datatime: datetime,
+            owner_id: admin_id,
+            status: [reject, apply]
+        }
+        2: {
+            datatime: datetime,
+            owner_id: admin_id,
+            status: [reject, apply]
+        }
+    }
+}
+
 структура данных ELECTRICS
     'class_code': код класса
     'class_of': класс оборудования

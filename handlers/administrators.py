@@ -13,16 +13,19 @@ from dialogs.for_administrators.states import Admins
 router = Router()
 
 dialog =  Dialog(
+    windows.select_category_window(),
     windows.select_admins_window(),
     windows.single_admin_window(),
     windows.confirm_delete_window(),
-    # windows.select_year_window(),
-    # windows.select_month_window(),
-    # windows.ks_report_window(),
+    windows.paths_info_window(),  # 4 кнопки с типами путей
+    windows.select_num_stage(),
+    windows.select_majors_window(),
+    windows.confirm_path_window(),
+    windows.complete_path_window(),
 )
 
 
 @router.message(Command('admins'))
 async def admins_request(message: Message, dialog_manager: DialogManager):
     await message.delete()
-    await dialog_manager.start(Admins.select_admin, mode=StartMode.RESET_STACK)
+    await dialog_manager.start(Admins.select_category, mode=StartMode.RESET_STACK)

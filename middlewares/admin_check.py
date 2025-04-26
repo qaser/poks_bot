@@ -1,13 +1,12 @@
 from aiogram import BaseMiddleware
 from aiogram.types import Message, TelegramObject
 from typing import Callable, Dict, Any, Awaitable
-from datetime import datetime
 from config.mongo_config import admins
 
 
 class AdminCheckMiddleware(BaseMiddleware):
     # Команды, доступные всем пользователям
-    PUBLIC_COMMANDS = ['/start', '/reset', '/admin']
+    PUBLIC_COMMANDS = ['/start', '/reset', '/admin', '/request']
 
     async def __call__(
         self,
@@ -41,6 +40,7 @@ class AdminCheckMiddleware(BaseMiddleware):
         # Проверяем права для всех остальных команд
         admin = admins.find_one({'user_id': event.from_user.id})
         if not admin:
+            await event.delete()  # Удаляем сообщение, если пользователь не админ
             return
 
         return await handler(event, data)
