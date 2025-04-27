@@ -20,7 +20,7 @@ msgs = db['msgs']
 operating_time = db['operating_time']
 otkaz_msgs = db['otkaz_msgs']
 paths = db['paths']
-requests = db['requests']
+reqs = db['requests']
 
 
 '''
@@ -28,29 +28,31 @@ paths {
     path_type: ['Стационар_1', 'Стационар_2', 'Авиа', 'Судовые']
     num_stages: 3,
     stages {
-        1: id_admin,
-        2: id_admin,
-        3: id_admin
+        '1': id_admin,
+        '2': id_admin,
+        '3': id_admin
     }
 }
 
 requests {
-    author: user_id,
+    author_id: user_id,
     ks: станция,
     gpa_id: gpa_id,
     datetime: datetime,
     text: text
     path_id: path_id,
+    status: [inwork, apply, reject]
+    'current_stage': 2,
     stages {
-        1: {
+        '1': {
             datatime: datetime,
-            owner_id: admin_id,
-            status: [reject, apply]
+            major_id: admin_id,
+            status: [pass, reject, apply, inwork]
         }
-        2: {
+        '2': {
             datatime: datetime,
-            owner_id: admin_id,
-            status: [reject, apply]
+            major_id: admin_id,
+            status: [pass, reject, apply, inwork]
         }
     }
 }

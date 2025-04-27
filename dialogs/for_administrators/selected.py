@@ -94,7 +94,7 @@ async def path_save(callback, widget, manager: DialogManager):
     path_name = const.PATH_TYPE[context.dialog_data['path_type']]
     stages = {}
     for stage_num in range(1, num_stages + 1):
-        stages[str(stage_num)] = int(majors[stage_num - 1])
+        stages[stage_num] = int(majors[stage_num - 1])
     paths.update_one(
         {'path_type': path_name},
         {'$set': {'num_stages': num_stages, 'stages': stages}},

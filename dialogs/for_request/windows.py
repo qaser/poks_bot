@@ -95,8 +95,6 @@ def request_confirm_window():
 def finish_window():
     return Window(
         Const(FINISH_TEXT),
-        # Format('{users_info}', when='no_users_info'),
         Button(Const(texts.EXIT_BUTTON), on_click=exit_click, id='exit_complete'),
         state=Request.request_finish,
-        # getter=getters.get_users_info,
     )
