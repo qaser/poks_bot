@@ -1,8 +1,9 @@
 from aiogram_dialog import Window
 from aiogram_dialog.widgets.kbd import (Back, Button, CurrentPage,
                                         NextPage, PrevPage, Row)
-from aiogram_dialog.widgets.text import Const, Format
+from aiogram_dialog.widgets.text import Const, Format, Multi
 from aiogram_dialog.widgets.input import TextInput
+from dialogs.custom_widgets.custom_calendar import CustomCalendar
 
 import utils.constants as texts
 from config.pyrogram_config import app
@@ -11,11 +12,17 @@ from dialogs.for_request.states import Request
 from . import getters, keyboards, selected
 
 ID_SCROLL_PAGER = 'stations_pager'
+MAJOR_SCROLL_PAGER = 'majors_pager'
+MAIN_MENU = 'Управление заявками на пуск ГПА.\nВыберите категорию:'
 STATIONS_TEXT = 'Выберите компрессорную станцию'
 SHOPS_TEXT = 'Выберите номер компрессорного цеха'
 GPA_TEXT = 'Выберите номер ГПА'
-INPUT_TEXT = 'Введите дополнительную информацию о Вашем запросе в тексте сообщения ниже и нажмите кнопку ➤'
-FINISH_TEXT = 'Запрос отправлен на согласование'
+INPUT_TEXT = 'Введите дополнительную информацию о Вашей заявке в тексте сообщения ниже и нажмите кнопку ➤'
+FINISH_TEXT = 'Запрос отправлен на согласование. Вам придёт сообщение с результатом согласования.'
+PATHS_EMPTY = 'Правила согласования заявок не установлены. Вы можете установить их кнопками ниже:'
+PATH_TUNE = 'Вы настраиваете правила согласования по направлению:'
+DATE_TEXT = 'Выберите дату запланированного пуска ГПА'
+TIME_TEXT = 'Выберите время запланированного пуска ГПА'
 
 
 async def exit_click(callback, button, dialog_manager):
@@ -24,6 +31,20 @@ async def exit_click(callback, button, dialog_manager):
         await callback.message.delete()
     except:
         pass
+
+
+async def return_main_menu(callback, button, dialog_manager):
+    await dialog_manager.switch_to(Request.select_category)
+
+
+def select_category_window():
+    return Window(
+        Const(MAIN_MENU),
+        keyboards.category_buttons(),
+        Button(Const(texts.EXIT_BUTTON), on_click=exit_click, id='exit'),
+        state=Request.select_category,
+        getter=getters.get_users_info
+    )
 
 
 def stations_window():
@@ -35,7 +56,7 @@ def stations_window():
             CurrentPage(scroll=ID_SCROLL_PAGER, text=Format('{current_page1} / {pages}')),
             NextPage(scroll=ID_SCROLL_PAGER, text=Format('>')),
         ),
-        Button(Const(texts.EXIT_BUTTON), on_click=exit_click, id='exit'),
+        Button(Const(texts.BACK_BUTTON), on_click=return_main_menu, id='main_menu'),
         state=Request.select_station,
         getter=getters.get_stations,
     )
@@ -61,6 +82,27 @@ def gpa_window():
     )
 
 
+def date_window():
+    return Window(
+        Const(DATE_TEXT),
+        CustomCalendar(
+            id='calendar',
+            on_click=selected.on_select_date,
+        ),
+        Back(Const(texts.BACK_BUTTON)),
+        state=Request.select_date,
+    )
+
+
+def time_window():
+    return Window(
+        Const(TIME_TEXT),
+        keyboards.time_btns(selected.on_select_time),
+        Back(Const(texts.BACK_BUTTON)),
+        state=Request.select_time,
+    )
+
+
 def input_info_window():
     return Window(
         Const(INPUT_TEXT),
@@ -75,8 +117,9 @@ def input_info_window():
 
 def request_confirm_window():
     return Window(
-        Format('<u>Вы выбрали:</u>\n{station}\nГПА ст.№ {gpa_num}'),
-        Format('<u>Текст запроса:</u>\n<i>"{request_text}"</i>'),
+        Format('<u>Вы выбрали:</u>\n{station}\nГПА ст.№ {gpa_num}\n'),
+        Format('<u>Срок запуска ГПА:</u>\n{req_date} - {req_time}\n'),
+        Format('<u>Текст заявки:</u>\n<i>"{request_text}"</i>'),
         Const('\nОтправить запрос на согласование?'),
         Row(
             Back(Const(texts.BACK_BUTTON)),
@@ -97,4 +140,84 @@ def finish_window():
         Const(FINISH_TEXT),
         Button(Const(texts.EXIT_BUTTON), on_click=exit_click, id='exit_complete'),
         state=Request.request_finish,
+    )
+
+
+def paths_info_window():
+    return Window(
+        Const(PATHS_EMPTY, when='paths_empty'),
+        Const('<u>Правила согласования заявок:</u>\n', when='paths_on'),
+        Format('{paths_info}', when='paths_on'),
+        keyboards.paths_type_buttons(),
+        Button(Const(texts.BACK_BUTTON), on_click=return_main_menu, id='exit'),
+        state=Request.paths_info,
+        getter=getters.get_paths_info,
+    )
+
+
+def select_num_stage():
+    return Window(
+        Multi(Const(PATH_TUNE), Format('<u>{path_name}</u>'), sep=' '),
+        Const('Выберите количество этапов согласования'),
+        keyboards.num_stages_buttons(),
+        Back(Const(texts.BACK_BUTTON)),
+        state=Request.select_num_stages,
+        getter=getters.get_path_name,
+    )
+
+
+def select_majors_window():
+    return Window(
+        Multi(Const(PATH_TUNE), Format('<u>{path_name}</u>'), sep=' '),
+        Format('Количество этапов: <b>{num_stages}</b>\n'),
+        Const('Последовательно выберите участников процесса начиная с первого этапа:'),
+        Format('{stages_info}'),
+        keyboards.paginated_majors(MAJOR_SCROLL_PAGER),
+        Row(
+            PrevPage(scroll=MAJOR_SCROLL_PAGER, text=Format('<')),
+            CurrentPage(scroll=MAJOR_SCROLL_PAGER, text=Format('{current_page1} / {pages}')),
+            NextPage(scroll=MAJOR_SCROLL_PAGER, text=Format('>')),
+        ),
+        Button(
+            Const(texts.NEXT_BUTTON),
+            id='majors_done',
+            on_click=selected.on_majors_done,
+            when='complete'
+        ),
+        Button(
+            Const(texts.BACK_BUTTON),
+            on_click=selected.back_and_erase_widget_click,
+            id='back_with_erase'
+        ),
+        state=Request.select_majors,
+        getter=getters.get_majors_and_stages
+    )
+
+
+def confirm_path_window():
+    return Window(
+        Const('<u>Проверьте данные перед сохранением:</u>'),
+        Format('<b>Наименование:</b> {path_name}'),
+        Format('<b>Количество этапов:</b> {num_stages}'),
+        Format('{stages_info}'),
+        Const('Сохранить?'),
+        Row(
+            Back(Const(texts.BACK_BUTTON)),
+            Button(Const('✔️ Да'), 'path_save', on_click=selected.path_save),
+            id='choose_btns'
+        ),
+        state=Request.path_confirm,
+        getter=getters.get_path_complete_info,
+    )
+
+
+def complete_path_window():
+    return Window(
+        Const('Сохранено'),
+        Button(
+            Const(texts.EXIT_BUTTON),
+            on_click=return_main_menu,
+            id='exit'
+        ),
+        state=Request.path_complete,
     )
