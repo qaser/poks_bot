@@ -107,7 +107,7 @@ async def handle_request_decision(call: CallbackQuery, state: FSMContext):
                 )
             except Exception as e:
                 print(f"Ошибка уведомления автора: {e}")
-            try:
+            # try:
                 # gpa_info = (
                 #     f'<b>Ст.№ ГПА:</b> {gpa_instance["num_gpa"]}\n'
                 #     f'<b>Наименование ГПА:</b> {gpa_instance["name_gpa"]}\n'
@@ -136,15 +136,15 @@ async def handle_request_decision(call: CallbackQuery, state: FSMContext):
                 #     # f"<b>Статус согласования:</b>\n{stages_text}\n"
                 #     f"<b>Текст запроса:</b>\n<i>{req['text']}</i>\n\n"
                 # )
-                await bot.send_message(
-                    chat_id=EXPLOIT_GROUP_ID,
-                    text='123',
-                    # message_thread_id=SPCH_THREAD_ID
-                )
-            except Exception as e:
-                print(f"Ошибка уведомления группы: {e}")
-            await call.answer("Запрос полностью согласован!")
-            await call.message.edit_reply_markup()  # Убираем кнопки
+                # await bot.send_message(
+                #     chat_id=EXPLOIT_GROUP_ID,
+                #     text='123',
+                #     # message_thread_id=SPCH_THREAD_ID
+                # )
+            # except Exception as e:
+            #     print(f"Ошибка уведомления группы: {e}")
+            # await call.answer("Запрос полностью согласован!")
+            # await call.message.edit_reply_markup()  # Убираем кнопки
         else:
             # Переходим к следующему этапу
             reqs.update_one(
