@@ -34,8 +34,8 @@ async def on_select_category(callback, widget, manager: DialogManager):
         await manager.switch_to(Request.paths_info)
     elif category == 'new_request':
         await manager.switch_to(Request.select_station)
-    elif category == 'my_requests':
-        await manager.switch_to(Request.select_type_requests)
+    elif category == 'archive_requests':
+        await manager.switch_to(Request.select_sorting_requests)
     elif category == 'inwork_requests':
         await manager.switch_to(Request.inwork_requests)
 
@@ -221,10 +221,32 @@ async def on_confirm(callback, widget, manager: DialogManager):
     await send_request_to_major(req_id, current_stage)
 
 
-async def on_selected_request(callback, widget, manager: DialogManager, req_id):
+async def on_selected_inwork_request(callback, widget, manager: DialogManager, req_id):
     context = manager.current_context()
     context.dialog_data.update(req_id=req_id)
     await manager.switch_to(Request.show_inwork_single_request)
+
+
+async def on_select_sorting(callback, widget, manager: DialogManager):
+    category = widget.widget_id
+    if category == 'sort_date':
+        await manager.switch_to(Request.date_sort_requests)
+    elif category == 'sort_status':
+        await manager.switch_to(Request.status_sort_requests)
+    elif category == 'sort_ks':
+        await manager.switch_to(Request.ks_sort_requests)
+
+
+async def on_status_done(callback, widget, manager: DialogManager, status):
+    context = manager.current_context()
+    context.dialog_data.update(status=status, sorting_order='status')
+    await manager.switch_to(Request.show_list_requests)
+
+
+async def on_selected_request(callback, widget, manager: DialogManager, req_id):
+    context = manager.current_context()
+    context.dialog_data.update(req_id=req_id)
+    await manager.switch_to(Request.show_single_request)
 
 
 def get_path_type(gpa_instance):

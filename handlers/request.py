@@ -33,7 +33,14 @@ dialog =  Dialog(
     windows.inwork_requests_window(),
     windows.show_inwork_single_request_window(),
 
-    windows.paths_info_window(),  # 4 кнопки с типами путей
+    windows.select_sorting_requests_window(),
+    # windows.date_sort_requests_window(),
+    windows.status_sort_requests_window(),
+    # windows.ks_sort_requests_window(),
+    windows.show_list_requests_window(),
+    windows.show_single_request_window(),
+
+    windows.paths_info_window(),
     windows.select_num_stage(),
     windows.select_majors_window(),
     windows.confirm_path_window(),
@@ -43,7 +50,7 @@ dialog =  Dialog(
 
 @router.message(Command('request'), F.chat.type == ChatType.PRIVATE)
 async def make_request(message: Message, dialog_manager: DialogManager):
-    # await message.delete()
+    await message.delete()
     await dialog_manager.start(Request.select_category, mode=StartMode.RESET_STACK)
 
 

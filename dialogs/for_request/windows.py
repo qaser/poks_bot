@@ -38,6 +38,10 @@ async def return_main_menu(callback, button, dialog_manager):
     await dialog_manager.switch_to(Request.select_category)
 
 
+async def return_sorting_menu(callback, button, dialog_manager):
+    await dialog_manager.switch_to(Request.select_sorting_requests)
+
+
 def select_category_window():
     return Window(
         Const(MAIN_MENU),
@@ -148,7 +152,7 @@ def inwork_requests_window():
     return Window(
         Const('Заявки на согласовании', when='not_empty'),
         Const('Заявки на согласовании отсутствуют', when='is_empty'),
-        keyboards.paginated_requests(REQUEST_SCROLL_PAGER, selected.on_selected_request),
+        keyboards.paginated_requests(REQUEST_SCROLL_PAGER, selected.on_selected_inwork_request),
         Row(
             PrevPage(scroll=REQUEST_SCROLL_PAGER, text=Format('<')),
             CurrentPage(scroll=REQUEST_SCROLL_PAGER, text=Format('{current_page1} / {pages}')),
@@ -166,6 +170,49 @@ def show_inwork_single_request_window():
         Format('{text}'),
         Button(Const(texts.BACK_BUTTON), on_click=return_main_menu, id='main_menu'),
         state=Request.show_inwork_single_request,
+        getter=getters.get_single_request,
+    )
+
+
+def select_sorting_requests_window():
+    return Window(
+        Const('Выберите способ сортировки заявок:'),
+        keyboards.sort_requests_buttons(),
+        Button(Const(texts.BACK_BUTTON), on_click=return_main_menu, id='main_menu'),
+        state=Request.select_sorting_requests,
+    )
+
+
+def status_sort_requests_window():
+    return Window(
+        Const('Выберите требуемый статус заявок:'),
+        keyboards.statuses_buttons(selected.on_status_done),
+        Button(Const(texts.BACK_BUTTON), on_click=return_sorting_menu, id='sorting_menu'),
+        state=Request.status_sort_requests,
+        getter=getters.get_statuses,
+    )
+
+
+def show_list_requests_window():
+    return Window(
+        Format('Заявки со статусом "{status}"'),
+        keyboards.paginated_requests(REQUEST_SCROLL_PAGER, selected.on_selected_request),
+        Row(
+            PrevPage(scroll=REQUEST_SCROLL_PAGER, text=Format('<')),
+            CurrentPage(scroll=REQUEST_SCROLL_PAGER, text=Format('{current_page1} / {pages}')),
+            NextPage(scroll=REQUEST_SCROLL_PAGER, text=Format('>')),
+        ),
+        Button(Const(texts.BACK_BUTTON), on_click=return_main_menu, id='main_menu'),
+        state=Request.show_list_requests,
+        getter=getters.get_requests,
+    )
+
+
+def show_single_request_window():
+    return Window(
+        Format('{text}'),
+        Back(Const(texts.BACK_BUTTON)),
+        state=Request.show_single_request,
         getter=getters.get_single_request,
     )
 

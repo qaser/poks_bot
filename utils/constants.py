@@ -33,6 +33,12 @@ SCROLL_EMOJI = emoji.emojize(':orange_book:')
 GROUP_EMOJI = emoji.emojize(':closed_mailbox_with_raised_flag:')
 SORT_EMOJI = emoji.emojize(':chart_increasing:')
 
+REQUEST_STATUS = {
+    'approved': '🟢 Согласовано',
+    'inwork': '⚪ В работе',
+    'rejected': '🔴 Отклонено',
+}
+
 KS = [
     'Бобровская КС',
     'Верхнеказымская КС',

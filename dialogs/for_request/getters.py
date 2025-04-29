@@ -7,7 +7,7 @@ from config.bot_config import bot
 from config.mongo_config import admins, gpa, paths, reqs
 from config.telegram_config import MY_TELEGRAM_ID
 from dialogs.for_request.selected import build_req_text, build_stages_text
-from utils.constants import KS, PATH_TYPE
+from utils.constants import KS, PATH_TYPE, REQUEST_STATUS
 
 
 async def get_stations(dialog_manager: DialogManager, **middleware_data):
@@ -78,6 +78,27 @@ async def get_single_request(dialog_manager: DialogManager, **middleware_data):
     stages_text = await build_stages_text(ObjectId(req_id), path_instance, current_stage)
     text = await build_req_text(req, gpa_instance, stages_text, author_name)
     return {'text': text}
+
+
+async def get_statuses(dialog_manager: DialogManager, **middleware_data):
+    statuses = reqs.find({}).distinct('status')
+    return {'statuses': [(status, REQUEST_STATUS[status]) for status in statuses]}
+
+
+async def get_requests(dialog_manager: DialogManager, **middleware_data):
+    context = dialog_manager.current_context()
+    sorting_order = context.dialog_data['sorting_order']
+    if sorting_order == 'status':
+        status = context.dialog_data['status']
+        queryset = list(reqs.find({'status': status}).sort('$natural', -1).limit(24))
+    res = [
+        {
+            'name': f"{q['ks']} - ГПА{gpa.find_one({'_id': q['gpa_id']})['num_gpa']}",
+            'id': q['_id'],
+        }
+        for q in queryset
+    ]
+    return {'requests': res, 'status': REQUEST_STATUS[status], 'not_empty': True}
 
 
 async def get_paths_info(dialog_manager: DialogManager, **middleware_data):

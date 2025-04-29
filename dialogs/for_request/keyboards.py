@@ -22,12 +22,12 @@ def category_buttons():
             id='inwork_requests',
             on_click=selected.on_select_category,
         ),
-        # Button(
-        #     Const('🗄️ Архив заявок'),
-        #     id='inwork_requests',
-        #     on_click=selected.on_select_category,
-        #     when='is_admin',
-        # ),
+        Button(
+            Const('🗄️ Архив заявок'),
+            id='archive_requests',
+            on_click=selected.on_select_category,
+            # when='is_admin',
+        ),
         Button(
             Const('📚 Правила согласования заявок'),
             id='paths',
@@ -97,30 +97,37 @@ def time_btns(on_click):
     return Group(*buttons, id='time_btns', width=2)
 
 
-def type_requests_buttons():
+def sort_requests_buttons():
     return Column(
-        Button(
-            Const('🕒 На согласовании'),
-            id='inwork_requests',
-            on_click=selected.on_select_category,
-            # when='is_user',
-        ),
-        Button(
-            Const('🏁 Завершенные'),
-            id='all_requests',
-            on_click=selected.on_select_category,
-        ),
         # Button(
-        #     Const('🚀 Заявки на согласовании'),
-        #     id='inwork_requests',
-        #     on_click=selected.on_select_category,
+        #     Const('📅 По дате'),
+        #     id='sort_date',
+        #     on_click=selected.on_select_sorting,
         # ),
         Button(
-            Const('📚 Правила согласования заявок'),
-            id='paths',
-            on_click=selected.on_select_category,
-            when='is_admin',
+            Const('📊 По статусу'),
+            id='sort_status',
+            on_click=selected.on_select_sorting,
         ),
+        # Button(
+        #     Const('🏤 По станции'),
+        #     id='sort_ks',
+        #     on_click=selected.on_select_sorting,
+        # ),
+    )
+
+
+def statuses_buttons(on_click):
+    return Group(
+        Select(
+            Format('{item[1]}'),
+            id='s_statuses',
+            item_id_getter=lambda x: x[0],
+            items='statuses',
+            on_click=on_click,
+        ),
+        id='statuses_btns',
+        width=1,
     )
 
 
