@@ -1,13 +1,13 @@
 from time import sleep
 
 from aiogram import Router
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import Command
 from aiogram.types import Message
 
 from config.bot_config import bot
 from config.pyrogram_config import app
 from config.telegram_config import MY_TELEGRAM_ID
-from aiogram.exceptions import TelegramBadRequest
 
 router = Router()
 

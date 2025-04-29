@@ -6,7 +6,6 @@ from aiogram_dialog import Dialog, DialogManager, StartMode
 from dialogs.for_administrators import windows
 from dialogs.for_administrators.states import Admins
 
-
 router = Router()
 
 dialog =  Dialog(

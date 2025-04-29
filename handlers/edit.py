@@ -6,8 +6,6 @@ from aiogram_dialog import Dialog, DialogManager, StartMode
 from dialogs.for_edit import windows
 from dialogs.for_edit.states import Edit
 
-
-
 router = Router()
 
 dialog =  Dialog(

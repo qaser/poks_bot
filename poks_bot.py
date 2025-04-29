@@ -11,14 +11,14 @@ from pyrogram import utils
 
 import utils.constants as const
 from config.bot_config import bot, dp
-from config.telegram_config import MY_TELEGRAM_ID
-from config.pyrogram_config import app
 from config.mongo_config import admins
+from config.pyrogram_config import app
+from config.telegram_config import MY_TELEGRAM_ID
+from handlers import (administrators, ao, archive, copy, edit, groups, iskra,
+                      request, service)
 from middlewares.admin_check import AdminCheckMiddleware
-from handlers import (administrators, ao, archive, copy, iskra,
-                      service, groups, edit, request)
-from scheduler.scheduler_funcs import (clear_msgs, send_backups, send_remainder,
-                                       send_work_time_reminder)
+from scheduler.scheduler_funcs import (clear_msgs, send_backups,
+                                       send_remainder, send_work_time_reminder)
 
 
 def get_peer_type_new(peer_id: int) -> str:

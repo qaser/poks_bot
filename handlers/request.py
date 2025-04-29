@@ -1,28 +1,26 @@
 import datetime as dt
 
-from bson import ObjectId
 from aiogram import F, Router
-from aiogram.filters import Command, StateFilter
-from aiogram.types import Message
-from aiogram_dialog import Dialog, DialogManager, StartMode
-
-from config.bot_config import bot
-from config.mongo_config import reqs, paths, gpa
-from config.telegram_config import MY_TELEGRAM_ID, EXPLOIT_GROUP_ID
-from dialogs.for_request import windows
-from dialogs.for_request.states import Request
-from dialogs.for_request.selected import send_notify, send_request_to_major
 from aiogram.enums import ChatType
-
+from aiogram.filters import Command, StateFilter
+from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from aiogram.fsm.context import FSMContext
+from aiogram_dialog import Dialog, DialogManager, StartMode
+from bson import ObjectId
 
+from config.bot_config import bot
+from config.mongo_config import gpa, paths, reqs
+from config.telegram_config import EXPLOIT_GROUP_ID, MY_TELEGRAM_ID
+from dialogs.for_request import windows
+from dialogs.for_request.selected import send_notify, send_request_to_major
+from dialogs.for_request.states import Request
 
 router = Router()
 
 dialog =  Dialog(
     windows.select_category_window(),
+
     windows.stations_window(),
     windows.shops_window(),
     windows.gpa_window(),
@@ -31,6 +29,10 @@ dialog =  Dialog(
     windows.input_info_window(),
     windows.request_confirm_window(),
     windows.finish_window(),
+
+    windows.inwork_requests_window(),
+    windows.show_inwork_single_request_window(),
+
     windows.paths_info_window(),  # 4 кнопки с типами путей
     windows.select_num_stage(),
     windows.select_majors_window(),

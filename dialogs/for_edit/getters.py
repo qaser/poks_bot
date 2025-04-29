@@ -1,8 +1,8 @@
 import re
 
 from aiogram_dialog import DialogManager
-from config.bot_config import bot
 
+from config.bot_config import bot
 from config.mongo_config import emergency_stops, groups
 
 

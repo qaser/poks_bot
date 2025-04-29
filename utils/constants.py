@@ -2,7 +2,6 @@ from datetime import timedelta, timezone
 
 import emoji
 
-
 PATH_TYPE = {
     '1': 'Стационарные ГПА',
     '2': 'Стационарные ГПА (ГТК-10-4)',

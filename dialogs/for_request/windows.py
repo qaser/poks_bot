@@ -1,18 +1,19 @@
 from aiogram_dialog import Window
-from aiogram_dialog.widgets.kbd import (Back, Button, CurrentPage,
-                                        NextPage, PrevPage, Row)
-from aiogram_dialog.widgets.text import Const, Format, Multi
 from aiogram_dialog.widgets.input import TextInput
-from dialogs.custom_widgets.custom_calendar import CustomCalendar
+from aiogram_dialog.widgets.kbd import (Back, Button, CurrentPage, NextPage,
+                                        PrevPage, Row)
+from aiogram_dialog.widgets.text import Const, Format, Multi
 
 import utils.constants as texts
 from config.pyrogram_config import app
+from dialogs.custom_widgets.custom_calendar import CustomCalendar
 from dialogs.for_request.states import Request
 
 from . import getters, keyboards, selected
 
 ID_SCROLL_PAGER = 'stations_pager'
 MAJOR_SCROLL_PAGER = 'majors_pager'
+REQUEST_SCROLL_PAGER = 'requests_pager'
 MAIN_MENU = 'Управление заявками на пуск ГПА.\nВыберите категорию:'
 STATIONS_TEXT = 'Выберите компрессорную станцию'
 SHOPS_TEXT = 'Выберите номер компрессорного цеха'
@@ -140,6 +141,32 @@ def finish_window():
         Const(FINISH_TEXT),
         Button(Const(texts.EXIT_BUTTON), on_click=exit_click, id='exit_complete'),
         state=Request.request_finish,
+    )
+
+
+def inwork_requests_window():
+    return Window(
+        Const('Заявки на согласовании', when='not_empty'),
+        Const('Заявки на согласовании отсутствуют', when='is_empty'),
+        keyboards.paginated_requests(REQUEST_SCROLL_PAGER, selected.on_selected_request),
+        Row(
+            PrevPage(scroll=REQUEST_SCROLL_PAGER, text=Format('<')),
+            CurrentPage(scroll=REQUEST_SCROLL_PAGER, text=Format('{current_page1} / {pages}')),
+            NextPage(scroll=REQUEST_SCROLL_PAGER, text=Format('>')),
+            when='not_empty'
+        ),
+        Button(Const(texts.BACK_BUTTON), on_click=return_main_menu, id='main_menu'),
+        state=Request.inwork_requests,
+        getter=getters.get_inwork_requests,
+    )
+
+
+def show_inwork_single_request_window():
+    return Window(
+        Format('{text}'),
+        Button(Const(texts.BACK_BUTTON), on_click=return_main_menu, id='main_menu'),
+        state=Request.show_inwork_single_request,
+        getter=getters.get_single_request,
     )
 
 

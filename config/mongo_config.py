@@ -41,8 +41,9 @@ requests {
     datetime: datetime,
     text: text
     path_id: path_id,
-    status: [inwork, apply, reject]
-    'current_stage': 2,
+    status: [inwork, approved, reject]
+    current_stage: 2,
+    request_datetime: datetime,
     stages {
         '1': {
             datatime: datetime,

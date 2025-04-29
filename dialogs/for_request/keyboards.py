@@ -1,7 +1,8 @@
-from aiogram_dialog.widgets.kbd import (Button, Column, Group, Row,
-                                        ScrollingGroup, Select, Multiselect)
-from aiogram_dialog.widgets.text import Const, Format
 from functools import partial
+
+from aiogram_dialog.widgets.kbd import (Button, Column, Group, Multiselect,
+                                        Row, ScrollingGroup, Select)
+from aiogram_dialog.widgets.text import Const, Format
 
 from . import selected
 
@@ -16,10 +17,16 @@ def category_buttons():
             on_click=selected.on_select_category,
             # when='is_user',
         ),
+        Button(
+            Const('🚀 Заявки на согласовании'),
+            id='inwork_requests',
+            on_click=selected.on_select_category,
+        ),
         # Button(
-        #     Const('🚀 Заявки на согласовании'),
+        #     Const('🗄️ Архив заявок'),
         #     id='inwork_requests',
         #     on_click=selected.on_select_category,
+        #     when='is_admin',
         # ),
         Button(
             Const('📚 Правила согласования заявок'),
@@ -88,6 +95,51 @@ def time_btns(on_click):
             )
         )
     return Group(*buttons, id='time_btns', width=2)
+
+
+def type_requests_buttons():
+    return Column(
+        Button(
+            Const('🕒 На согласовании'),
+            id='inwork_requests',
+            on_click=selected.on_select_category,
+            # when='is_user',
+        ),
+        Button(
+            Const('🏁 Завершенные'),
+            id='all_requests',
+            on_click=selected.on_select_category,
+        ),
+        # Button(
+        #     Const('🚀 Заявки на согласовании'),
+        #     id='inwork_requests',
+        #     on_click=selected.on_select_category,
+        # ),
+        Button(
+            Const('📚 Правила согласования заявок'),
+            id='paths',
+            on_click=selected.on_select_category,
+            when='is_admin',
+        ),
+    )
+
+
+def paginated_requests(id_pager, on_click):
+    return ScrollingGroup(
+        Select(
+            Format('{item[name]}'),
+            id='s_requests',
+            item_id_getter=lambda x: x['id'],
+            items='requests',
+            on_click=on_click,
+        ),
+        id=id_pager,
+        width=1,
+        height=SCROLLING_HEIGHT,
+        hide_pager=True,
+        hide_on_single_page=True,
+        when='not_empty'
+    )
 
 
 def paths_type_buttons():

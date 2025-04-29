@@ -1,6 +1,8 @@
+from typing import Any, Awaitable, Callable, Dict
+
 from aiogram import BaseMiddleware
 from aiogram.types import Message, TelegramObject
-from typing import Callable, Dict, Any, Awaitable
+
 from config.mongo_config import admins
 
 

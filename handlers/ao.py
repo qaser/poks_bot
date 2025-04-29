@@ -1,6 +1,6 @@
+import datetime as dt
 import re
 from html import escape
-import datetime as dt
 
 from aiogram import F, Router
 from aiogram.filters import Command

@@ -1,8 +1,8 @@
-from aiogram_dialog.widgets.kbd import Button, Column, ScrollingGroup, Select, Row, Multiselect
+from aiogram_dialog.widgets.kbd import (Button, Column, Multiselect, Row,
+                                        ScrollingGroup, Select)
 from aiogram_dialog.widgets.text import Const, Format
 
 from . import selected
-
 
 SCROLLING_HEIGHT = 6
 

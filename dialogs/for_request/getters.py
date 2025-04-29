@@ -2,10 +2,12 @@ from collections import Counter
 
 from aiogram_dialog import DialogManager
 from bson.objectid import ObjectId
+from config.bot_config import bot
 
-from config.mongo_config import admins, paths, gpa
-from utils.constants import KS, PATH_TYPE
+from config.mongo_config import admins, gpa, paths, reqs
 from config.telegram_config import MY_TELEGRAM_ID
+from dialogs.for_request.selected import build_req_text, build_stages_text
+from utils.constants import KS, PATH_TYPE
 
 
 async def get_stations(dialog_manager: DialogManager, **middleware_data):
@@ -40,6 +42,42 @@ async def get_request_info(dialog_manager: DialogManager, **middleware_data):
         'req_date': context.dialog_data['req_date'],
         'req_time': context.dialog_data['req_time'],
     }
+
+
+async def get_inwork_requests(dialog_manager: DialogManager, **middleware_data):
+    user_id = dialog_manager.event.from_user.id
+    admin = admins.find_one({'user_id': user_id})
+    is_admin = bool(admin)
+    if is_admin:
+        queryset = list(reqs.find({'status': 'inwork'}))
+    else:
+        queryset = list(reqs.find({'status': 'inwork', 'author_id': user_id}))
+    res = [
+        {
+            'name': f"{q['ks']} - ГПА{gpa.find_one({'_id': q['gpa_id']})['num_gpa']}",
+            'id': q['_id'],
+        }
+        for q in queryset
+    ]
+    is_empty = False if len(queryset) > 0 else True
+    return {
+        'is_empty': is_empty,
+        'not_empty': not is_empty,
+        'requests': res
+    }
+
+
+async def get_single_request(dialog_manager: DialogManager, **middleware_data):
+    context = dialog_manager.current_context()
+    req_id = context.dialog_data['req_id']
+    req = reqs.find_one({'_id': ObjectId(req_id)})
+    current_stage = req['current_stage']
+    path_instance = paths.find_one({'_id': req['path_id']})
+    gpa_instance = gpa.find_one({'_id': req['gpa_id']})
+    author_name = (await bot.get_chat(req['author_id'])).full_name
+    stages_text = await build_stages_text(ObjectId(req_id), path_instance, current_stage)
+    text = await build_req_text(req, gpa_instance, stages_text, author_name)
+    return {'text': text}
 
 
 async def get_paths_info(dialog_manager: DialogManager, **middleware_data):

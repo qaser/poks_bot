@@ -12,10 +12,9 @@ class Request(StatesGroup):
     input_info = State()
     request_confirm = State()
     request_finish = State()
-    # категория "Посмотреть заявки"
-    show_requests = State()  # с этого состояния перепрыгиваем на select_category
     # категория "Заявки в работе"
     inwork_requests = State()  # с этого состояния перепрыгиваем на select_category
+    show_inwork_single_request = State()
     # категория "Настройка"
     paths_info = State()  # с этого состояния перепрыгиваем на select_category
     select_num_stages = State()

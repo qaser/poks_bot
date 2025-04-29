@@ -1,6 +1,6 @@
 from aiogram_dialog import Window
-from aiogram_dialog.widgets.kbd import (Back, Button, CurrentPage,
-                                        NextPage, PrevPage, Row)
+from aiogram_dialog.widgets.kbd import (Back, Button, CurrentPage, NextPage,
+                                        PrevPage, Row)
 from aiogram_dialog.widgets.text import Const, Format
 
 import utils.constants as texts

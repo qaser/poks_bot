@@ -1,7 +1,8 @@
+from html import escape
+
 from aiogram import F, Router
 from aiogram.types import Message
 
-from html import escape
 from config.bot_config import bot
 from config.mongo_config import archive
 from config.telegram_config import MY_TELEGRAM_ID

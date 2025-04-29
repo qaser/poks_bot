@@ -1,6 +1,6 @@
-from aiogram_dialog.widgets.kbd import Group, ScrollingGroup, Select, Url, ListGroup
+from aiogram_dialog.widgets.kbd import (Group, ListGroup, ScrollingGroup,
+                                        Select, Url)
 from aiogram_dialog.widgets.text import Format
-
 
 SCROLLING_HEIGHT = 6
 

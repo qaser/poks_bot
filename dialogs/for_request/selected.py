@@ -1,18 +1,17 @@
 import datetime as dt
 import re
-import aiohttp
 
+import aiohttp
+from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram_dialog import DialogManager, StartMode
 
 import utils.constants as const
 from config.bot_config import bot
-from config.mongo_config import gpa, reqs, paths
+from config.mongo_config import gpa, paths, reqs
 from config.pyrogram_config import app
-from config.telegram_config import BOT_ID, MY_TELEGRAM_ID, EXPLOIT_GROUP_ID
+from config.telegram_config import BOT_ID, EXPLOIT_GROUP_ID, MY_TELEGRAM_ID
 from dialogs.for_request.states import Request
-from aiogram.exceptions import TelegramForbiddenError, TelegramBadRequest
-from aiogram.utils.keyboard import InlineKeyboardBuilder
-
 
 DATE_ERROR_MSG = (
     'Выбранная дата уже прошла.\n'
@@ -36,7 +35,7 @@ async def on_select_category(callback, widget, manager: DialogManager):
     elif category == 'new_request':
         await manager.switch_to(Request.select_station)
     elif category == 'my_requests':
-        await manager.switch_to(Request.show_requests)
+        await manager.switch_to(Request.select_type_requests)
     elif category == 'inwork_requests':
         await manager.switch_to(Request.inwork_requests)
 
@@ -222,6 +221,12 @@ async def on_confirm(callback, widget, manager: DialogManager):
     await send_request_to_major(req_id, current_stage)
 
 
+async def on_selected_request(callback, widget, manager: DialogManager, req_id):
+    context = manager.current_context()
+    context.dialog_data.update(req_id=req_id)
+    await manager.switch_to(Request.show_inwork_single_request)
+
+
 def get_path_type(gpa_instance):
     type_gpa = gpa_instance['type_gpa']
     group_gpa = gpa_instance['group_gpa']
@@ -243,20 +248,7 @@ async def send_request_to_major(req_id, current_stage):
     while current_stage <= path_instance['num_stages']:
         major_stage_id = path_instance['stages'][str(current_stage)]
         stages_text = await build_stages_text(req_id, path_instance, current_stage)
-        request_text = (
-            f"<b>Новый запрос на пуск ГПА</b>\n"
-            f"📅 Дата создания: {req['datetime'].strftime('%d.%m.%Y %H:%M')}\n"
-            f"🏭 Станция: {req['ks']}\n"
-            f"👤 Автор: {author_name}\n\n"
-            f"<b>Информация о ГПА:</b>\n"
-            f"Ст.№ ГПА: {gpa_instance['num_gpa']}\n"
-            f"Наименование ГПА: {gpa_instance['name_gpa']}\n"
-            f"Тип ГПА: {gpa_instance['type_gpa']}\n"
-            f"Тип нагнетателя: {gpa_instance['cbn_type']}\n\n"
-            f"<b>Планируемое время запуска:</b>\n{req['request_datetime'].strftime('%d.%m.%Y %H:%M')}\n\n"
-            f"<b>Текст запроса:</b>\n<i>{req['text']}</i>\n\n"
-            f"<b>Статус согласования:</b>\n{stages_text}\nПожалуйста, согласуйте или отклоните запрос:"
-        )
+        request_text = await build_req_text(req, gpa_instance, stages_text, author_name, new_req=True)
         kb = InlineKeyboardBuilder()
         kb.button(text='🔴 Отклонить', callback_data=f'req_reject_{req_id}_{current_stage}')
         kb.button(text='🟢 Согласовать', callback_data=f'req_apply_{req_id}_{current_stage}')
@@ -285,6 +277,25 @@ async def send_request_to_major(req_id, current_stage):
     else:
         # await send_notify(req_id, gpa_instance, path_instance, is_fallback=True, is_group=True)
         pass
+
+
+async def build_req_text(req, gpa_instance, stages_text, author_name, new_req=False):
+    request_text = (
+        f"📅 Дата создания: {req['datetime'].strftime('%d.%m.%Y %H:%M')}\n"
+        f"🏭 Станция: {req['ks']}\n"
+        f"👤 Автор: {author_name}\n\n"
+        f"<b>Информация о ГПА:</b>\n"
+        f"Ст.№ ГПА: {gpa_instance['num_gpa']}\n"
+        f"Наименование ГПА: {gpa_instance['name_gpa']}\n"
+        f"Тип ГПА: {gpa_instance['type_gpa']}\n"
+        f"Тип нагнетателя: {gpa_instance['cbn_type']}\n\n"
+        f"<b>Планируемое время запуска:</b>\n{req['request_datetime'].strftime('%d.%m.%Y %H:%M')}\n\n"
+        f"<b>Текст запроса:</b>\n<i>{req['text']}</i>\n\n"
+        f"<b>Статус согласования:</b>\n{stages_text}\n"
+    )
+    request_text = f'<b>Новый запрос на пуск ГПА</b>\n{request_text}' if new_req else f'<b>Запрос на пуск ГПА</b>\n{request_text}'
+    request_text = f'{request_text}Пожалуйста, согласуйте или отклоните запрос:' if new_req else request_text
+    return request_text
 
 
 async def build_stages_text(req_id, path_instance, current_stage):
