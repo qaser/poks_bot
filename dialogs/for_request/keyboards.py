@@ -26,7 +26,7 @@ def category_buttons():
             Const('🗄️ Архив заявок'),
             id='archive_requests',
             on_click=selected.on_select_category,
-            # when='is_admin',
+            when='is_admin',
         ),
         Button(
             Const('📚 Правила согласования заявок'),
