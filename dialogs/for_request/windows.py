@@ -119,7 +119,7 @@ def request_confirm_window():
     return Window(
         Format('<u>Вы выбрали:</u>\n{station}\nГПА ст.№ {gpa_num}\n'),
         Format('<u>Срок запуска ГПА:</u>\n{req_date} - {req_time}\n'),
-        Format('<u>Текст заявки:</u>\n<i>"{request_text}"</i>'),
+        Format('<u>Текст заявки:</u>\n<i>{request_text}</i>'),
         Const('\nОтправить запрос на согласование?'),
         Row(
             Back(Const(texts.BACK_BUTTON)),

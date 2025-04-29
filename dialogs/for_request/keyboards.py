@@ -14,7 +14,7 @@ def category_buttons():
             Const('📝 Новая заявка'),
             id='new_request',
             on_click=selected.on_select_category,
-            when='is_admin',
+            # when='is_user',
         ),
         # Button(
         #     Const('📋 Мои заявки'),

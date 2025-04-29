@@ -47,18 +47,15 @@ class CustomCalendar(Calendar):
                 weekday_text=WeekDay(),
                 next_month_text=Month() + ' >>',
                 prev_month_text='<< ' + Month(),
-                config=self.config
             ),
             CalendarScope.MONTHS: CalendarMonthView(
                 self._item_callback_data,
                 month_text=Month(),
                 header_text='🗓 ' + Format('{date:%Y}'),
                 this_month_text='[' + Month() + ']',
-                config=self.config
             ),
             CalendarScope.YEARS: CalendarYearsView(
                 self._item_callback_data,
-                config=self.config
             ),
         }
 
