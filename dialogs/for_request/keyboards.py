@@ -17,16 +17,9 @@ def category_buttons():
             # when='is_user',
         ),
         # Button(
-        #     Const('📋 Мои заявки'),
-        #     id='my_requests',
-        #     on_click=selected.on_select_category,
-        #     when='is_user',
-        # ),
-        # Button(
         #     Const('🚀 Заявки на согласовании'),
         #     id='inwork_requests',
         #     on_click=selected.on_select_category,
-        #     when='is_admin',
         # ),
         Button(
             Const('📚 Правила согласования заявок'),

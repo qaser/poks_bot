@@ -1,6 +1,6 @@
 import datetime as dt
 import re
-import asyncio
+import aiohttp
 
 from aiogram_dialog import DialogManager, StartMode
 
@@ -104,15 +104,45 @@ async def on_gpa_done(callback, widget, manager: DialogManager, gpa_num):
     await manager.switch_to(Request.select_date)
 
 
+async def is_holiday(target_date: dt.date) -> bool:
+    """Проверяет, является ли дата праздничным днём в России"""
+    year = target_date.year
+    url = f"https://isdayoff.ru/api/getdata?year={year}"
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                if response.status == 200:
+                    data = await response.text()
+                    # Данные возвращаются в виде строки с кодами для каждого дня года
+                    day_of_year = target_date.timetuple().tm_yday - 1
+                    return data[day_of_year] == '1'  # '1' - праздник/выходной
+    except Exception as e:
+        print(f"Ошибка при проверке праздников: {e}")
+    return False
+
+
 async def on_select_date(callback, widget, manager: DialogManager, clicked_date):
     context = manager.current_context()
     today = dt.datetime.now().date()
-    # Объединенная проверка на прошедшую дату или выходной день
-    if clicked_date < today or clicked_date.weekday() in (5, 6):
-        error_message = DATE_ERROR_MSG
+    # Проверка на прошедшую дату
+    if clicked_date < today:
+        error_message = "❌ Нельзя выбрать прошедшую дату. Пожалуйста, выберите будущую дату."
         await callback.answer(error_message, show_alert=True)
         await manager.switch_to(Request.select_date)
         return
+    # Проверка на выходные (суббота, воскресенье)
+    if clicked_date.weekday() in (5, 6):
+        error_message = "❌ Выбран выходной день (суббота/воскресенье). Пожалуйста, выберите рабочий день."
+        await callback.answer(error_message, show_alert=True)
+        await manager.switch_to(Request.select_date)
+        return
+    # Проверка на праздничный день
+    if await is_holiday(clicked_date):
+        error_message = "❌ Выбран праздничный день. Пожалуйста, выберите рабочий день."
+        await callback.answer(error_message, show_alert=True)
+        await manager.switch_to(Request.select_date)
+        return
+    # Если все проверки пройдены
     req_date = clicked_date.strftime('%d.%m.%Y')
     context.dialog_data.update(req_date=req_date)
     await manager.switch_to(Request.select_time)
