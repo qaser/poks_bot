@@ -169,7 +169,7 @@ def inwork_requests_window():
 def show_inwork_single_request_window():
     return Window(
         Format('{text}'),
-        Button(Const(texts.BACK_BUTTON), on_click=return_main_menu, id='main_menu'),
+        Back(Const(texts.BACK_BUTTON)),
         state=Request.show_inwork_single_request,
         getter=getters.get_single_request,
     )
