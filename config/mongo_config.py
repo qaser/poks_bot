@@ -34,7 +34,7 @@ paths {
     }
 }
 
-requests {
+reqs {
     author_id: user_id,
     ks: станция,
     gpa_id: gpa_id,

@@ -34,9 +34,9 @@ dialog =  Dialog(
     windows.show_inwork_single_request_window(),
 
     windows.select_sorting_requests_window(),
-    # windows.date_sort_requests_window(),
+    windows.date_sort_requests_window(),
     windows.status_sort_requests_window(),
-    # windows.ks_sort_requests_window(),
+    windows.ks_sort_requests_window(),
     windows.show_list_requests_window(),
     windows.show_single_request_window(),
 

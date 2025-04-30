@@ -99,21 +99,21 @@ def time_btns(on_click):
 
 def sort_requests_buttons():
     return Column(
-        # Button(
-        #     Const('📅 По дате'),
-        #     id='sort_date',
-        #     on_click=selected.on_select_sorting,
-        # ),
+        Button(
+            Const('📅 По дате'),
+            id='sort_date',
+            on_click=selected.on_select_sorting,
+        ),
         Button(
             Const('📊 По статусу'),
             id='sort_status',
             on_click=selected.on_select_sorting,
         ),
-        # Button(
-        #     Const('🏤 По станции'),
-        #     id='sort_ks',
-        #     on_click=selected.on_select_sorting,
-        # ),
+        Button(
+            Const('🏤 По станции'),
+            id='sort_ks',
+            on_click=selected.on_select_sorting,
+        ),
     )
 
 
@@ -128,6 +128,23 @@ def statuses_buttons(on_click):
         ),
         id='statuses_btns',
         width=1,
+    )
+
+
+def paginated_ks(id_pager, on_click):
+    return ScrollingGroup(
+        Select(
+            Format('{item}'),
+            id='s_ks',
+            item_id_getter=lambda x: x,
+            items='ks',
+            on_click=on_click,
+        ),
+        id=id_pager,
+        width=1,
+        height=SCROLLING_HEIGHT,
+        hide_pager=True,
+        hide_on_single_page=True
     )
 
 

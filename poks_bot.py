@@ -50,7 +50,7 @@ async def help_handler(message: Message):
 @dp.message(Command('admin'))
 async def admin_handler(message: Message):
     user = message.from_user
-    administrators.update_one(
+    admins.update_one(
         {'user_id': user.id},
         {'$set': {'directions': ['gpa'], 'username': user.full_name}},
         upsert=True

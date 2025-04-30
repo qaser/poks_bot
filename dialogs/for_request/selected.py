@@ -243,6 +243,18 @@ async def on_status_done(callback, widget, manager: DialogManager, status):
     await manager.switch_to(Request.show_list_requests)
 
 
+async def on_ks_done(callback, widget, manager: DialogManager, ks):
+    context = manager.current_context()
+    context.dialog_data.update(ks=ks, sorting_order='ks')
+    await manager.switch_to(Request.show_list_requests)
+
+
+async def on_date_done(callback, widget, manager: DialogManager, clicked_date):
+    context = manager.current_context()
+    context.dialog_data.update(date=clicked_date.strftime('%d.%m.%Y'), sorting_order='date')
+    await manager.switch_to(Request.show_list_requests)
+
+
 async def on_selected_request(callback, widget, manager: DialogManager, req_id):
     context = manager.current_context()
     context.dialog_data.update(req_id=req_id)
@@ -327,15 +339,27 @@ async def build_stages_text(req_id, path_instance, current_stage):
         stage_data = req['stages'].get(str(stage_num), {})
         status = stage_data.get('status', 'inwork' if stage_num == current_stage else 'pending')
         icon = {'apply': '🟢', 'reject': '🔴', 'pass': '⚫'}.get(status, '⚪')
-        if stage_num == current_stage:
+
+        # Определяем имя ответственного
+        if stage_num == current_stage and status not in ('inwork', 'pending'):
+            # Для текущего этапа с завершенным статусом показываем ответственного
+            try:
+                major_name = (await bot.get_chat(stage_data['major_id'])).full_name if 'major_id' in stage_data else 'недоступен'
+            except:
+                major_name = 'недоступен'
+        elif stage_num == current_stage:
+            # Для текущего этапа в работе/ожидании
             major_name = 'текущий этап'
         else:
+            # Для всех остальных этапов
             try:
                 major_name = (await bot.get_chat(stage_data['major_id'])).full_name if 'major_id' in stage_data else 'ожидается'
             except:
                 major_name = 'недоступен'
+
         date_str = stage_data.get('datetime', '').strftime('%d.%m.%Y %H:%M') if 'datetime' in stage_data else ""
         result += f"{icon} Этап {stage_num} - {major_name}" + (f" ({date_str})" if date_str else "") + "\n"
+
     return result
 
 

@@ -14,6 +14,7 @@ from . import getters, keyboards, selected
 ID_SCROLL_PAGER = 'stations_pager'
 MAJOR_SCROLL_PAGER = 'majors_pager'
 REQUEST_SCROLL_PAGER = 'requests_pager'
+KS_SCROLL_PAGER = 'ks_pager'
 MAIN_MENU = 'Управление заявками на пуск ГПА.\nВыберите категорию:'
 STATIONS_TEXT = 'Выберите компрессорную станцию'
 SHOPS_TEXT = 'Выберите номер компрессорного цеха'
@@ -176,7 +177,7 @@ def show_inwork_single_request_window():
 
 def select_sorting_requests_window():
     return Window(
-        Const('Выберите способ сортировки заявок:'),
+        Const('Выберите способ группировки заявок:'),
         keyboards.sort_requests_buttons(),
         Button(Const(texts.BACK_BUTTON), on_click=return_main_menu, id='main_menu'),
         state=Request.select_sorting_requests,
@@ -193,16 +194,63 @@ def status_sort_requests_window():
     )
 
 
+def ks_sort_requests_window():
+    return Window(
+        Const(STATIONS_TEXT),
+        keyboards.paginated_ks(KS_SCROLL_PAGER, selected.on_ks_done),
+        Row(
+            PrevPage(scroll=KS_SCROLL_PAGER, text=Format('<')),
+            CurrentPage(scroll=KS_SCROLL_PAGER, text=Format('{current_page1} / {pages}')),
+            NextPage(scroll=KS_SCROLL_PAGER, text=Format('>')),
+        ),
+        Button(Const(texts.BACK_BUTTON), on_click=return_sorting_menu, id='sorting_menu'),
+        state=Request.ks_sort_requests,
+        getter=getters.get_ks,
+    )
+
+
+def date_sort_requests_window():
+    return Window(
+        Const('Выберите дату, на которую планировался пуск ГПА'),
+        CustomCalendar(
+            id='calendar',
+            on_click=selected.on_date_done,
+        ),
+        Button(Const(texts.BACK_BUTTON), on_click=return_sorting_menu, id='sorting_menu'),
+        state=Request.date_sort_requests,
+    )
+
+
 def show_list_requests_window():
     return Window(
-        Format('Заявки со статусом "{status}"'),
+        Format('Заявки со статусом "{status}"', when='is_status'),
+        Format('Заявки на компрессоной станции {ks}', when='is_ks'),
+        Format('Заявки на {date}', when='is_date'),
+        Const('отсутствуют', when='is_empty'),
         keyboards.paginated_requests(REQUEST_SCROLL_PAGER, selected.on_selected_request),
         Row(
             PrevPage(scroll=REQUEST_SCROLL_PAGER, text=Format('<')),
             CurrentPage(scroll=REQUEST_SCROLL_PAGER, text=Format('{current_page1} / {pages}')),
             NextPage(scroll=REQUEST_SCROLL_PAGER, text=Format('>')),
         ),
-        Button(Const(texts.BACK_BUTTON), on_click=return_main_menu, id='main_menu'),
+        Button(
+            Const(texts.BACK_BUTTON),
+            on_click=selected.on_select_sorting,
+            id='sort_status',
+            when='is_status'
+        ),
+        Button(
+            Const(texts.BACK_BUTTON),
+            on_click=selected.on_select_sorting,
+            id='sort_ks',
+            when='is_ks'
+        ),
+        Button(
+            Const(texts.BACK_BUTTON),
+            on_click=selected.on_select_sorting,
+            id='sort_date',
+            when='is_date'
+        ),
         state=Request.show_list_requests,
         getter=getters.get_requests,
     )

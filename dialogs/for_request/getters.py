@@ -1,9 +1,10 @@
+import datetime as dt
 from collections import Counter
 
 from aiogram_dialog import DialogManager
 from bson.objectid import ObjectId
-from config.bot_config import bot
 
+from config.bot_config import bot
 from config.mongo_config import admins, gpa, paths, reqs
 from config.telegram_config import MY_TELEGRAM_ID
 from dialogs.for_request.selected import build_req_text, build_stages_text
@@ -85,12 +86,38 @@ async def get_statuses(dialog_manager: DialogManager, **middleware_data):
     return {'statuses': [(status, REQUEST_STATUS[status]) for status in statuses]}
 
 
+async def get_ks(dialog_manager: DialogManager, **middleware_data):
+    ks = reqs.find({}).distinct('ks')
+    return {'ks': ks}
+
+
 async def get_requests(dialog_manager: DialogManager, **middleware_data):
     context = dialog_manager.current_context()
     sorting_order = context.dialog_data['sorting_order']
-    if sorting_order == 'status':
+    if sorting_order == 'ks':
+        ks = context.dialog_data['ks']
+        queryset = list(reqs.find({'ks': ks}).sort('$natural', -1).limit(24))
+        data = {'ks': ks, 'is_ks': True, 'not_empty': True}
+    elif sorting_order == 'status':
         status = context.dialog_data['status']
         queryset = list(reqs.find({'status': status}).sort('$natural', -1).limit(24))
+        data = {'status': REQUEST_STATUS[status], 'is_status': True, 'not_empty': True}
+    elif sorting_order == 'date':
+        req_date_str = context.dialog_data.get('date')
+        req_date = dt.datetime.strptime(req_date_str, '%d.%m.%Y').date()
+        queryset = list(reqs.find({
+            '$expr': {
+                '$eq': [
+                    {'$dateToString': {'format': '%Y-%m-%d', 'date': '$request_datetime'}},
+                    req_date.strftime('%Y-%m-%d')
+                ]
+            }
+        }).sort('$natural', -1).limit(24))
+        data = {'date': req_date_str, 'is_date': True}
+        if len(queryset) == 0:
+            data.update(is_empty=True)
+        else:
+            data.update(not_empty=True)
     res = [
         {
             'name': f"{q['ks']} - ГПА{gpa.find_one({'_id': q['gpa_id']})['num_gpa']}",
@@ -98,7 +125,8 @@ async def get_requests(dialog_manager: DialogManager, **middleware_data):
         }
         for q in queryset
     ]
-    return {'requests': res, 'status': REQUEST_STATUS[status], 'not_empty': True}
+    data.update(requests=res, sorting_order=sorting_order)
+    return data
 
 
 async def get_paths_info(dialog_manager: DialogManager, **middleware_data):
