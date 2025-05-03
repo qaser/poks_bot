@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import datetime as dt
 
 from aiogram import F
 from aiogram.filters.command import Command
@@ -8,6 +9,7 @@ from aiogram.types import Message, ReplyKeyboardRemove
 from aiogram_dialog import setup_dialogs
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from pyrogram import utils
+from pytz import timezone
 
 import utils.constants as const
 from config.bot_config import bot, dp
@@ -17,7 +19,7 @@ from config.telegram_config import MY_TELEGRAM_ID
 from handlers import (administrators, ao, archive, copy, edit, groups, iskra,
                       request, service)
 from middlewares.admin_check import AdminCheckMiddleware
-from scheduler.scheduler_funcs import (clear_msgs, send_backups,
+from scheduler.scheduler_funcs import (clear_msgs, send_backups, find_overdue_requests,
                                        send_remainder, send_work_time_reminder)
 
 
@@ -66,6 +68,22 @@ async def admin_handler(message: Message):
 @dp.message(Command('start'))
 async def start_handler(message: Message):
     await message.answer(const.INITIAL_TEXT)
+
+
+@dp.message(Command('time'))
+async def check_time_handler(message: Message):
+    tz = timezone(const.TIME_ZONE)
+    now = dt.datetime.now(tz).strftime('%d.%m.%Y %H:%M')
+    # res = list(reqs.find({
+    #     'status': 'approved',
+    #     'is_complete': False,
+    #     'notification_datetime': {'$lt': now}
+    # }))
+    # print(res)
+    await bot.send_message(
+        chat_id=MY_TELEGRAM_ID,
+        text=now
+    )
 
 
 # удаление сервисных сообщений
@@ -120,6 +138,21 @@ async def main():
         day_of_week='mon-sun',
         hour=13,
         minute=30,
+        timezone=const.TIME_ZONE
+    )
+    # Добавляем задачу, которая будет выполняться каждый час
+    # scheduler.add_job(
+    #     find_overdue_requests,
+    #     'cron',
+    #     minute=1,
+    #     timezone=const.TIME_ZONE
+    # )
+    scheduler.add_job(
+        find_overdue_requests,
+        'cron',
+        day_of_week='mon-sun',
+        hour=22,
+        minute=31,
         timezone=const.TIME_ZONE
     )
     scheduler.start()

@@ -12,7 +12,9 @@ from config.mongo_config import gpa, paths, reqs
 from config.pyrogram_config import app
 from config.telegram_config import BOT_ID, EXPLOIT_GROUP_ID, MY_TELEGRAM_ID
 from dialogs.for_request.states import Request
+import pytz
 
+timezone = pytz.timezone(const.TIME_ZONE)
 DATE_ERROR_MSG = (
     'Выбранная дата уже прошла.\n'
     'Пожалуйста, выберите другой рабочий день (начиная с текущего дня)'
@@ -209,6 +211,8 @@ async def on_confirm(callback, widget, manager: DialogManager):
         'status': 'inwork',
         'current_stage': current_stage,
         'request_datetime': request_datetime,
+        'notification_datetime': request_datetime + dt.timedelta(hours=3),
+        'is_complete': False,
         'stages': {
             '1': {
                 'status': 'pending',

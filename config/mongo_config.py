@@ -44,6 +44,8 @@ reqs {
     status: [inwork, approved, reject]
     current_stage: 2,
     request_datetime: datetime,
+    notification_datetime: datetime - время отправки уведомления о успешности пуска ГПА
+    # is_complete: False/True  -  при успешном пуске
     stages {
         '1': {
             datatime: datetime,
