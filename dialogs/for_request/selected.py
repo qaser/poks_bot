@@ -2,7 +2,7 @@ import datetime as dt
 import re
 
 import aiohttp
-import pytz
+from pytz import timezone
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram_dialog import DialogManager, StartMode
@@ -14,7 +14,6 @@ from config.pyrogram_config import app
 from config.telegram_config import BOT_ID, EXPLOIT_GROUP_ID, MY_TELEGRAM_ID
 from dialogs.for_request.states import Request
 
-timezone = pytz.timezone(const.TIME_ZONE)
 DATE_ERROR_MSG = (
     'Выбранная дата уже прошла.\n'
     'Пожалуйста, выберите другой рабочий день (начиная с текущего дня)'
@@ -204,6 +203,7 @@ async def on_confirm(callback, widget, manager: DialogManager):
     req_id = reqs.insert_one({
         'author_id': manager.event.from_user.id,
         'ks': context.dialog_data['station'],
+        'num_gpa': context.dialog_data['gpa'],
         'gpa_id': gpa_instance['_id'],
         'datetime': dt.datetime.now(),
         'text': context.dialog_data['request_text'],
@@ -318,8 +318,9 @@ async def send_request_to_major(req_id, current_stage):
 
 
 async def build_req_text(req, gpa_instance, stages_text, author_name, new_req=False):
+    tz = timezone(const.TIME_ZONE)
     request_text = (
-        f"📅 Дата создания: {req['datetime'].strftime('%d.%m.%Y %H:%M')}\n"
+        f"📅 Дата создания: {req['datetime'].astimezone(tz).strftime('%d.%m.%Y %H:%M')}\n"
         f"🏭 Станция: {req['ks']}\n"
         f"👤 Автор: {author_name}\n\n"
         f"<b>Информация о ГПА:</b>\n"
@@ -360,14 +361,15 @@ async def build_stages_text(req_id, path_instance, current_stage):
                 major_name = (await bot.get_chat(stage_data['major_id'])).full_name if 'major_id' in stage_data else 'ожидается'
             except:
                 major_name = 'недоступен'
-
-        date_str = stage_data.get('datetime', '').strftime('%d.%m.%Y %H:%M') if 'datetime' in stage_data else ""
+        tz = timezone(const.TIME_ZONE)
+        date_str = stage_data.get('datetime', '').astimezone(tz).strftime('%d.%m.%Y %H:%M') if 'datetime' in stage_data else ""
         result += f"{icon} Этап {stage_num} - {major_name}" + (f" ({date_str})" if date_str else "") + "\n"
 
     return result
 
 
 async def send_notify(req_id, gpa_instance, path, is_fallback=False, is_group=True, reason='', is_rejected=False):
+    tz = timezone(const.TIME_ZONE)
     req = reqs.find_one({'_id': req_id})
     if not req:
         return
@@ -405,12 +407,12 @@ async def send_notify(req_id, gpa_instance, path, is_fallback=False, is_group=Tr
                     major_name = major_chat.full_name
                 except:
                     major_name = 'недоступен'
-            date_str = stage_data.get('datetime', '').strftime('%d.%m.%Y %H:%M') if 'datetime' in stage_data else ""
+            date_str = stage_data.get('datetime', '').astimezone(tz).strftime('%d.%m.%Y %H:%M') if 'datetime' in stage_data else ""
             stages_text += f"{icon} Этап {stage_num} - {major_name}" + (f" ({date_str})" if date_str else "") + "\n"
     # Формируем основной текст сообщения
     request_text = (
         f"{header}"
-        f"📅 Дата запроса: {req['datetime'].strftime('%d.%m.%Y %H:%M')}\n"
+        f"📅 Дата запроса: {req['datetime'].astimezone(tz).strftime('%d.%m.%Y %H:%M')}\n"
         f"🏭 Станция: {req['ks']}\n"
         f"👤 Автор: {author_name}\n\n"
         f"<u>Информация о ГПА:</u>\n{gpa_info}\n\n"

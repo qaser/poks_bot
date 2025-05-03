@@ -3,13 +3,14 @@ import imaplib
 import os
 
 from aiogram.exceptions import AiogramError
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 from pytz import timezone
 
 import utils.constants as const
 from config.bot_config import bot
 from config.mail_config import (ADMIN_EMAIL, IMAP_MAIL_SERVER, MAIL_LOGIN,
                                 MAIL_PASS)
-from config.mongo_config import groups, msgs, reqs, users
+from config.mongo_config import groups, msgs, reqs, users, gpa
 from config.telegram_config import (EXPLOIT_GROUP_ID, MY_TELEGRAM_ID,
                                     SPCH_THREAD_ID)
 from utils.backup_db import send_dbs_mail
@@ -109,14 +110,21 @@ async def find_overdue_requests():
         'notification_datetime': {'$lt': now}
     }))
     for req in res:
-        date = req['datetime']
-        text=f'Ваш запрос от'
+        prime_date = req['datetime'].astimezone(tz).strftime('%d.%m.%Y %H:%M')
+        req_date = req['request_datetime'].astimezone(tz).strftime('%d.%m.%Y %H:%M')
+        gpa_instance = gpa.find_one({'_id': req['gpa_id']})
+        msg_text=(
+            f'Ваш запрос от {prime_date} на пуск ГПА №{gpa_instance["num_gpa"]} ({req["ks"]}) '
+            f'был согласован. Согласованное время запуска {req_date} со временем, отведенным на пуск '
+            'прошло.\nЕсли запуск ГПА завершён успешно нажмите кнопку "Пуск завершён".\n'
+            'Если во время запуска возникли проблемы нажмите "Пуск не завершён"'
+        )
+        kb = InlineKeyboardBuilder()
+        kb.button(text='🔴 Пуск не завершён', callback_data=f'launch_fail_{req["_id"]}')
+        kb.button(text='🟢 Пуск завершён', callback_data=f'launch_success_{req["_id"]}')
+        kb.adjust(1)
         await bot.send_message(
             chat_id=req['author_id'],
-            text=''
+            text=msg_text,
+            reply_markup=kb.as_markup()
         )
-    print(res)
-    # await bot.send_message(
-    #     chat_id=MY_TELEGRAM_ID,
-    #     text=res
-    # )

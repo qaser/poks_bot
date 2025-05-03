@@ -146,3 +146,29 @@ async def handle_apply_request(call: CallbackQuery):
             print(f'Ошибка отправки следующему согласующему: {e}')
             await call.answer('Ошибка при передаче запроса', show_alert=True)
     await call.message.delete()
+
+
+@router.callback_query(F.data.startswith('launch_fail_'))
+async def handle_fail_launch(call: CallbackQuery):
+    _, _, req_id = call.data.split('_')
+    await bot.send_message(
+        chat_id=call.from_user.id,
+        text='Пуск завершён успешно'
+    )
+
+
+@router.callback_query(F.data.startswith('launch_success_'))
+async def handle_success_launch(call: CallbackQuery):
+    _, _, req_id = call.data.split('_')
+    req_id = ObjectId(req_id)
+    # user_id = call.from_user.id
+    req = reqs.find_one({'_id': req_id})
+    reqs.update_one({'_id': req_id}, {'$set': {'is_complete': True}})
+    stages = req['stages']
+    for stage in stages.values():
+        major_id = stage['major_id']
+        await bot.send_message(
+            chat_id=major_id,
+            text='Пуск завершён успешно'
+        )
+    await call.message.delete()
