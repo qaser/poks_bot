@@ -1,9 +1,12 @@
+import datetime as dt
+
 from aiogram import Router
 from aiogram.filters import Command
 from aiogram.types import FSInputFile, Message
+from pytz import timezone
 
 from config.bot_config import bot
-from config.mongo_config import admins, groups
+from config.mongo_config import groups
 from config.telegram_config import MY_TELEGRAM_ID
 from utils import constants as const
 
@@ -47,3 +50,14 @@ async def send_logs(message: Message):
         document = FSInputFile(path=r'logs_bot.log')
         await message.answer_document(document=document)
     await message.delete()
+
+
+@router.message(Command('time'))
+async def check_time_handler(message: Message):
+    tz = timezone(const.TIME_ZONE)
+    now = dt.datetime.now(tz).strftime('%d.%m.%Y %H:%M')
+    server_now = dt.datetime.now().strftime('%d.%m.%Y %H:%M')
+    await bot.send_message(
+        chat_id=MY_TELEGRAM_ID,
+        text=f'Время для пользователей - {now}\nВремя сервера - {server_now}'
+    )

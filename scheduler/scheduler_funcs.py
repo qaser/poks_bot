@@ -1,20 +1,19 @@
 import datetime as dt
 import imaplib
 import os
-from pytz import timezone
 
 from aiogram.exceptions import AiogramError
+from pytz import timezone
 
 import utils.constants as const
 from config.bot_config import bot
 from config.mail_config import (ADMIN_EMAIL, IMAP_MAIL_SERVER, MAIL_LOGIN,
                                 MAIL_PASS)
-from config.mongo_config import groups, msgs, users, reqs
+from config.mongo_config import groups, msgs, reqs, users
 from config.telegram_config import (EXPLOIT_GROUP_ID, MY_TELEGRAM_ID,
                                     SPCH_THREAD_ID)
 from utils.backup_db import send_dbs_mail
 from utils.get_mail import get_letters
-
 
 SPCH_TIME_WORK_MSG = ('В срок до 12:00 текущего дня прошу выложить фактическую наработку за прошедший месяц.\n\n'
                       'Пример:\n\nКС «Примерная»:\nГПА 12 - 720\nГПА 24 - 9\n\n'
@@ -109,6 +108,13 @@ async def find_overdue_requests():
         'is_complete': False,
         'notification_datetime': {'$lt': now}
     }))
+    for req in res:
+        date = req['datetime']
+        text=f'Ваш запрос от'
+        await bot.send_message(
+            chat_id=req['author_id'],
+            text=''
+        )
     print(res)
     # await bot.send_message(
     #     chat_id=MY_TELEGRAM_ID,
