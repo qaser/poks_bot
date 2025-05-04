@@ -114,6 +114,7 @@ async def find_overdue_requests():
         req_date = req['request_datetime'].astimezone(tz).strftime('%d.%m.%Y %H:%M')
         gpa_instance = gpa.find_one({'_id': req['gpa_id']})
         msg_text=(
+            '!!! Это тестовая механика, проверьте работу нажатием кнопки "Пуск завершён"\n\n'
             f'Ваш запрос от {prime_date} на пуск ГПА №{gpa_instance["num_gpa"]} ({req["ks"]}) '
             f'был согласован. Согласованное время запуска {req_date} со временем, отведенным на пуск '
             'прошло.\nЕсли запуск ГПА завершён успешно нажмите кнопку "Пуск завершён".\n'

@@ -151,24 +151,42 @@ async def handle_apply_request(call: CallbackQuery):
 @router.callback_query(F.data.startswith('launch_fail_'))
 async def handle_fail_launch(call: CallbackQuery):
     _, _, req_id = call.data.split('_')
-    await bot.send_message(
-        chat_id=call.from_user.id,
-        text='Пуск завершён успешно'
-    )
+    req_id = ObjectId(req_id)
+    reqs.update_one({'_id': req_id}, {'$set': {'is_complete': True}})
+    req = reqs.find_one({'_id': req_id})
+    gpa_instance = gpa.find_one({'_id': req['gpa_id']})
+    stages = req['stages']
+    try:
+        await bot.send_message(
+            chat_id=stages['1']['major_id'],
+            text=(
+                f'Пуск ГПА №{gpa_instance["num_gpa"]} ({req["ks"]}) не завершён.'
+                '(Здесь будет кнопка для создания группы расследования)'
+            )
+        )
+    except:
+        pass
+    await call.message.delete()
 
 
 @router.callback_query(F.data.startswith('launch_success_'))
 async def handle_success_launch(call: CallbackQuery):
     _, _, req_id = call.data.split('_')
     req_id = ObjectId(req_id)
-    # user_id = call.from_user.id
     req = reqs.find_one({'_id': req_id})
     reqs.update_one({'_id': req_id}, {'$set': {'is_complete': True}})
+    gpa_instance = gpa.find_one({'_id': req['gpa_id']})
     stages = req['stages']
     for stage in stages.values():
         major_id = stage['major_id']
-        await bot.send_message(
-            chat_id=major_id,
-            text='Пуск завершён успешно'
-        )
+        try:
+            await bot.send_message(
+                chat_id=major_id,
+                text=(
+                    f'Пользователь подтвердил, что пуск ГПА №{gpa_instance["num_gpa"]} '
+                    f'({req["ks"]}) завершён успешно'
+                )
+            )
+        except:
+            pass
     await call.message.delete()
