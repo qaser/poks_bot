@@ -190,3 +190,7 @@ async def handle_success_launch(call: CallbackQuery):
         except:
             pass
     await call.message.delete()
+    await bot.send_message(
+        chat_id=MY_TELEGRAM_ID,
+        text='Кнопка подтверждения нажата'
+    )

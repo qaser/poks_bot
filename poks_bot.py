@@ -134,8 +134,8 @@ async def main():
         find_overdue_requests,
         'cron',
         day_of_week='mon-sun',
-        hour=18,
-        minute=30,
+        hour=20,
+        minute=0,
         timezone=const.TIME_ZONE
     )
     scheduler.start()

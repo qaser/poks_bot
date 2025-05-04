@@ -124,8 +124,15 @@ async def find_overdue_requests():
         kb.button(text='🔴 Пуск не завершён', callback_data=f'launch_fail_{req["_id"]}')
         kb.button(text='🟢 Пуск завершён', callback_data=f'launch_success_{req["_id"]}')
         kb.adjust(1)
-        await bot.send_message(
-            chat_id=req['author_id'],
-            text=msg_text,
-            reply_markup=kb.as_markup()
-        )
+        try:
+            await bot.send_message(
+                chat_id=req['author_id'],
+                text=msg_text,
+                reply_markup=kb.as_markup()
+            )
+        except:
+            pass
+    await bot.send_message(
+        chat_id=MY_TELEGRAM_ID,
+        text='Отправлено сообщение с кнопками подтверждения пуска'
+    )
