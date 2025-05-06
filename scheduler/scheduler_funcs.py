@@ -102,15 +102,16 @@ async def send_work_time_reminder():
 
 
 async def find_overdue_requests():
-    tz = timezone(const.TIME_ZONE)
-    now_local = dt.datetime.now(tz)  # Локальное время (например, MSK)
-    now_utc = now_local.astimezone(timezone('UTC'))  # Конвертируем в UTC
+    now_utc = dt.datetime.now(dt.timezone.utc)  # Берём текущее время в UTC
 
     res = list(reqs.find({
         'status': 'approved',
         'is_complete': False,
-        'notification_datetime': {'$lt': now_utc}  # Сравниваем с UTC
+        'notification_datetime': {'$lt': now_utc}
     }))
+
+    tz = timezone(const.TIME_ZONE)
+    now_local = now_utc.replace(tzinfo=timezone('UTC')).astimezone(tz)
 
     await bot.send_message(
         chat_id=MY_TELEGRAM_ID,
