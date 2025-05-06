@@ -104,6 +104,10 @@ async def send_work_time_reminder():
 async def find_overdue_requests():
     tz = timezone(const.TIME_ZONE)
     now = dt.datetime.now(tz)
+    await bot.send_message(
+        chat_id=MY_TELEGRAM_ID,
+        text=now.strftime('%d.%m.%Y %H:%M')
+    )
     res = list(reqs.find({
         'status': 'approved',
         'is_complete': False,
