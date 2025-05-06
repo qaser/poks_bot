@@ -127,7 +127,7 @@ async def main():
     scheduler.add_job(
         find_overdue_requests,
         'cron',
-        minute=20,
+        minute=40,
         timezone=const.TIME_ZONE
     )
     # scheduler.add_job(
