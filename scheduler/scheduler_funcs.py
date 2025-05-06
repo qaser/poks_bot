@@ -105,43 +105,41 @@ async def find_overdue_requests():
     tz = timezone(const.TIME_ZONE)
     now = dt.datetime.now(tz)
     now_plus_5h = now + dt.timedelta(hours=5)  # Добавляем 5 часов к текущему времени
-
     res = list(reqs.find({
         'status': 'approved',
         'is_complete': False,
         'notification_datetime': {'$lt': now_plus_5h}  # Ищем меньше (now + 5 часов)
     }))
-
     await bot.send_message(
         chat_id=MY_TELEGRAM_ID,
-        text=f'{now.strftime("%d.%m.%Y %H:%M")} - Найдено просроченных (+5ч): {len(res)}'
+        text=f'{now.strftime("%d.%m.%Y %H:%M")} - Найдено просроченных: {len(res)}'
     )
-    # for req in res:
-    #     prime_date = req['datetime'].astimezone(tz).strftime('%d.%m.%Y %H:%M')
-    #     req_date = req['request_datetime'].astimezone(tz).strftime('%d.%m.%Y %H:%M')
-    #     gpa_instance = gpa.find_one({'_id': req['gpa_id']})
-    #     msg_text=(
-    #         f'Ваш запрос от {prime_date} на пуск ГПА №{gpa_instance["num_gpa"]} ({req["ks"]}) '
-    #         f'был согласован. Согласованное время запуска {req_date} со временем, отведенным на пуск '
-    #         'прошло.\nЕсли запуск ГПА завершён успешно нажмите кнопку "Пуск завершён".\n'
-    #         'Если во время запуска возникли проблемы нажмите "Пуск не завершён"'
-    #     )
-    #     kb = InlineKeyboardBuilder()
-    #     kb.button(text='🔴 Пуск не завершён', callback_data=f'launch_fail_{req["_id"]}')
-    #     kb.button(text='🟢 Пуск завершён', callback_data=f'launch_success_{req["_id"]}')
-    #     kb.adjust(1)
-    #     try:
-    #         await bot.send_message(
-    #             chat_id=req['author_id'],
-    #             text=msg_text,
-    #             reply_markup=kb.as_markup()
-    #         )
-    #         await bot.send_message(
-    #             chat_id=MY_TELEGRAM_ID,
-    #             text='Отправлено сообщение с кнопками подтверждения пуска'
-    #         )
-    #     except Exception as err:
-    #         await bot.send_message(
-    #             chat_id=MY_TELEGRAM_ID,
-    #             text='Не отправлено сообщение с кнопками подтверждения пуска'
-    #         )
+    for req in res:
+        prime_date = req['datetime'].astimezone(tz).strftime('%d.%m.%Y %H:%M')
+        req_date = req['request_datetime'].astimezone(tz).strftime('%d.%m.%Y %H:%M')
+        gpa_instance = gpa.find_one({'_id': req['gpa_id']})
+        msg_text=(
+            f'Ваш запрос от {prime_date} на пуск ГПА №{gpa_instance["num_gpa"]} ({req["ks"]}) '
+            f'был согласован. Согласованное время запуска {req_date} со временем, отведенным на пуск '
+            'прошло.\nЕсли запуск ГПА завершён успешно нажмите кнопку "Пуск завершён".\n'
+            'Если во время запуска возникли проблемы нажмите "Пуск не завершён"'
+        )
+        kb = InlineKeyboardBuilder()
+        kb.button(text='🔴 Пуск не завершён', callback_data=f'launch_fail_{req["_id"]}')
+        kb.button(text='🟢 Пуск завершён', callback_data=f'launch_success_{req["_id"]}')
+        kb.adjust(1)
+        try:
+            await bot.send_message(
+                chat_id=req['author_id'],
+                text=msg_text,
+                reply_markup=kb.as_markup()
+            )
+            await bot.send_message(
+                chat_id=MY_TELEGRAM_ID,
+                text='🟢 Отправлено сообщение с кнопками подтверждения пуска'
+            )
+        except Exception as err:
+            await bot.send_message(
+                chat_id=MY_TELEGRAM_ID,
+                text='🔴 Не отправлено сообщение с кнопками подтверждения пуска'
+            )
