@@ -102,20 +102,19 @@ async def send_work_time_reminder():
 
 
 async def find_overdue_requests():
-    now_utc = dt.datetime.now(dt.timezone.utc)  # Берём текущее время в UTC
+    tz = timezone(const.TIME_ZONE)
+    now = dt.datetime.now(tz)
+    now_plus_5h = now + dt.timedelta(hours=5)  # Добавляем 5 часов к текущему времени
 
     res = list(reqs.find({
         'status': 'approved',
         'is_complete': False,
-        'notification_datetime': {'$lt': now_utc}
+        'notification_datetime': {'$lt': now_plus_5h}  # Ищем меньше (now + 5 часов)
     }))
-
-    tz = timezone(const.TIME_ZONE)
-    now_local = now_utc.replace(tzinfo=timezone('UTC')).astimezone(tz)
 
     await bot.send_message(
         chat_id=MY_TELEGRAM_ID,
-        text=f'{now_local.strftime("%d.%m.%Y %H:%M")} - Найдено: {len(res)}'
+        text=f'{now.strftime("%d.%m.%Y %H:%M")} - Найдено просроченных (+5ч): {len(res)}'
     )
     # for req in res:
     #     prime_date = req['datetime'].astimezone(tz).strftime('%d.%m.%Y %H:%M')
