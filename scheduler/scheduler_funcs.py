@@ -103,7 +103,8 @@ async def send_work_time_reminder():
 
 async def find_overdue_requests():
     tz = timezone(const.TIME_ZONE)
-    now = dt.datetime.now(tz)
+    # now = dt.datetime.now(tz)
+    now = dt.datetime.now(tz).astimezone(timezone('UTC'))
     res = list(reqs.find({
         'status': 'approved',
         'is_complete': False,
