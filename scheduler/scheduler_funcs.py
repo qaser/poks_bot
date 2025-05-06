@@ -111,7 +111,7 @@ async def find_overdue_requests():
     }))
     await bot.send_message(
         chat_id=MY_TELEGRAM_ID,
-        text=f'{now.strftime('%d.%m.%Y %H:%M')} - Найдено: {len(res)}'
+        text=f'{now.strftime("%d.%m.%Y %H:%M")} - Найдено: {len(res)}'
     )
     # for req in res:
     #     prime_date = req['datetime'].astimezone(tz).strftime('%d.%m.%Y %H:%M')
