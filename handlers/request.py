@@ -158,11 +158,9 @@ async def handle_fail_launch(call: CallbackQuery):
     stages = req['stages']
     try:
         await bot.send_message(
-            chat_id=stages['1']['major_id'],
-            text=(
-                f'Пуск ГПА №{gpa_instance["num_gpa"]} ({req["ks"]}) не завершён.'
-                '(Здесь будет кнопка для создания группы расследования)'
-            )
+            chat_id=stages['2']['major_id'],
+            text=f'Пуск ГПА №{gpa_instance["num_gpa"]} ({req["ks"]}) не завершён.',
+            message_effect_id='5104858069142078462'
         )
     except:
         pass
@@ -185,12 +183,9 @@ async def handle_success_launch(call: CallbackQuery):
                 text=(
                     f'Пользователь подтвердил, что пуск ГПА №{gpa_instance["num_gpa"]} '
                     f'({req["ks"]}) завершён успешно'
-                )
+                ),
+                message_effect_id='5046509860389126442'
             )
         except:
             pass
     await call.message.delete()
-    await bot.send_message(
-        chat_id=MY_TELEGRAM_ID,
-        text='Кнопка подтверждения нажата'
-    )

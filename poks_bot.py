@@ -130,14 +130,6 @@ async def main():
         minute=1,
         timezone=const.TIME_ZONE
     )
-    # scheduler.add_job(
-    #     find_overdue_requests,
-    #     'cron',
-    #     day_of_week='mon-sun',
-    #     hour=20,
-    #     minute=0,
-    #     timezone=const.TIME_ZONE
-    # )
     scheduler.start()
     dp.include_routers(
         copy.router,
