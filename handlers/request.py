@@ -5,13 +5,12 @@ from aiogram.enums import ChatType
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
-from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram_dialog import Dialog, DialogManager, StartMode
 from bson import ObjectId
 
 from config.bot_config import bot
 from config.mongo_config import gpa, paths, reqs
-from config.telegram_config import EXPLOIT_GROUP_ID, MY_TELEGRAM_ID
+# from config.telegram_config import EXPLOIT_GROUP_ID, MY_TELEGRAM_ID
 from dialogs.for_request import windows
 from dialogs.for_request.selected import send_notify, send_request_to_major
 from dialogs.for_request.states import Request

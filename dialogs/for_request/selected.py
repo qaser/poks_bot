@@ -1,7 +1,7 @@
 import datetime as dt
-import re
 
 import aiohttp
+from bson import ObjectId
 from pytz import timezone
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 from aiogram.utils.keyboard import InlineKeyboardBuilder
@@ -263,6 +263,13 @@ async def on_selected_request(callback, widget, manager: DialogManager, req_id):
     context = manager.current_context()
     context.dialog_data.update(req_id=req_id)
     await manager.switch_to(Request.show_single_request)
+
+
+async def on_delete_req(callback, widget, manager: DialogManager):
+    context = manager.current_context()
+    req_id = context.dialog_data['req_id']
+    reqs.delete_one({'_id': ObjectId(req_id)})
+    await manager.switch_to(Request.show_list_requests)
 
 
 def get_path_type(gpa_instance):

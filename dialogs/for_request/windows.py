@@ -259,6 +259,11 @@ def show_list_requests_window():
 def show_single_request_window():
     return Window(
         Format('{text}'),
+        Button(
+            Const('🗑️ Удалить заявку'),
+            on_click=selected.on_delete_req,
+            id='delete_req',
+        ),
         Back(Const(texts.BACK_BUTTON)),
         state=Request.show_single_request,
         getter=getters.get_single_request,
