@@ -153,7 +153,7 @@ async def send_morning_report():
         'is_complete': False,
     }
     # Получаем все заявки на сегодня
-    queryset = list(reqs.find(req_filter).sort('request_datetime', -1))
+    queryset = list(reqs.find(req_filter).sort('request_datetime', 1))
     # Группируем заявки по типам ГПА
     gpa_types = defaultdict(list)
     for req in queryset:
@@ -216,7 +216,7 @@ async def send_evening_report():
         'status': 'approved',
     }
     # Получаем все заявки на сегодня
-    queryset = list(reqs.find(req_filter).sort('request_datetime', -1))
+    queryset = list(reqs.find(req_filter).sort('request_datetime', 1))
     # Группируем заявки по типам ГПА
     gpa_types = defaultdict(list)
     for req in queryset:
