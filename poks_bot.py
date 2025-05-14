@@ -5,6 +5,7 @@ from aiogram import F
 from aiogram.filters.command import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, ReplyKeyboardRemove
+from aiogram.types import BotCommand, BotCommandScopeAllPrivateChats
 from aiogram_dialog import setup_dialogs
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from pyrogram import utils
@@ -67,6 +68,18 @@ async def admin_handler(message: Message):
 @dp.message(Command('start'))
 async def start_handler(message: Message):
     await message.answer(const.INITIAL_TEXT)
+
+
+async def setup_bot_commands(bot):
+    # Установим команды только для приватных чатов
+    private_commands = [
+        BotCommand(command="start", description="Начать"),
+        BotCommand(command="help", description="Помощь"),
+    ]
+    await bot.set_my_commands(private_commands, scope=BotCommandScopeAllPrivateChats())
+
+    # Очистим команды по умолчанию (чтобы в группах ничего не отображалось)
+    await bot.set_my_commands([], scope=None)
 
 
 # удаление сервисных сообщений
@@ -164,6 +177,7 @@ async def main():
         edit.dialog,
         archive.router,
     )
+    await setup_bot_commands(bot)
     setup_dialogs(dp)
     await app.start()
     await dp.start_polling(bot)
