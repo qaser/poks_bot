@@ -35,7 +35,7 @@ paths {
 }
 
 reqs {
-    req_type: [with-approval, without-approval]
+    req_type: [with_approval, without_approval]
     author_id: user_id,
     ks: станция,
     gpa_id: gpa_id,
@@ -64,6 +64,7 @@ reqs {
         }
     }
 }
+
 
 структура данных ELECTRICS
     'class_code': код класса

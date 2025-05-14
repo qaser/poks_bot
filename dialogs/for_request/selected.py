@@ -46,6 +46,15 @@ async def on_main_menu(callback, widget, manager: DialogManager):
     await manager.start(Request.select_station, mode=StartMode.RESET_STACK)
 
 
+async def return_from_resource(callback, widget, manager: DialogManager):
+    context = manager.current_context()
+    req_type = context.dialog_data['req_type']
+    if req_type == 'with_approval':
+        await manager.switch_to(Request.select_time)
+    else:
+        await manager.switch_to(Request.select_epb)
+
+
 async def on_select_category(callback, widget, manager: DialogManager):
     category = widget.widget_id
     if category == 'paths':
@@ -124,16 +133,25 @@ async def on_shop_done(callback, widget, manager: DialogManager, shop):
 
 async def on_gpa_done(callback, widget, manager: DialogManager, gpa_num):
     context = manager.current_context()
-    req_type = context.dialog_data['req_type']
-
     context.dialog_data.update(gpa=gpa_num)
-    if req_type == 'with_approval':
-        await manager.switch_to(Request.select_date)
+    await manager.switch_to(Request.select_epb)
+
+
+async def on_epb(callback, widget, manager: DialogManager):
+    epb = widget.widget_id
+    context = manager.current_context()
+    req_type = context.dialog_data['req_type']
+    if epb == 'epb_yes':
+        context.dialog_data.update(epb=epb)
+        if req_type == 'with_approval':
+            await manager.switch_to(Request.select_date)
+        else:
+            today = dt.datetime.now()
+            context.dialog_data.update(req_date=today.strftime('%d.%m.%Y'))
+            context.dialog_data.update(req_time=today.strftime('%H:%M'))
+            await manager.switch_to(Request.select_resource)
     else:
-        today = dt.datetime.now()
-        context.dialog_data.update(req_date=today.strftime('%d.%m.%Y'))
-        context.dialog_data.update(req_time=today.strftime('%H:%M'))
-        await manager.switch_to(Request.select_resource)
+        await manager.switch_to(Request.show_reject_info)
 
 
 async def on_select_date(callback, widget, manager: DialogManager, clicked_date):

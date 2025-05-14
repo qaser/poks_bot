@@ -210,8 +210,8 @@ async def get_majors_and_stages(dialog_manager: DialogManager, **middleware_data
         'num_stages': num_stages,
         'stages_info': stages_info,
         'complete': len(majors) == num_stages,
-        # 'majors': list(admins.find({'user_id': {'$ne': int(MY_TELEGRAM_ID)}}))
-        'majors': list(admins.find({}))
+        'majors': list(admins.find({'user_id': {'$ne': int(MY_TELEGRAM_ID)}}))
+        # 'majors': list(admins.find({}))
     }
     return data
 

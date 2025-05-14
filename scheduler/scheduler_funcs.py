@@ -141,91 +141,138 @@ async def find_overdue_requests():
 
 async def send_morning_report():
     today = dt.datetime.now().date()
+    # Фильтр для поиска актуальных заявок на сегодня
     req_filter = {
-        'request_datetime': {
-            '$gte': dt.datetime.combine(today, dt.time.min),
-            '$lt': dt.datetime.combine(today, dt.time.max)
+        '$expr': {
+            '$eq': [
+                {'$dateToString': {'format': '%Y-%m-%d', 'date': '$request_datetime'}},
+                today.strftime('%Y-%m-%d')
+            ]
         },
         'status': 'approved',
         'is_complete': False,
     }
+    # Получаем все заявки на сегодня
     queryset = list(reqs.find(req_filter).sort('request_datetime', -1))
-    if not queryset:
-        await bot.send_message(
-            chat_id=MY_TELEGRAM_ID,
-            text='Заявок на сегодня нет'
-        )
-        return
-    user_notifications = defaultdict(list)
+    # Группируем заявки по типам ГПА
+    gpa_types = defaultdict(list)
     for req in queryset:
-        ks = req.get('ks', 'N/A')
-        gpa_num = req.get('num_gpa', 'N/A')
-        req_time = req['request_datetime'].strftime('%H:%M')
-        req_line = f"{ks} <b>ГПА{gpa_num}</b> - {req_time}"
-        stages = req.get('stages', {})
-        if not isinstance(stages, dict):
+        gpa_data = gpa.find_one({'_id': req['gpa_id']})
+        if not gpa_data:
             continue
-        for stage in stages.values():
-            major_id = stage.get('major_id')
-            if major_id:
-                user_notifications[major_id].append(req_line)
-    for user_id, lines in user_notifications.items():
-        try:
-            message = "<u>Запланированные на сегодня пуски:</u>\n" + "\n".join(lines)
-            await bot.send_message(chat_id=user_id, text=message)
-            await bot.send_message(chat_id=MY_TELEGRAM_ID, text=message)
-        except Exception as e:
-            await bot.send_message(
-                chat_id=MY_TELEGRAM_ID,
-                text=f"Не удалось отправить отчет пользователю {user_id}"
-            )
+        # Определяем тип ГПА с учетом особого случая для ГТК-10-4
+        if gpa_data['type_gpa'] == 'Стационарные' and gpa_data.get('group_gpa') == 'ГТК-10-4':
+            gpa_type = 'Стационарные ГПА (ГТК-10-4)'
+        elif gpa_data['type_gpa'] == 'Стационарные':
+            gpa_type = 'Стационарные ГПА'
+        elif gpa_data['type_gpa'] == 'Авиационный привод':
+            gpa_type = 'ГПА с авиа. приводом'
+        elif gpa_data['type_gpa'] == 'Судовой привод':
+            gpa_type = 'ГПА с судовым приводом'
+        else:
+            gpa_type = gpa_data['type_gpa']
+
+        # Формируем строку для отчета
+        time_str = req['request_datetime'].strftime('%H:%M')
+        report_line = f"{req['ks']} ГПА{gpa_data['num_gpa']} - {time_str}"
+        gpa_types[gpa_type].append(report_line)
+
+    # Формируем итоговый отчет
+    report_lines = []
+
+    # Порядок вывода типов ГПА в отчете
+    type_order = [
+        'ГПА с авиа. приводом',
+        'ГПА с судовым приводом',
+        'Стационарные ГПА',
+        'Стационарные ГПА (ГТК-10-4)'
+    ]
+    for gpa_type in type_order:
+        if gpa_type in gpa_types:
+            report_lines.append(f"<b>{gpa_type}</b>:")
+            report_lines.extend(gpa_types[gpa_type])
+        else:
+            report_lines.append(f"<b>{gpa_type}</b>: на сегодня заявок нет\n")
+    # Объединяем все строки отчета
+    report_text = "\n".join(report_lines)
+    # Добавляем заголовок с текущей датой
+    full_report = f"<u>Отчет по запланированным пускам ГПА на {today.strftime('%d.%m.%Y')}</u>\n{report_text}"
+    await bot.send_message(
+        chat_id=MY_TELEGRAM_ID,
+        text=full_report,
+    )
 
 
 async def send_evening_report():
     today = dt.datetime.now().date()
+    # Фильтр для поиска всех одобренных заявок на сегодня
     req_filter = {
-        'request_datetime': {
-            '$gte': dt.datetime.combine(today, dt.time.min),
-            '$lt': dt.datetime.combine(today, dt.time.max)
+        '$expr': {
+            '$eq': [
+                {'$dateToString': {'format': '%Y-%m-%d', 'date': '$request_datetime'}},
+                today.strftime('%Y-%m-%d')
+            ]
         },
-        'status': 'approved'
+        'status': 'approved',
     }
+    # Получаем все заявки на сегодня
     queryset = list(reqs.find(req_filter).sort('request_datetime', -1))
-    if not queryset:
-        await bot.send_message(
-            chat_id=MY_TELEGRAM_ID,
-            text='Заявок на вечер нет'
-        )
-        return
-    user_notifications = defaultdict(list)
+    # Группируем заявки по типам ГПА
+    gpa_types = defaultdict(list)
     for req in queryset:
-        ks = req.get('ks', 'N/A')
-        gpa_num = req.get('gpa_num', 'N/A')
-        req_time = req['request_datetime'].strftime('%H:%M')
-        # Определяем статус запуска
-        if req.get('is_fail') is True:
-            # reason = req.get('fail_reason', 'без указания причины')
-            status = "🔴"
-            # status = f"🔴 ({reason})"
-        elif req.get('is_complete') is True:
-            status = "🟢"
-        else:
-            status = "⚪"
-        req_line = f"{status} {ks} <b>ГПА{gpa_num}</b> - {req_time}\n"
-        stages = req.get('stages', {})
-        if not isinstance(stages, dict):
+        gpa_data = gpa.find_one({'_id': req['gpa_id']})
+        if not gpa_data:
             continue
-        for stage in stages.values():
-            major_id = stage.get('major_id')
-            if major_id:
-                user_notifications[major_id].append(req_line)
-    for user_id, requests in user_notifications.items():
-        try:
-            message = "<u>Результаты пусков за сегодня:</u>\n" + "\n".join(requests)
-            await bot.send_message(chat_id=user_id, text=message)
-            await bot.send_message(chat_id=MY_TELEGRAM_ID, text=message)
-        except Exception as e:
-            await bot.send_message(
-                chat_id=MY_TELEGRAM_ID,
-                text=f"Не удалось отправить отчет пользователю {user_id}"
-            )
+        # Определяем тип ГПА
+        if gpa_data['type_gpa'] == 'Стационарные' and gpa_data.get('group_gpa') == 'ГТК-10-4':
+            gpa_type = 'Стационарные ГПА (ГТК-10-4)'
+        elif gpa_data['type_gpa'] == 'Стационарные':
+            gpa_type = 'Стационарные ГПА'
+        elif gpa_data['type_gpa'] == 'Авиационный привод':
+            gpa_type = 'ГПА с авиа. приводом'
+        elif gpa_data['type_gpa'] == 'Судовой привод':
+            gpa_type = 'ГПА с судовым приводом'
+        else:
+            gpa_type = gpa_data['type_gpa']
+        # Определяем статус пуска
+        if req.get('is_fail') is True:
+            reason = req.get('fail_reason', 'без указания причины')
+            status = "🟥"
+            status_text = f" ({reason})"
+        elif req.get('is_complete') is True:
+            status = "🟩"
+            status_text = ""
+        else:
+            status = "⬜"
+            status_text = " (не завершён)"
+        # Формируем строку для отчета
+        time_str = req['request_datetime'].strftime('%H:%M')
+        report_line = f"{status} {req['ks']} ГПА{gpa_data['num_gpa']} - {time_str}{status_text}"
+        gpa_types[gpa_type].append(report_line)
+    # Формируем итоговый отчет
+    report_lines = []
+    # Порядок вывода типов ГПА в отчете
+    type_order = [
+        'ГПА с авиа. приводом',
+        'ГПА с судовым приводом',
+        'Стационарные ГПА',
+        'Стационарные ГПА (ГТК-10-4)'
+    ]
+    for gpa_type in type_order:
+        if gpa_type in gpa_types:
+            report_lines.append(f"<b>{gpa_type}</b>:")
+            report_lines.extend(gpa_types[gpa_type])
+            report_lines.append("")  # Пустая строка между группами
+        else:
+            report_lines.append(f"<b>{gpa_type}</b>: заявок не было\n")
+    # Объединяем все строки отчета
+    report_text = "\n".join(report_lines)
+    # Добавляем заголовок с текущей датой
+    full_report = (
+        f"<u>Отчет по пускам ГПА за {today.strftime('%d.%m.%Y')}</u>\n"
+        f"{report_text}"
+    )
+    await bot.send_message(
+        chat_id=MY_TELEGRAM_ID,
+        text=full_report,
+    )

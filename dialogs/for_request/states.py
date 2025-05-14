@@ -11,6 +11,9 @@ class Request(StatesGroup):
     select_station = State()
     select_shop = State()
     select_gpa = State()
+
+    select_epb = State()
+
     select_date = State()
     select_time = State()
 
@@ -20,7 +23,6 @@ class Request(StatesGroup):
     # input_resource_act = State()   # каждый 2-ой запрос
     select_protocol = State()
     # input_protocol_file = State()   # каждый 4-ой запрос
-    # select_expert = State()
     # select_card = State()
     # input_card_file = State()  # каждый 6-ой запрос
 

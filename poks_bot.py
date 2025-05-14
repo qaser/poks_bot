@@ -21,6 +21,8 @@ from middlewares.admin_check import AdminCheckMiddleware
 from scheduler.scheduler_funcs import (clear_msgs, find_overdue_requests,
                                        send_backups, send_remainder, send_evening_report,
                                        send_work_time_reminder, send_morning_report)
+import datetime as dt
+from collections import defaultdict
 
 
 def get_peer_type_new(peer_id: int) -> str:
@@ -165,7 +167,7 @@ async def main():
     scheduler.add_job(
         find_overdue_requests,
         'cron',
-        minute=20,
+        minute=1,
         timezone=const.TIME_ZONE
     )
     scheduler.start()
@@ -187,6 +189,8 @@ async def main():
         archive.router,
     )
     await setup_bot_commands(bot)
+    # await send_morning_report()
+    await send_evening_report()
     setup_dialogs(dp)
     await app.start()
     await dp.start_polling(bot)
