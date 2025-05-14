@@ -139,7 +139,7 @@ async def find_overdue_requests():
             )
 
 
-async def send_morning_summary():
+async def send_morning_report():
     today = dt.datetime.now().date()
     req_filter = {
         'request_datetime': {
@@ -152,8 +152,7 @@ async def send_morning_summary():
     }
     queryset = list(reqs.find(req_filter).sort('request_datetime', -1))
     if not queryset:
-        # return
-        print(queryset)
+        return
     user_notifications = defaultdict(list)
     for req in queryset:
         # Получаем данные ГПА
@@ -170,3 +169,41 @@ async def send_morning_summary():
             await bot.send_message(chat_id=user_id, text=message)
         except Exception as e:
             print(f"Не удалось отправить уведомление пользователю {user_id}: {e}")
+
+
+async def send_evening_report():
+    today = dt.datetime.now().date()
+    req_filter = {
+        'request_datetime': {
+            '$gte': dt.datetime.combine(today, dt.time.min),
+            '$lt': dt.datetime.combine(today, dt.time.max)
+        },
+        'status': 'approved',
+        'is_complete': True,
+    }
+    queryset = list(reqs.find(req_filter).sort('request_datetime', -1))
+    if not queryset:
+        return
+    user_notifications = defaultdict(list)
+    for req in queryset:
+        gpa_data = gpa.find_one({'_id': req['gpa_id']})
+        num_gpa = gpa_data.get('num_gpa', 'N/A')
+        req_time = req['request_datetime'].strftime('%H:%M')
+        # Формируем строку в зависимости от статуса
+        if req.get('is_fail'):
+            status = f"🔴 ({req.get('fail_reason', 'без указания причины')})"
+        else:
+            status = "🟢"
+        req_line = f"{req['ks']} <b>ГПА №{num_gpa}</b> - {req_time} - {status}"
+        for stage in req.get('stages', {}).values():
+            if 'major_id' in stage:
+                user_notifications[stage['major_id']].append(req_line)
+    for user_id, requests in user_notifications.items():
+        try:
+            message = "<u>Результаты пусков за сегодня:</u>\n" + "\n".join(requests)
+            await bot.send_message(
+                chat_id=user_id,
+                text=message,
+            )
+        except Exception as e:
+            print(f"Не удалось отправить отчет пользователю {user_id}: {e}")

@@ -48,8 +48,8 @@ reqs {
     current_stage: 2,
     request_datetime: datetime, - дата на которую делается запрос
     notification_datetime: datetime - время отправки уведомления о успешности пуска ГПА
-    is_complete: False/True  -  при успешном пуске
-    is_fail: False/True
+    is_complete: False/True  -  при полном завершении цикла от заявки до пуска
+    is_fail: False/True - удачен пуск или нет
     fail_reason: причина неудавшегося пуска
     stages {
         '1': {

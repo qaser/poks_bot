@@ -17,7 +17,12 @@ class Request(StatesGroup):
     # опрос о соответствии ГПА требованиям
     select_resource = State()
     select_resource_act = State()
+    # input_resource_act = State()   # каждый 2-ой запрос
     select_protocol = State()
+    # input_protocol_file = State()   # каждый 4-ой запрос
+    # select_expert = State()
+    # select_card = State()
+    # input_card_file = State()  # каждый 6-ой запрос
 
     input_info = State()  # с этого состояния перепрыгиваем на select_category
     request_confirm = State()

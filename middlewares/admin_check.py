@@ -7,7 +7,7 @@ from config.mongo_config import admins
 
 
 class AdminCheckMiddleware(BaseMiddleware):
-    # Команды, доступные всем пользователям
+    # Команды, доступные всем пользователям, но которые нужно удалять в группах
     PUBLIC_COMMANDS = ['/start', '/reset', '/admin', '/request']
 
     async def __call__(
@@ -20,29 +20,45 @@ class AdminCheckMiddleware(BaseMiddleware):
         if not isinstance(event, Message):
             return await handler(event, data)
 
-        # Пропускаем сообщения без текста (фото, документы и т.д.)
+        # Пропускаем сообщения без текста
         if not event.text:
             return await handler(event, data)
 
         # Разбиваем текст на части для проверки команды
         parts = event.text.split()
-        if not parts:  # На всякий случай, если пустой текст
+        if not parts:
             return await handler(event, data)
 
-        first_word = parts[0].split('@')[0].lower()  # Убираем mention бота если есть
+        first_word = parts[0].split('@')[0].lower()
 
-        # Если это не команда (не начинается с /) - пропускаем
+        # Если это не команда - пропускаем
         if not first_word.startswith('/'):
             return await handler(event, data)
 
-        # Если это публичная команда - пропускаем
+        # Проверяем тип чата
+        chat_type = event.chat.type if hasattr(event, 'chat') else None
+
+        # Если это публичная группа/супергруппа/канал
+        if chat_type in ['group', 'supergroup', 'channel']:
+            if first_word in self.PUBLIC_COMMANDS:
+                try:
+                    await event.delete()
+                except Exception as e:
+                    print(f"Не удалось удалить сообщение: {e}")
+                return
+            return await handler(event, data)
+
+        # Для личных сообщений и приватных чатов
         if first_word in self.PUBLIC_COMMANDS:
             return await handler(event, data)
 
         # Проверяем права для всех остальных команд
         admin = admins.find_one({'user_id': event.from_user.id})
         if not admin:
-            await event.delete()  # Удаляем сообщение, если пользователь не админ
+            try:
+                await event.delete()
+            except Exception as e:
+                print(f"Не удалось удалить сообщение не-админа: {e}")
             return
 
         return await handler(event, data)

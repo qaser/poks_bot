@@ -28,7 +28,13 @@ dialog =  Dialog(
     windows.time_window(),
     windows.select_resource_window(),
     windows.select_resource_act_window(),
+    # windows.input_resource_act_file_window(),  # каждый 2-ой запрос
     windows.select_protocol_window(),
+    # windows.input_protocol_file_window(),  # каждый 4-ой запрос
+    # windows.select_expert_window(),
+    # windows.select_card_window(),
+    # windows.input_card_window(),  # каждый 6-ой запрос
+
     windows.show_reject_window(),
     windows.input_info_window(),
     windows.request_confirm_window(),
