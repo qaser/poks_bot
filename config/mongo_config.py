@@ -39,7 +39,7 @@ reqs {
     author_id: user_id,
     ks: станция,
     gpa_id: gpa_id,
-    gpa_num: номер гпа
+    num_gpa: номер гпа
     datetime: datetime,
     text: text
     path_id: path_id,

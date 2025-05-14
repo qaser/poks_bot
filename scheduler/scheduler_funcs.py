@@ -148,24 +148,30 @@ async def send_morning_report():
         },
         'status': 'approved',
         'is_complete': False,
-        'is_fail': False
     }
     queryset = list(reqs.find(req_filter).sort('request_datetime', -1))
     if not queryset:
+        await bot.send_message(
+            chat_id=MY_TELEGRAM_ID,
+            text='Заявок на сегодня нет'
+        )
         return
     user_notifications = defaultdict(list)
     for req in queryset:
-        # Получаем данные ГПА
-        gpa_data = gpa.find_one({'_id': req['gpa_id']})
-        num_gpa = gpa_data.get('num_gpa', 'N/A')
+        ks = req.get('ks', 'N/A')
+        gpa_num = req.get('num_gpa', 'N/A')
         req_time = req['request_datetime'].strftime('%H:%M')
-        req_line = f"{req['ks']} <b>ГПА №{num_gpa}</b> - {req_time}"
-        for stage in req.get('stages', {}).values():
-            if 'major_id' in stage:
-                user_notifications[stage['major_id']].append(req_line)
-    for user_id, requests in user_notifications.items():
+        req_line = f"{ks} <b>ГПА{gpa_num}</b> - {req_time}"
+        stages = req.get('stages', {})
+        if not isinstance(stages, dict):
+            continue
+        for stage in stages.values():
+            major_id = stage.get('major_id')
+            if major_id:
+                user_notifications[major_id].append(req_line)
+    for user_id, lines in user_notifications.items():
         try:
-            message = "<u>Запланированные на сегодня пуски:</u>\n" + "\n".join(requests)
+            message = "<u>Запланированные на сегодня пуски:</u>\n" + "\n".join(lines)
             await bot.send_message(chat_id=user_id, text=message)
         except Exception as e:
             print(f"Не удалось отправить уведомление пользователю {user_id}: {e}")
@@ -178,32 +184,40 @@ async def send_evening_report():
             '$gte': dt.datetime.combine(today, dt.time.min),
             '$lt': dt.datetime.combine(today, dt.time.max)
         },
-        'status': 'approved',
-        'is_complete': True,
+        'status': 'approved'
     }
     queryset = list(reqs.find(req_filter).sort('request_datetime', -1))
     if not queryset:
+        await bot.send_message(
+            chat_id=MY_TELEGRAM_ID,
+            text='Заявок на вечер нет'
+        )
         return
     user_notifications = defaultdict(list)
     for req in queryset:
-        gpa_data = gpa.find_one({'_id': req['gpa_id']})
-        num_gpa = gpa_data.get('num_gpa', 'N/A')
+        ks = req.get('ks', 'N/A')
+        gpa_num = req.get('gpa_num', 'N/A')
         req_time = req['request_datetime'].strftime('%H:%M')
-        # Формируем строку в зависимости от статуса
-        if req.get('is_fail'):
-            status = f"🔴 ({req.get('fail_reason', 'без указания причины')})"
-        else:
+        # Определяем статус запуска
+        if req.get('is_fail') is True:
+            # reason = req.get('fail_reason', 'без указания причины')
+            status = "🔴"
+            # status = f"🔴 ({reason})"
+        elif req.get('is_complete') is True:
             status = "🟢"
-        req_line = f"{req['ks']} <b>ГПА №{num_gpa}</b> - {req_time} - {status}"
-        for stage in req.get('stages', {}).values():
-            if 'major_id' in stage:
-                user_notifications[stage['major_id']].append(req_line)
+        else:
+            status = "⚪"
+        req_line = f"{status} {ks} <b>ГПА{gpa_num}</b> - {req_time}\n"
+        stages = req.get('stages', {})
+        if not isinstance(stages, dict):
+            continue
+        for stage in stages.values():
+            major_id = stage.get('major_id')
+            if major_id:
+                user_notifications[major_id].append(req_line)
     for user_id, requests in user_notifications.items():
         try:
             message = "<u>Результаты пусков за сегодня:</u>\n" + "\n".join(requests)
-            await bot.send_message(
-                chat_id=user_id,
-                text=message,
-            )
+            await bot.send_message(chat_id=user_id, text=message)
         except Exception as e:
             print(f"Не удалось отправить отчет пользователю {user_id}: {e}")
