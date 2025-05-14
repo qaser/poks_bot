@@ -73,8 +73,17 @@ async def start_handler(message: Message):
 async def setup_bot_commands(bot):
     # Установим команды только для приватных чатов
     private_commands = [
-        BotCommand(command="start", description="Начать"),
-        BotCommand(command="help", description="Помощь"),
+        BotCommand(command="ao", description="Создание группы расследования"),
+        BotCommand(command="request", description="Отправить запрос на пуск ГПА"),
+        BotCommand(command="groups", description="Просмотр групп расследования"),
+        BotCommand(command="sub", description="Включение рассылки напоминаний"),
+        BotCommand(command="unsub", description="Выключение рассылки напоминаний"),
+        BotCommand(command="iskra", description="Просмотр наработки ГПА с СПЧ-1,35"),
+        BotCommand(command="admins", description="Просмотр списка администраторов"),
+        BotCommand(command="copy", description="Отключение защиты от копирования"),
+        BotCommand(command="edit", description="Удалить ошибочно созданные группы"),
+        BotCommand(command="help", description="Просмотр справки по командам"),
+        BotCommand(command="reset", description="Отмена текущего действия, сброс ошибок"),
     ]
     await bot.set_my_commands(private_commands, scope=BotCommandScopeAllPrivateChats())
 
