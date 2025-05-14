@@ -173,8 +173,12 @@ async def send_morning_report():
         try:
             message = "<u>Запланированные на сегодня пуски:</u>\n" + "\n".join(lines)
             await bot.send_message(chat_id=user_id, text=message)
+            await bot.send_message(chat_id=MY_TELEGRAM_ID, text=message)
         except Exception as e:
-            print(f"Не удалось отправить уведомление пользователю {user_id}: {e}")
+            await bot.send_message(
+                chat_id=MY_TELEGRAM_ID,
+                text=f"Не удалось отправить отчет пользователю {user_id}"
+            )
 
 
 async def send_evening_report():
@@ -219,5 +223,9 @@ async def send_evening_report():
         try:
             message = "<u>Результаты пусков за сегодня:</u>\n" + "\n".join(requests)
             await bot.send_message(chat_id=user_id, text=message)
+            await bot.send_message(chat_id=MY_TELEGRAM_ID, text=message)
         except Exception as e:
-            print(f"Не удалось отправить отчет пользователю {user_id}: {e}")
+            await bot.send_message(
+                chat_id=MY_TELEGRAM_ID,
+                text=f"Не удалось отправить отчет пользователю {user_id}"
+            )
