@@ -124,11 +124,13 @@ async def get_requests(dialog_manager: DialogManager, **middleware_data):
     sorting_order = context.dialog_data['sorting_order']
     if sorting_order == 'ks':
         ks = context.dialog_data['ks']
-        queryset = list(reqs.find({'ks': ks,'req_type': 'with_approval'}).sort('$natural', -1).limit(24))
+        queryset = list(reqs.find({'ks': ks}).sort('$natural', -1).limit(24))
+        # queryset = list(reqs.find({'ks': ks,'req_type': 'with_approval'}).sort('$natural', -1).limit(24))
         data = {'ks': ks, 'is_ks': True, 'not_empty': True}
     elif sorting_order == 'status':
         status = context.dialog_data['status']
-        queryset = list(reqs.find({'status': status, 'req_type': 'with_approval'}).sort('$natural', -1).limit(24))
+        queryset = list(reqs.find({'status': status}).sort('$natural', -1).limit(24))
+        # queryset = list(reqs.find({'status': status, 'req_type': 'with_approval'}).sort('$natural', -1).limit(24))
         data = {'status': REQUEST_STATUS[status], 'is_status': True, 'not_empty': True}
     elif sorting_order == 'date':
         req_date_str = context.dialog_data.get('date')
@@ -140,7 +142,7 @@ async def get_requests(dialog_manager: DialogManager, **middleware_data):
                     req_date.strftime('%Y-%m-%d')
                 ]
             },
-            'req_type': 'with_approval'
+            # 'req_type': 'with_approval'
         }).sort('$natural', -1).limit(24))
         data = {'date': req_date_str, 'is_date': True}
         if len(queryset) == 0:

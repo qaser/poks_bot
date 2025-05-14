@@ -240,7 +240,6 @@ async def on_resource_act(callback, widget, manager: DialogManager):
         await manager.switch_to(Request.show_reject_info)
 
 
-# Здесь будет еще одна развилка!!!!!!!!!!!
 async def on_protocol(callback, widget, manager: DialogManager):
     protocol = widget.widget_id
     context = manager.current_context()
