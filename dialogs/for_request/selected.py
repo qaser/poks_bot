@@ -25,6 +25,23 @@ TIME_ERROR_MSG = (
 )
 
 
+async def is_holiday(target_date: dt.date) -> bool:
+    """Проверяет, является ли дата праздничным днём в России"""
+    year = target_date.year
+    url = f"https://isdayoff.ru/api/getdata?year={year}"
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                if response.status == 200:
+                    data = await response.text()
+                    # Данные возвращаются в виде строки с кодами для каждого дня года
+                    day_of_year = target_date.timetuple().tm_yday - 1
+                    return data[day_of_year] == '1'  # '1' - праздник/выходной
+    except Exception as e:
+        print(f"Ошибка при проверке праздников: {e}")
+    return False
+
+
 async def on_main_menu(callback, widget, manager: DialogManager):
     await manager.start(Request.select_station, mode=StartMode.RESET_STACK)
 
@@ -34,11 +51,18 @@ async def on_select_category(callback, widget, manager: DialogManager):
     if category == 'paths':
         await manager.switch_to(Request.paths_info)
     elif category == 'new_request':
-        await manager.switch_to(Request.select_station)
+        await manager.switch_to(Request.select_type_request)
     elif category == 'archive_requests':
         await manager.switch_to(Request.select_sorting_requests)
     elif category == 'inwork_requests':
         await manager.switch_to(Request.inwork_requests)
+
+
+async def on_select_type_request(callback, widget, manager: DialogManager):
+    context = manager.current_context()
+    req_type = widget.widget_id
+    context.dialog_data.update(req_type=req_type)
+    await manager.switch_to(Request.select_station)
 
 
 async def on_path_selected(callback, widget, manager: DialogManager):
@@ -100,50 +124,51 @@ async def on_shop_done(callback, widget, manager: DialogManager, shop):
 
 async def on_gpa_done(callback, widget, manager: DialogManager, gpa_num):
     context = manager.current_context()
+    req_type = context.dialog_data['req_type']
+
     context.dialog_data.update(gpa=gpa_num)
-    await manager.switch_to(Request.select_date)
-
-
-async def is_holiday(target_date: dt.date) -> bool:
-    """Проверяет, является ли дата праздничным днём в России"""
-    year = target_date.year
-    url = f"https://isdayoff.ru/api/getdata?year={year}"
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as response:
-                if response.status == 200:
-                    data = await response.text()
-                    # Данные возвращаются в виде строки с кодами для каждого дня года
-                    day_of_year = target_date.timetuple().tm_yday - 1
-                    return data[day_of_year] == '1'  # '1' - праздник/выходной
-    except Exception as e:
-        print(f"Ошибка при проверке праздников: {e}")
-    return False
+    if req_type == 'with_approval':
+        await manager.switch_to(Request.select_date)
+    else:
+        today = dt.datetime.now()
+        context.dialog_data.update(req_date=today.strftime('%d.%m.%Y'))
+        context.dialog_data.update(req_time=today.strftime('%H:%M'))
+        await manager.switch_to(Request.select_resource)
 
 
 async def on_select_date(callback, widget, manager: DialogManager, clicked_date):
     context = manager.current_context()
+    req_type = context.dialog_data['req_type']
     today = dt.datetime.now().date()
-    # Проверка на прошедшую дату
-    if clicked_date < today:
-        error_message = "❌ Нельзя выбрать прошедшую дату. Пожалуйста, выберите будущую дату."
-        await callback.answer(error_message, show_alert=True)
-        await manager.switch_to(Request.select_date)
-        return
-    # Проверка на выходные (суббота, воскресенье)
-    if clicked_date.weekday() in (5, 6):
-        error_message = "❌ Выбран выходной день (суббота/воскресенье). Пожалуйста, выберите рабочий день."
-        await callback.answer(error_message, show_alert=True)
-        await manager.switch_to(Request.select_date)
-        return
-    # Проверка на праздничный день
-    if await is_holiday(clicked_date):
-        error_message = "❌ Выбран праздничный день. Пожалуйста, выберите рабочий день."
-        await callback.answer(error_message, show_alert=True)
-        await manager.switch_to(Request.select_date)
-        return
-    # Если все проверки пройдены
-    req_date = clicked_date.strftime('%d.%m.%Y')
+    if req_type == 'with_approval':
+        # Проверка на прошедшую дату
+        if clicked_date < today:
+            error_message = "❌ Нельзя выбрать прошедшую дату. Пожалуйста, выберите будущую дату."
+            await callback.answer(error_message, show_alert=True)
+            await manager.switch_to(Request.select_date)
+            return
+        # Проверка на выходные (суббота, воскресенье)
+        if clicked_date.weekday() in (5, 6):
+            error_message = "❌ Выбран выходной день (суббота/воскресенье). Пожалуйста, выберите рабочий день."
+            await callback.answer(error_message, show_alert=True)
+            await manager.switch_to(Request.select_date)
+            return
+        # Проверка на праздничный день
+        if await is_holiday(clicked_date):
+            error_message = "❌ Выбран праздничный день. Пожалуйста, выберите рабочий день."
+            await callback.answer(error_message, show_alert=True)
+            await manager.switch_to(Request.select_date)
+            return
+        # Если все проверки пройдены
+        req_date = clicked_date.strftime('%d.%m.%Y')
+    else:
+        # Проверка на прошедшую дату
+        if clicked_date < today:
+            error_message = "❌ Нельзя выбрать прошедшую дату. Пожалуйста, выберите будущую дату."
+            await callback.answer(error_message, show_alert=True)
+            await manager.switch_to(Request.select_date)
+            return
+        req_date = clicked_date.strftime('%d.%m.%Y')
     context.dialog_data.update(req_date=req_date)
     await manager.switch_to(Request.select_time)
 
@@ -173,7 +198,39 @@ async def on_select_time(callback, widget, manager: DialogManager, time: str):
             return
     # Если проверки пройдены, сохраняем время
     context.dialog_data['req_time'] = time
-    await manager.switch_to(Request.input_info)
+    await manager.switch_to(Request.select_resource)
+
+
+async def on_resource(callback, widget, manager: DialogManager):
+    resource = widget.widget_id
+    context = manager.current_context()
+    context.dialog_data.update(resource=resource)
+    if resource == 'resource_yes':
+        await manager.switch_to(Request.select_resource_act)
+    elif resource == 'resource_no':
+        context.dialog_data.update(resource_act='Не требуется')
+        await manager.switch_to(Request.select_protocol)
+
+
+async def on_resource_act(callback, widget, manager: DialogManager):
+    resource_act = widget.widget_id
+    context = manager.current_context()
+    context.dialog_data.update(resource_act=resource_act)
+    if resource_act == 'resource_act_yes':
+        await manager.switch_to(Request.select_protocol)
+    elif resource_act == 'resource_act_no':
+        await manager.switch_to(Request.show_reject_info)
+
+
+# Здесь будет еще одна развилка!!!!!!!!!!!
+async def on_protocol(callback, widget, manager: DialogManager):
+    protocol = widget.widget_id
+    context = manager.current_context()
+    context.dialog_data.update(protocol=protocol)
+    if protocol == 'protocol_yes':
+        await manager.switch_to(Request.input_info)
+    elif protocol == 'protocol_no':
+        await manager.switch_to(Request.show_reject_info)
 
 
 async def on_input_info(callback, widget, manager: DialogManager, request_text):
@@ -200,7 +257,9 @@ async def on_confirm(callback, widget, manager: DialogManager):
     path_type = get_path_type(gpa_instance)
     path_instance = paths.find_one({'path_type': path_type})
     current_stage = 1
+    req_type = context.dialog_data['req_type']
     req_id = reqs.insert_one({
+        'req_type': req_type,
         'author_id': manager.event.from_user.id,
         'ks': context.dialog_data['station'],
         'num_gpa': context.dialog_data['gpa'],
@@ -213,6 +272,12 @@ async def on_confirm(callback, widget, manager: DialogManager):
         'request_datetime': request_datetime,
         'notification_datetime': request_datetime + dt.timedelta(hours=3),
         'is_complete': False,
+        'resource': 'Выработан' if context.dialog_data['resource'] == 'resource_yes' else 'Не выработан',
+        'resource_act': 'Есть' if context.dialog_data['resource_act'] == 'resource_act_yes' else 'Нет',
+        'protocol': 'Есть' if context.dialog_data['protocol'] == 'protocol_yes' else 'Нет',
+        'is_fail': False,
+        'fail_reason': '',
+        'reject_reason': '',
         'stages': {
             '1': {
                 'status': 'pending',
@@ -222,7 +287,14 @@ async def on_confirm(callback, widget, manager: DialogManager):
         }
     }).inserted_id
     await manager.switch_to(Request.request_finish)
-    await send_request_to_major(req_id, current_stage)
+    if req_type == 'with_approval':
+        await send_request_to_major(req_id, current_stage)
+    else:
+        reqs.update_one(
+            {'_id': req_id},
+            {'$set': {'is_complete': True}}
+        )
+        await send_information_to_major(req_id)
 
 
 async def on_selected_inwork_request(callback, widget, manager: DialogManager, req_id):
@@ -285,6 +357,37 @@ def get_path_type(gpa_instance):
         return 'ГПА с судовым приводом'
 
 
+async def send_information_to_major(req_id):
+    tz = timezone(const.TIME_ZONE)
+    req = reqs.find_one({'_id': req_id})
+    path_instance = paths.find_one({'_id': req['path_id']})
+    gpa_instance = gpa.find_one({'_id': req['gpa_id']})
+    author_name = (await bot.get_chat(req['author_id'])).full_name
+    stages = path_instance['stages']
+    info_text = (
+        '<b>Информация о запросе на пуск ГПА:</b>\n'
+        f"📅 Дата создания: {req['datetime'].astimezone(tz).strftime('%d.%m.%Y %H:%M')}\n"
+        f"🏭 Станция: {req['ks']}\n"
+        f"👤 Автор: {author_name}\n\n"
+        f"<b>Информация о ГПА:</b>\n"
+        f"Ст.№ ГПА: {gpa_instance['num_gpa']}\n"
+        f"Наименование ГПА: {gpa_instance['name_gpa']}\n"
+        f"Тип ГПА: {gpa_instance['type_gpa']}\n"
+        f"Тип нагнетателя: {gpa_instance['cbn_type']}\n"
+        f'МРР: {req["resource"]}\n'
+        f'Акт продления МРР: {req["resource_act"]}\n'
+        f'Протокол сдачи защит: {req["protocol"]}\n\n'
+        "<b>Планируемое время запуска:</b> с момента подачи заявки\n\n"
+        f"<b>Текст запроса:</b>\n<i>{req['text']}</i>\n\n"
+        'Данный запрос не требует согласования'
+    )
+    for major_id in stages.values():
+        try:
+            await bot.send_message(chat_id=major_id, text=info_text)
+        except Exception as err:
+            pass
+
+
 async def send_request_to_major(req_id, current_stage):
     req = reqs.find_one({'_id': req_id})
     path_instance = paths.find_one({'_id': req['path_id']})
@@ -334,13 +437,18 @@ async def build_req_text(req, gpa_instance, stages_text, author_name, new_req=Fa
         f"Ст.№ ГПА: {gpa_instance['num_gpa']}\n"
         f"Наименование ГПА: {gpa_instance['name_gpa']}\n"
         f"Тип ГПА: {gpa_instance['type_gpa']}\n"
-        f"Тип нагнетателя: {gpa_instance['cbn_type']}\n\n"
+        f"Тип нагнетателя: {gpa_instance['cbn_type']}\n"
+        f'МРР: {req["resource"]}\n'
+        f'Акт продления МРР: {req["resource_act"]}\n'
+        f'Протокол сдачи защит: {req["protocol"]}\n\n'
         f"<b>Планируемое время запуска:</b>\n{req['request_datetime'].strftime('%d.%m.%Y %H:%M')}\n\n"
         f"<b>Текст запроса:</b>\n<i>{req['text']}</i>\n\n"
         f"<b>Статус согласования:</b>\n{stages_text}\n"
     )
     request_text = f'<b>Новый запрос на пуск ГПА</b>\n{request_text}' if new_req else f'<b>Запрос на пуск ГПА</b>\n{request_text}'
     request_text = f'{request_text}Пожалуйста, согласуйте или отклоните запрос:' if new_req else request_text
+    if req['status'] == 'rejected':
+        request_text = f'{request_text}<b>Причина отклонения заявки:</b>\n<i>{req["reject_reason"]}</i>'
     return request_text
 
 
@@ -444,4 +552,4 @@ async def send_notify(req_id, gpa_instance, path, is_fallback=False, is_group=Tr
                 text=request_text
             )
     except Exception as e:
-        print(f"Ошибка при отправке уведомления: {e}")
+        pass

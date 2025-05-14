@@ -19,7 +19,7 @@ from handlers import (administrators, ao, archive, copy, edit, groups, iskra,
 from middlewares.admin_check import AdminCheckMiddleware
 from scheduler.scheduler_funcs import (clear_msgs, find_overdue_requests,
                                        send_backups, send_remainder,
-                                       send_work_time_reminder)
+                                       send_work_time_reminder, send_morning_summary)
 
 
 def get_peer_type_new(peer_id: int) -> str:
@@ -123,11 +123,19 @@ async def main():
         minute=30,
         timezone=const.TIME_ZONE
     )
+    scheduler.add_job(
+        send_morning_summary,
+        'cron',
+        day_of_week='mon-sun',
+        hour=12,
+        minute=0,
+        timezone=const.TIME_ZONE
+    )
     # задача, которая будет выполняться каждый час
     scheduler.add_job(
         find_overdue_requests,
         'cron',
-        minute=1,
+        minute=20,
         timezone=const.TIME_ZONE
     )
     scheduler.start()

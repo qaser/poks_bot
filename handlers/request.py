@@ -20,11 +20,16 @@ router = Router()
 dialog =  Dialog(
     windows.select_category_window(),
 
+    windows.select_type_request_window(),  # выбор типа запроса (без согласования или с согласованием)
     windows.stations_window(),
     windows.shops_window(),
     windows.gpa_window(),
     windows.date_window(),
     windows.time_window(),
+    windows.select_resource_window(),
+    windows.select_resource_act_window(),
+    windows.select_protocol_window(),
+    windows.show_reject_window(),
     windows.input_info_window(),
     windows.request_confirm_window(),
     windows.finish_window(),
@@ -98,7 +103,8 @@ async def process_reject_reason(message: Message, state: FSMContext, bot):
         f'stages.{current_stage}.datetime': dt.datetime.now(),
         f'stages.{current_stage}.major_id': user_id,
         f'stages.{current_stage}.reason': message.text,
-        'status': 'rejected'
+        'status': 'rejected',
+        'reject_reason': message.text
     }
     reqs.update_one({'_id': req_id}, {'$set': update_data})
     try:
@@ -148,43 +154,73 @@ async def handle_apply_request(call: CallbackQuery):
 
 
 @router.callback_query(F.data.startswith('launch_fail_'))
-async def handle_fail_launch(call: CallbackQuery):
+async def handle_fail_launch(call: CallbackQuery, state: FSMContext):
     _, _, req_id = call.data.split('_')
-    req_id = ObjectId(req_id)
-    reqs.update_one({'_id': req_id}, {'$set': {'is_complete': True}})
+    # await call.message.delete()
+    await state.update_data(req_id=req_id, message_to_delete=call.message.message_id)
+    await call.message.edit_text(
+        '❓ Укажите <u>причину</u>, почему пуск не был завершён:',
+        reply_markup=None
+    )
+    await state.set_state('waiting_fail_reason')
+
+
+@router.message(F.text, StateFilter("waiting_fail_reason"))
+async def process_reject_reason(message: Message, state: FSMContext, bot):
+    data = await state.get_data()
+    req_id = ObjectId(data['req_id'])
+    reason = message.text
+    reqs.update_one(
+        {'_id': req_id},
+        {'$set': {'is_complete': True, 'fail_reason': reason, 'is_fail': True}}
+    )
     req = reqs.find_one({'_id': req_id})
+    req_date = req['request_datetime'].strftime('%d.%m.%Y %H:%M')
     gpa_instance = gpa.find_one({'_id': req['gpa_id']})
-    stages = req['stages']
+    # Удаляем предыдущие сообщения
     try:
-        await bot.send_message(
-            chat_id=stages['2']['major_id'],
-            text=f'Пуск ГПА №{gpa_instance["num_gpa"]} ({req["ks"]}) не завершён.',
-            message_effect_id='5104858069142078462'
+        await bot.delete_message(
+            chat_id=message.chat.id,
+            message_id=data['message_to_delete']
         )
-    except:
-        pass
-    await call.message.delete()
+        await message.delete()
+    except Exception as e:
+        print(f"Ошибка при удалении сообщений: {e}")
+    stages = req['stages']
+    for stage in stages.values():
+        try:
+            await bot.send_message(
+                chat_id=stage['major_id'],
+                text=(
+                    f'🟠 Пуск <b>ГПА №{gpa_instance["num_gpa"]}</b> ({req["ks"]}), '
+                    f'который планировался на <u>{req_date}</u>, <b>не завершён</b> по причине:\n<i>{reason}</i>'
+                ),
+            )
+        except:
+            pass
+    await message.answer("Отправлено. Специалисты ПОЭКС уведомлены о причине.")
+    await state.clear()
 
 
 @router.callback_query(F.data.startswith('launch_success_'))
 async def handle_success_launch(call: CallbackQuery):
     _, _, req_id = call.data.split('_')
+    await call.message.delete()
     req_id = ObjectId(req_id)
     req = reqs.find_one({'_id': req_id})
     reqs.update_one({'_id': req_id}, {'$set': {'is_complete': True}})
+    req_date = req['request_datetime'].strftime('%d.%m.%Y %H:%M')
     gpa_instance = gpa.find_one({'_id': req['gpa_id']})
     stages = req['stages']
     for stage in stages.values():
-        major_id = stage['major_id']
         try:
             await bot.send_message(
-                chat_id=major_id,
+                chat_id=stage['major_id'],
                 text=(
-                    f'Пользователь подтвердил, что пуск ГПА №{gpa_instance["num_gpa"]} '
-                    f'({req["ks"]}) завершён успешно'
+                    f'🟢 Пользователь подтвердил, что пуск <b>ГПА №{gpa_instance["num_gpa"]}</b> '
+                    f'({req["ks"]}), который планировался на <u>{req_date}</u> завершён успешно'
                 ),
                 message_effect_id='5046509860389126442'
             )
         except:
             pass
-    await call.message.delete()

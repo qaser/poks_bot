@@ -37,6 +37,21 @@ def category_buttons():
     )
 
 
+def type_request_buttons():
+    return Column(
+        Button(
+            Const('✅ C согласованием ПОЭКС'),
+            id='with_approval',
+            on_click=selected.on_select_type_request,
+        ),
+        Button(
+            Const('⚡ Без согласования ПОЭКС'),
+            id='without_approval',
+            on_click=selected.on_select_type_request,
+        )
+    )
+
+
 def paginated_stations(id_pager, on_click):
     return ScrollingGroup(
         Select(
@@ -92,6 +107,23 @@ def time_btns(on_click):
                 Const(time),
                 id=f"time_{time.replace(':', '')}",
                 on_click=partial(on_click, time=time),
+                when='with_approval'
+            )
+        )
+    return Group(*buttons, id='time_btns', width=2)
+
+
+def time_btns_ext(on_click):
+    # Генерируем кнопки с временами (00:00 - 23:00)
+    times = [f'{hour}:00' for hour in range(0, 24, 2)]
+    buttons = []
+    for time in times:
+        buttons.append(
+            Button(
+                Const(time),
+                id=f"time_{time.replace(':', '')}",
+                on_click=partial(on_click, time=time),
+                when='without_approval'
             )
         )
     return Group(*buttons, id='time_btns', width=2)

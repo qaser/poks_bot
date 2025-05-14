@@ -11,6 +11,16 @@ from dialogs.for_request.selected import build_req_text, build_stages_text
 from utils.constants import KS, PATH_TYPE, REQUEST_STATUS
 
 
+async def get_type_request(dialog_manager: DialogManager, **middleware_data):
+    context = dialog_manager.current_context()
+    req_type = context.dialog_data['req_type']
+    without_approval = True if req_type == 'without_approval' else False
+    return {
+        'without_approval': without_approval,
+        'with_approval': not without_approval
+    }
+
+
 async def get_stations(dialog_manager: DialogManager, **middleware_data):
     return {'stations': KS}
 
@@ -30,11 +40,27 @@ async def get_gpa(dialog_manager: DialogManager, **middleware_data):
     return {'gpa': queryset}
 
 
+async def get_date_options(dialog_manager: DialogManager, **middleware_data):
+    context = dialog_manager.current_context()
+    today = dt.datetime.now()
+    tomorrow = today + dt.timedelta(days=1)
+    type_req = context.dialog_data['req_type']
+    calendar_on = True if type_req == 'with_approval' else False
+    return {
+        'calendar_on': calendar_on,
+        'calendar_off': not calendar_on,
+        'today': today.strftime('%d.%m.%Y'),
+        'tomorrow': tomorrow.strftime('%d.%m.%Y'),
+    }
+
+
 async def get_request_info(dialog_manager: DialogManager, **middleware_data):
     context = dialog_manager.current_context()
     num_gpa = context.dialog_data['gpa']
     station = context.dialog_data['station']
+    req_type = context.dialog_data['req_type']
     gpa_instance = gpa.find_one({'ks': station, 'num_gpa': num_gpa})
+    without_approval = True if req_type == 'without_approval' else False
     return {
         'station': station,
         'gpa_num': num_gpa,
@@ -42,6 +68,8 @@ async def get_request_info(dialog_manager: DialogManager, **middleware_data):
         'request_text': context.dialog_data['request_text'],
         'req_date': context.dialog_data['req_date'],
         'req_time': context.dialog_data['req_time'],
+        'without_approval': without_approval,
+        'with_approval': not without_approval
     }
 
 
@@ -50,9 +78,9 @@ async def get_inwork_requests(dialog_manager: DialogManager, **middleware_data):
     admin = admins.find_one({'user_id': user_id})
     is_admin = bool(admin)
     if is_admin:
-        queryset = list(reqs.find({'status': 'inwork'}))
+        queryset = list(reqs.find({'status': 'inwork', 'req_type': 'with_approval'}))
     else:
-        queryset = list(reqs.find({'status': 'inwork', 'author_id': user_id}))
+        queryset = list(reqs.find({'status': 'inwork', 'author_id': user_id, 'req_type': 'with_approval'}))
     res = [
         {
             'name': f"{q['ks']} - ГПА{gpa.find_one({'_id': q['gpa_id']})['num_gpa']}",
@@ -82,12 +110,12 @@ async def get_single_request(dialog_manager: DialogManager, **middleware_data):
 
 
 async def get_statuses(dialog_manager: DialogManager, **middleware_data):
-    statuses = reqs.find({}).distinct('status')
+    statuses = reqs.find({'req_type': 'with_approval'}).distinct('status')
     return {'statuses': [(status, REQUEST_STATUS[status]) for status in statuses]}
 
 
 async def get_ks(dialog_manager: DialogManager, **middleware_data):
-    ks = reqs.find({}).distinct('ks')
+    ks = reqs.find({'req_type': 'with_approval'}).distinct('ks')
     return {'ks': ks}
 
 
@@ -96,11 +124,11 @@ async def get_requests(dialog_manager: DialogManager, **middleware_data):
     sorting_order = context.dialog_data['sorting_order']
     if sorting_order == 'ks':
         ks = context.dialog_data['ks']
-        queryset = list(reqs.find({'ks': ks}).sort('$natural', -1).limit(24))
+        queryset = list(reqs.find({'ks': ks,'req_type': 'with_approval'}).sort('$natural', -1).limit(24))
         data = {'ks': ks, 'is_ks': True, 'not_empty': True}
     elif sorting_order == 'status':
         status = context.dialog_data['status']
-        queryset = list(reqs.find({'status': status}).sort('$natural', -1).limit(24))
+        queryset = list(reqs.find({'status': status, 'req_type': 'with_approval'}).sort('$natural', -1).limit(24))
         data = {'status': REQUEST_STATUS[status], 'is_status': True, 'not_empty': True}
     elif sorting_order == 'date':
         req_date_str = context.dialog_data.get('date')
@@ -111,7 +139,8 @@ async def get_requests(dialog_manager: DialogManager, **middleware_data):
                     {'$dateToString': {'format': '%Y-%m-%d', 'date': '$request_datetime'}},
                     req_date.strftime('%Y-%m-%d')
                 ]
-            }
+            },
+            'req_type': 'with_approval'
         }).sort('$natural', -1).limit(24))
         data = {'date': req_date_str, 'is_date': True}
         if len(queryset) == 0:
@@ -181,7 +210,8 @@ async def get_majors_and_stages(dialog_manager: DialogManager, **middleware_data
         'num_stages': num_stages,
         'stages_info': stages_info,
         'complete': len(majors) == num_stages,
-        'majors': list(admins.find({'user_id': {'$ne': int(MY_TELEGRAM_ID)}}))
+        # 'majors': list(admins.find({'user_id': {'$ne': int(MY_TELEGRAM_ID)}}))
+        'majors': list(admins.find({}))
     }
     return data
 

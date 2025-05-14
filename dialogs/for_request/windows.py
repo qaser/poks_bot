@@ -21,10 +21,24 @@ SHOPS_TEXT = 'Выберите номер компрессорного цеха'
 GPA_TEXT = 'Выберите номер ГПА'
 INPUT_TEXT = 'Введите дополнительную информацию о Вашей заявке в тексте сообщения ниже и нажмите кнопку ➤'
 FINISH_TEXT = 'Запрос отправлен на согласование. Вам придёт сообщение с результатом согласования.'
+FINISH_TEXT_INFO = 'Запрос отправлен. Информация направлена специалистам ПОЭКС'
 PATHS_EMPTY = 'Правила согласования заявок не установлены. Вы можете установить их кнопками ниже:'
 PATH_TUNE = 'Вы настраиваете правила согласования по направлению:'
 DATE_TEXT = 'Выберите дату запланированного пуска ГПА'
 TIME_TEXT = 'Выберите время запланированного пуска ГПА'
+RESOURCE_TEXT = '🛠️ У выбранного ГПА выработан межремонтный ресурс (МРР)?'
+RESOURCE_ACT_TEXT = '📝 Имеется ли согласованный ПОЭКС Акт продления МРР?'
+PROTOCOL_TEXT = '🛡️ Имеется ли Протокол сдачи защит перед пуском?'
+REJECT_TEXT = '❗ Заявка при таких условиях не может быть согласована'
+TYPE_REQUEST_TEXT = (
+    'Выберите тип заявки:\n\n'
+    '<b>«✅ С согласованием ПОЭКС»</b> – стандартный процесс подачи заявки.\n'
+    '<b>«⚡ Без согласования ПОЭКС»</b> – только для экстренных случаев '
+    '(аварийные ситуации, ночные пуски по команде ДС и т.п.). '
+    'Специалисты ПОЭКС будут уведомлены о данной заявке.\n\n'
+    '⚠️ Если заявка не требует срочного исполнения, выбирайте вариант <b>с согласованием</b> – '
+    'это поможет избежать дополнительных уточнений и задержек.'
+)
 
 
 async def exit_click(callback, button, dialog_manager):
@@ -49,6 +63,16 @@ def select_category_window():
         keyboards.category_buttons(),
         Button(Const(texts.EXIT_BUTTON), on_click=exit_click, id='exit'),
         state=Request.select_category,
+        getter=getters.get_users_info
+    )
+
+
+def select_type_request_window():
+    return Window(
+        Const(TYPE_REQUEST_TEXT),
+        keyboards.type_request_buttons(),
+        Back(Const(texts.BACK_BUTTON)),
+        state=Request.select_type_request,
         getter=getters.get_users_info
     )
 
@@ -94,9 +118,12 @@ def date_window():
         CustomCalendar(
             id='calendar',
             on_click=selected.on_select_date,
+            # when='calendar_on'
         ),
+        # keyboards.date_btns(),
         Back(Const(texts.BACK_BUTTON)),
         state=Request.select_date,
+        # getter=getters.get_date_options
     )
 
 
@@ -104,15 +131,88 @@ def time_window():
     return Window(
         Const(TIME_TEXT),
         keyboards.time_btns(selected.on_select_time),
+        keyboards.time_btns_ext(selected.on_select_time),
         Back(Const(texts.BACK_BUTTON)),
         state=Request.select_time,
+        getter=getters.get_type_request
+    )
+
+
+def select_resource_window():
+    return Window(
+        Const(RESOURCE_TEXT),
+        Row(
+            Button(
+                Const('✔️ Да'),
+                'resource_yes',
+                on_click=selected.on_resource,
+            ),
+            Button(
+                Const('❌ Нет'),
+                'resource_no',
+                on_click=selected.on_resource,
+            ),
+            id='resource_btns'
+        ),
+        Back(Const(texts.BACK_BUTTON)),
+        state=Request.select_resource,
+    )
+
+
+def select_resource_act_window():
+    return Window(
+        Const(RESOURCE_ACT_TEXT),
+        Row(
+            Button(
+                Const('✔️ Да'),
+                'resource_act_yes',
+                on_click=selected.on_resource_act,
+            ),
+            Button(
+                Const('❌ Нет'),
+                'resource_act_no',
+                on_click=selected.on_resource_act,
+            ),
+            id='resource_act_btns'
+        ),
+        Back(Const(texts.BACK_BUTTON)),
+        state=Request.select_resource_act,
+    )
+
+
+def select_protocol_window():
+    return Window(
+        Const(PROTOCOL_TEXT),
+        Row(
+            Button(
+                Const('✔️ Да'),
+                'protocol_yes',
+                on_click=selected.on_protocol,
+            ),
+            Button(
+                Const('❌ Нет'),
+                'protocol_no',
+                on_click=selected.on_protocol,
+            ),
+            id='protocol_btns'
+        ),
+        Back(Const(texts.BACK_BUTTON)),
+        state=Request.select_protocol,
+    )
+
+
+def show_reject_window():
+    return Window(
+        Const(REJECT_TEXT),
+        Button(Const(texts.EXIT_BUTTON), on_click=return_main_menu, id='main_menu'),
+        state=Request.show_reject_info,
     )
 
 
 def input_info_window():
     return Window(
         Const(INPUT_TEXT),
-        Back(Const(texts.BACK_BUTTON)),
+        Button(Const(texts.BACK_BUTTON), on_click=return_main_menu, id='main_menu'),
         TextInput(
             id='request_info',
             on_success=selected.on_input_info,
@@ -124,9 +224,13 @@ def input_info_window():
 def request_confirm_window():
     return Window(
         Format('<u>Вы выбрали:</u>\n{station}\nГПА ст.№ {gpa_num}\n'),
-        Format('<u>Срок запуска ГПА:</u>\n{req_date} - {req_time}\n'),
+        Format(
+            '<u>Срок запуска ГПА:</u>\n{req_date} - {req_time}\n',
+            when='with_approval'
+        ),
         Format('<u>Текст заявки:</u>\n<i>{request_text}</i>'),
-        Const('\nОтправить запрос на согласование?'),
+        Const('\nОтправить запрос на согласование?', when='with_approval'),
+        Const('\nОтправить информацию о пуске ГПА?', when='without_approval'),
         Row(
             Back(Const(texts.BACK_BUTTON)),
             Button(
@@ -143,9 +247,11 @@ def request_confirm_window():
 
 def finish_window():
     return Window(
-        Const(FINISH_TEXT),
+        Const(FINISH_TEXT, when='with_approval'),
+        Const(FINISH_TEXT_INFO, when='without_approval'),
         Button(Const(texts.EXIT_BUTTON), on_click=exit_click, id='exit_complete'),
         state=Request.request_finish,
+        getter=getters.get_type_request
     )
 
 

@@ -5,6 +5,7 @@ import os
 from aiogram.exceptions import AiogramError
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from pytz import timezone
+from collections import defaultdict
 
 import utils.constants as const
 from config.bot_config import bot
@@ -116,9 +117,10 @@ async def find_overdue_requests():
         gpa_instance = gpa.find_one({'_id': req['gpa_id']})
         msg_text=(
             f'Ваш запрос от {prime_date} на пуск ГПА №{gpa_instance["num_gpa"]} ({req["ks"]}) '
-            f'был согласован. Согласованное время запуска {req_date} со временем, отведенным на пуск '
-            'прошло.\nЕсли запуск ГПА завершён успешно нажмите кнопку "Пуск завершён".\n'
-            'Если во время запуска возникли проблемы нажмите "Пуск не завершён"'
+            f'был согласован. Согласованное время запуска <u>{req_date}</u> со временем, отведенным на пуск '
+            'прошло.\nЕсли запуск ГПА завершён успешно нажмите кнопку <b>"Пуск завершён"</b>.\n'
+            'Если во время запуска возникли проблемы нажмите <b>"Пуск не завершён"</b>,'
+            'при этом необходимо будет указать причину неудачного запуска.'
         )
         kb = InlineKeyboardBuilder()
         kb.button(text='🔴 Пуск не завершён', callback_data=f'launch_fail_{req["_id"]}')
@@ -135,3 +137,36 @@ async def find_overdue_requests():
                 chat_id=MY_TELEGRAM_ID,
                 text='🔴 Не отправлено сообщение с кнопками подтверждения пуска'
             )
+
+
+async def send_morning_summary():
+    today = dt.datetime.now().date()
+    req_filter = {
+        'request_datetime': {
+            '$gte': dt.datetime.combine(today, dt.time.min),
+            '$lt': dt.datetime.combine(today, dt.time.max)
+        },
+        'status': 'approved',
+        'is_complete': False,
+        'is_fail': False
+    }
+    queryset = list(reqs.find(req_filter).sort('request_datetime', -1))
+    if not queryset:
+        # return
+        print(queryset)
+    user_notifications = defaultdict(list)
+    for req in queryset:
+        # Получаем данные ГПА
+        gpa_data = gpa.find_one({'_id': req['gpa_id']})
+        num_gpa = gpa_data.get('num_gpa', 'N/A')
+        req_time = req['request_datetime'].strftime('%H:%M')
+        req_line = f"{req['ks']} <b>ГПА №{num_gpa}</b> - {req_time}"
+        for stage in req.get('stages', {}).values():
+            if 'major_id' in stage:
+                user_notifications[stage['major_id']].append(req_line)
+    for user_id, requests in user_notifications.items():
+        try:
+            message = "<u>Запланированные на сегодня пуски:</u>\n" + "\n".join(requests)
+            await bot.send_message(chat_id=user_id, text=message)
+        except Exception as e:
+            print(f"Не удалось отправить уведомление пользователю {user_id}: {e}")

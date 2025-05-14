@@ -35,17 +35,22 @@ paths {
 }
 
 reqs {
+    req_type: [with-approval, without-approval]
     author_id: user_id,
     ks: станция,
     gpa_id: gpa_id,
+    gpa_num: номер гпа
     datetime: datetime,
     text: text
     path_id: path_id,
-    status: [inwork, approved, reject]
+    status: [inwork, approved, rejected]
+    reject_reason: причина отклонения
     current_stage: 2,
-    request_datetime: datetime,
+    request_datetime: datetime, - дата на которую делается запрос
     notification_datetime: datetime - время отправки уведомления о успешности пуска ГПА
     is_complete: False/True  -  при успешном пуске
+    is_fail: False/True
+    fail_reason: причина неудавшегося пуска
     stages {
         '1': {
             datatime: datetime,
