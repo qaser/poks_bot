@@ -190,7 +190,7 @@ async def main():
     )
     await setup_bot_commands(bot)
     # await send_morning_report()
-    await send_evening_report()
+    # await send_evening_report()
     setup_dialogs(dp)
     await app.start()
     await dp.start_polling(bot)

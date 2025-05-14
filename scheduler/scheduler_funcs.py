@@ -11,7 +11,7 @@ import utils.constants as const
 from config.bot_config import bot
 from config.mail_config import (ADMIN_EMAIL, IMAP_MAIL_SERVER, MAIL_LOGIN,
                                 MAIL_PASS)
-from config.mongo_config import groups, msgs, reqs, users, gpa
+from config.mongo_config import groups, msgs, reqs, users, gpa, paths
 from config.telegram_config import (EXPLOIT_GROUP_ID, MY_TELEGRAM_ID,
                                     SPCH_THREAD_ID)
 from utils.backup_db import send_dbs_mail
@@ -20,6 +20,12 @@ from utils.get_mail import get_letters
 SPCH_TIME_WORK_MSG = ('В срок до 12:00 текущего дня прошу выложить фактическую наработку за прошедший месяц.\n\n'
                       'Пример:\n\nКС «Примерная»:\nГПА 12 - 720\nГПА 24 - 9\n\n'
                       'Соблюдайте форму примера для корректной автоматической обработки данных')
+TYPE_ORDER = [
+    'ГПА с авиа. приводом',
+    'ГПА с судовым приводом',
+    'Стационарные ГПА',
+    'Стационарные ГПА (ГТК-10-4)'
+]
 
 
 async def clear_msgs():
@@ -179,15 +185,7 @@ async def send_morning_report():
 
     # Формируем итоговый отчет
     report_lines = []
-
-    # Порядок вывода типов ГПА в отчете
-    type_order = [
-        'ГПА с авиа. приводом',
-        'ГПА с судовым приводом',
-        'Стационарные ГПА',
-        'Стационарные ГПА (ГТК-10-4)'
-    ]
-    for gpa_type in type_order:
+    for gpa_type in TYPE_ORDER:
         if gpa_type in gpa_types:
             report_lines.append(f"<b>{gpa_type}</b>:")
             report_lines.extend(gpa_types[gpa_type])
@@ -197,10 +195,13 @@ async def send_morning_report():
     report_text = "\n".join(report_lines)
     # Добавляем заголовок с текущей датой
     full_report = f"<u>Отчет по запланированным пускам ГПА на {today.strftime('%d.%m.%Y')}</u>\n{report_text}"
-    await bot.send_message(
-        chat_id=MY_TELEGRAM_ID,
-        text=full_report,
-    )
+    admin_ids = get_unique_admin_ids()
+    for admin_id in admin_ids:
+        try:
+            await bot.send_message(chat_id=admin_id, text=full_report)
+        except Exception as err:
+            await bot.send_message(chat_id=MY_TELEGRAM_ID, text=str(err))
+    await bot.send_message(chat_id=MY_TELEGRAM_ID, text=full_report)
 
 
 async def send_evening_report():
@@ -252,13 +253,7 @@ async def send_evening_report():
     # Формируем итоговый отчет
     report_lines = []
     # Порядок вывода типов ГПА в отчете
-    type_order = [
-        'ГПА с авиа. приводом',
-        'ГПА с судовым приводом',
-        'Стационарные ГПА',
-        'Стационарные ГПА (ГТК-10-4)'
-    ]
-    for gpa_type in type_order:
+    for gpa_type in TYPE_ORDER:
         if gpa_type in gpa_types:
             report_lines.append(f"<b>{gpa_type}</b>:")
             report_lines.extend(gpa_types[gpa_type])
@@ -272,7 +267,25 @@ async def send_evening_report():
         f"<u>Отчет по пускам ГПА за {today.strftime('%d.%m.%Y')}</u>\n"
         f"{report_text}"
     )
-    await bot.send_message(
-        chat_id=MY_TELEGRAM_ID,
-        text=full_report,
-    )
+    admin_ids = get_unique_admin_ids()
+    for admin_id in admin_ids:
+        try:
+            await bot.send_message(chat_id=admin_id, text=full_report)
+        except Exception as err:
+            await bot.send_message(chat_id=MY_TELEGRAM_ID, text=str(err))
+    await bot.send_message(chat_id=MY_TELEGRAM_ID, text=full_report)
+
+
+def get_unique_admin_ids():
+    pipeline = [
+        # Разворачиваем массив stages
+        {'$project': {'stages': {'$objectToArray': '$stages'}}},
+        {'$unwind': '$stages'},
+        # Группируем по значениям stages.v (admin_id)
+        {'$group': {'_id': '$stages.v'}},
+        # Получаем только уникальные значения
+        {'$group': {'_id': None, 'admin_ids': {'$addToSet': '$_id'}}},
+        {'$project': {'_id': 0, 'admin_ids': 1}}
+    ]
+    result = list(paths.aggregate(pipeline))
+    return result[0]['admin_ids'] if result else []
