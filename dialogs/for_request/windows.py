@@ -1,5 +1,5 @@
 from aiogram_dialog import Window
-from aiogram_dialog.widgets.input import TextInput
+from aiogram_dialog.widgets.input import TextInput, MessageInput
 from aiogram_dialog.widgets.kbd import (Back, Button, CurrentPage, NextPage,
                                         PrevPage, Row)
 from aiogram_dialog.widgets.text import Const, Format, Multi
@@ -8,6 +8,7 @@ import utils.constants as texts
 from config.pyrogram_config import app
 from dialogs.custom_widgets.custom_calendar import CustomCalendar
 from dialogs.for_request.states import Request
+from aiogram.types import ContentType
 
 from . import getters, keyboards, selected
 
@@ -29,7 +30,21 @@ TIME_TEXT = '🕒 Выберите время запланированного �
 EPB_TEXT = '📑 У выбранного ГПА есть действующее заключение экпертизы промышленной безопасности (ЭПБ)?'
 RESOURCE_TEXT = '🛠️ У выбранного ГПА выработан межремонтный ресурс (МРР)?'
 RESOURCE_ACT_TEXT = '📝 Имеется ли согласованный ПОЭКС Акт продления МРР?'
+RESOURCE_ACT_FILE_TEXT = (
+    '💾 Отправьте скан-копию <u>согласованного</u> Акта продления МРР выбрав файл '
+    'и нажав кнопку ➤\n\n<i>💡 Можно отправить фото или файл .pdf</i>'
+)
+OUT_RESOURCE_REASON_TEXT = (
+    'Эксплуатация ГПА без продления МРР не допускается. Если Вам <u>необходимо</u> '
+    'пустить этот ГПА введите обоснование в тексте сообщения ниже и нажмите кнопку ➤'
+)
 PROTOCOL_TEXT = '🛡️ Имеется ли Протокол сдачи защит перед пуском?'
+PROTOCOL_FILE_TEXT = (
+    '💾 Отправьте скан-копию Протокола сдачи защит выбрав файл и нажав кнопку ➤\n\n'
+    '<i>💡 Можно отправить фото или файл .pdf</i>'
+)
+CARD_TEXT = '📑 Имеется ли Карта подготовки ГПА к пуску?'
+CARD_FILE_TEXT = '💾 Отправьте скан-копию Карты подготовки ГПА к пуску выбрав файл и нажав кнопку ➤\n\n<i>💡 Можно отправить фото или файл .pdf</i>'
 REJECT_TEXT = '❗ Заявка при таких условиях не может быть согласована'
 TYPE_REQUEST_TEXT = (
     'Выберите тип заявки:\n\n'
@@ -140,12 +155,9 @@ def date_window():
         CustomCalendar(
             id='calendar',
             on_click=selected.on_select_date,
-            # when='calendar_on'
         ),
-        # keyboards.date_btns(),
         Back(Const(texts.BACK_BUTTON)),
         state=Request.select_date,
-        # getter=getters.get_date_options
     )
 
 
@@ -206,6 +218,38 @@ def select_resource_act_window():
     )
 
 
+def input_resource_act_file_window():
+    return Window(
+        Const(RESOURCE_ACT_FILE_TEXT),
+        MessageInput(
+            selected.on_resource_act_file,
+            content_types=[ContentType.DOCUMENT, ContentType.PHOTO]
+        ),
+        Button(
+            Const(texts.BACK_BUTTON),
+            on_click=selected.return_to_resource_act,
+            id='return_to_resource_act'
+        ),
+        state=Request.input_resource_act_file,
+    )
+
+
+def input_out_of_resource_reason_window():
+    return Window(
+        Const(OUT_RESOURCE_REASON_TEXT),
+        Button(
+            Const(texts.BACK_BUTTON),
+            on_click=selected.return_to_resource_act,
+            id='return_to_resource_act'
+        ),
+        TextInput(
+            id='out_of_resource_reason',
+            on_success=selected.on_input_resource_reason,
+        ),
+        state=Request.input_out_of_resource_reason,
+    )
+
+
 def select_protocol_window():
     return Window(
         Const(PROTOCOL_TEXT),
@@ -222,8 +266,49 @@ def select_protocol_window():
             ),
             id='protocol_btns'
         ),
-        Back(Const(texts.BACK_BUTTON)),
+        Button(
+            Const(texts.BACK_BUTTON),
+            on_click=selected.return_to_previous_state,
+            id='return_to_resource_act'
+        ),
         state=Request.select_protocol,
+    )
+
+
+def input_protocol_file_window():
+    return Window(
+        Const(PROTOCOL_FILE_TEXT),
+        MessageInput(
+            selected.on_protocol_act_file,
+            content_types=[ContentType.DOCUMENT, ContentType.PHOTO]
+        ),
+        Back(Const(texts.BACK_BUTTON)),
+        state=Request.input_protocol_file,
+    )
+
+
+def select_card_window():
+    return Window(
+        Const(CARD_TEXT),
+        Row(
+            Button(Const('✔️ Да'), 'card_yes', on_click=selected.on_card),
+            Button(Const('❌ Нет'), 'card_no', on_click=selected.on_card),
+            id='protocol_btns'
+        ),
+        # Button(Const(texts.BACK_BUTTON), on_click=selected.return_to, id='return_to'),
+        state=Request.select_card,
+    )
+
+
+def input_card_file_window():
+    return Window(
+        Const(CARD_FILE_TEXT),
+        MessageInput(
+            selected.on_card_file,
+            content_types=[ContentType.DOCUMENT, ContentType.PHOTO]
+        ),
+        Back(Const(texts.BACK_BUTTON)),
+        state=Request.input_card_file,
     )
 
 

@@ -1,4 +1,5 @@
 import datetime as dt
+import random
 
 import aiohttp
 from bson import ObjectId
@@ -6,6 +7,8 @@ from pytz import timezone
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram_dialog import DialogManager, StartMode
+from aiogram.fsm.state import State
+from aiogram.types import PhotoSize
 
 import utils.constants as const
 from config.bot_config import bot
@@ -13,6 +16,8 @@ from config.mongo_config import gpa, paths, reqs
 from config.pyrogram_config import app
 from config.telegram_config import BOT_ID, EXPLOIT_GROUP_ID, MY_TELEGRAM_ID
 from dialogs.for_request.states import Request
+from aiogram_dialog import ShowMode
+
 
 DATE_ERROR_MSG = (
     'Выбранная дата уже прошла.\n'
@@ -23,6 +28,13 @@ TIME_ERROR_MSG = (
     'Пожалуйста, выберите время на час позже текущего.\n'
     'Если ни одно время не подходит, то запланируйте пуск на следующий день.'
 )
+STATE_MAPPING = {
+    "Request:select_resource": Request.select_resource,
+    "Request:select_resource_act": Request.select_resource_act,
+    "Request:input_resource_act_file": Request.input_resource_act_file,
+    "Request:input_out_of_resource_reason": Request.input_out_of_resource_reason,
+    "Request:select_protocol": Request.select_protocol,
+}
 
 
 async def is_holiday(target_date: dt.date) -> bool:
@@ -53,6 +65,18 @@ async def return_from_resource(callback, widget, manager: DialogManager):
         await manager.switch_to(Request.select_time)
     else:
         await manager.switch_to(Request.select_epb)
+
+
+async def return_to_resource_act(callback, widget, manager: DialogManager):
+    await manager.switch_to(Request.select_resource_act)
+
+
+async def return_to_previous_state(callback, button, manager: DialogManager):
+    previous_state_str = manager.dialog_data.get("previous_state")
+    if previous_state_str and previous_state_str in STATE_MAPPING:
+        await manager.switch_to(STATE_MAPPING[previous_state_str])
+    else:
+        await manager.back()
 
 
 async def on_select_category(callback, widget, manager: DialogManager):
@@ -227,6 +251,7 @@ async def on_resource(callback, widget, manager: DialogManager):
         await manager.switch_to(Request.select_resource_act)
     elif resource == 'resource_no':
         context.dialog_data.update(resource_act='Не требуется')
+        manager.dialog_data["previous_state"] = str(Request.select_resource.state)
         await manager.switch_to(Request.select_protocol)
 
 
@@ -234,36 +259,126 @@ async def on_resource_act(callback, widget, manager: DialogManager):
     resource_act = widget.widget_id
     context = manager.current_context()
     context.dialog_data.update(resource_act=resource_act)
+    # if resource_act == 'resource_act_yes':
+    #     await manager.switch_to(Request.input_resource_act_file)
+    # elif resource_act == 'resource_act_no':
+    #     await manager.switch_to(Request.input_out_of_resource_reason)
     if resource_act == 'resource_act_yes':
-        await manager.switch_to(Request.select_protocol)
+        if random.random() < 0.5:
+            await manager.switch_to(Request.input_resource_act_file)
+        else:
+            manager.dialog_data["previous_state"] = str(Request.select_resource_act.state)
+            await manager.switch_to(Request.select_protocol)
     elif resource_act == 'resource_act_no':
-        await manager.switch_to(Request.show_reject_info)
+        await manager.switch_to(Request.input_out_of_resource_reason)
+
+
+async def on_resource_act_file(message, message_input, manager):
+    manager.show_mode = ShowMode.DELETE_AND_SEND
+    if message.document:
+        file_id = message.document.file_id
+        manager.dialog_data["resource_file_id"] = file_id
+        manager.dialog_data["resource_file_type"] = 'file'
+        await message.answer("📎 Файл загружен.")
+    elif message.photo:
+        photo: PhotoSize = message.photo[-1]  # самое большое фото
+        file_id = photo.file_id
+        manager.dialog_data["resource_file_id"] = file_id
+        manager.dialog_data["resource_file_type"] = 'photo'
+        await message.answer("📷 Фото загружено.")
+    else:
+        await message.answer("⚠️ Пожалуйста, загрузите документ или фото.")
+        return
+    manager.dialog_data["previous_state"] = str(Request.input_resource_act_file.state)
+    await manager.switch_to(Request.select_protocol)
+
+
+async def on_input_resource_reason(callback, widget, manager: DialogManager, reason_text):
+    context = manager.current_context()
+    context.dialog_data.update(out_of_resource_reason_text=reason_text)
+    await delete_callback_message(callback)
+    manager.dialog_data["previous_state"] = str(Request.input_out_of_resource_reason.state)
+    await manager.switch_to(Request.select_protocol)
 
 
 async def on_protocol(callback, widget, manager: DialogManager):
     protocol = widget.widget_id
     context = manager.current_context()
     context.dialog_data.update(protocol=protocol)
+    # if protocol == 'protocol_yes':
+    #     await manager.switch_to(Request.input_protocol_file)
+    # elif protocol == 'protocol_no':
+    #     await manager.switch_to(Request.show_reject_info)
     if protocol == 'protocol_yes':
-        await manager.switch_to(Request.input_info)
+        if random.random() < 0.25:
+            await manager.switch_to(Request.input_protocol_file)
+        else:
+            # manager.dialog_data["previous_state"] = str(Request.select_resource_act.state)
+            await manager.switch_to(Request.select_card)
     elif protocol == 'protocol_no':
         await manager.switch_to(Request.show_reject_info)
+
+
+async def on_protocol_act_file(message, message_input, manager):
+    manager.show_mode = ShowMode.DELETE_AND_SEND
+    if message.document:
+        file_id = message.document.file_id
+        manager.dialog_data["protocol_file_id"] = file_id
+        manager.dialog_data["protocol_file_type"] = 'file'
+        await message.answer("📎 Файл загружен.")
+    elif message.photo:
+        photo: PhotoSize = message.photo[-1]  # самое большое фото
+        file_id = photo.file_id
+        manager.dialog_data["protocol_file_id"] = file_id
+        manager.dialog_data["protocol_file_type"] = 'photo'
+        await message.answer('📷 Фото загружено.')
+    else:
+        await message.answer('⚠️ Пожалуйста, загрузите документ или фото.')
+        return
+    manager.dialog_data["previous_state"] = str(Request.input_protocol_file.state)
+    await manager.switch_to(Request.select_card)
+
+
+async def on_card(callback, widget, manager: DialogManager):
+    card = widget.widget_id
+    context = manager.current_context()
+    context.dialog_data.update(card=card)
+    # if card == 'card_yes':
+    #     await manager.switch_to(Request.input_card_file)
+    # elif card == 'card_no':
+    #     await manager.switch_to(Request.show_reject_info)
+    if card == 'card_yes':
+        if random.random() < 0.17:
+            await manager.switch_to(Request.input_card_file)
+        else:
+            await manager.switch_to(Request.input_info)
+    elif card == 'card_no':
+        await manager.switch_to(Request.show_reject_info)
+
+
+async def on_card_file(message, message_input, manager):
+    manager.show_mode = ShowMode.DELETE_AND_SEND
+    if message.document:
+        file_id = message.document.file_id
+        manager.dialog_data["card_file_id"] = file_id
+        manager.dialog_data["card_file_type"] = 'file'
+        await message.answer("📎 Файл загружен.")
+    elif message.photo:
+        photo: PhotoSize = message.photo[-1]  # самое большое фото
+        file_id = photo.file_id
+        manager.dialog_data["card_file_id"] = file_id
+        manager.dialog_data["card_file_type"] = 'photo'
+        await message.answer("📷 Фото загружено.")
+    else:
+        await message.answer("⚠️ Пожалуйста, загрузите документ или фото.")
+        return
+    await manager.switch_to(Request.input_info)
 
 
 async def on_input_info(callback, widget, manager: DialogManager, request_text):
     context = manager.current_context()
     context.dialog_data.update(request_text=request_text)
-    try:
-        await callback.delete()
-    except Exception as e:
-        pass
-    try:
-        await callback.bot.delete_message(
-            chat_id=callback.from_user.id,
-            message_id=callback.message_id - 1
-        )
-    except Exception as e:
-        pass
+    await delete_callback_message(callback)
     await manager.switch_to(Request.request_confirm)
 
 
@@ -275,6 +390,26 @@ async def on_confirm(callback, widget, manager: DialogManager):
     path_instance = paths.find_one({'path_type': path_type})
     current_stage = 1
     req_type = context.dialog_data['req_type']
+    resource_act_reason = context.dialog_data.get('out_of_resource_reason_text')
+    files = {}
+    # Добавляем protocol, если он есть и был загружен
+    if context.dialog_data.get('protocol') == 'protocol_yes' and 'protocol_file_id' in context.dialog_data:
+        files['protocol'] = {
+            'type': context.dialog_data['protocol_file_type'],
+            'id': context.dialog_data['protocol_file_id'],
+        }
+    # Добавляем act, если он есть и был загружен
+    if context.dialog_data.get('resource_act') == 'resource_act_yes' and 'resource_file_id' in context.dialog_data:
+        files['act'] = {
+            'type': context.dialog_data['resource_file_type'],
+            'id': context.dialog_data['resource_file_id'],
+        }
+    # Добавляем card, если она есть и была загружена
+    if context.dialog_data.get('card') == 'card_yes' and 'card_file_id' in context.dialog_data:
+        files['card'] = {
+            'type': context.dialog_data['card_file_type'],
+            'id': context.dialog_data['card_file_id'],
+        }
     req_id = reqs.insert_one({
         'req_type': req_type,
         'author_id': manager.event.from_user.id,
@@ -291,10 +426,13 @@ async def on_confirm(callback, widget, manager: DialogManager):
         'is_complete': False,
         'resource': 'Выработан' if context.dialog_data['resource'] == 'resource_yes' else 'Не выработан',
         'resource_act': 'Есть' if context.dialog_data['resource_act'] == 'resource_act_yes' else 'Нет',
+        'resource_act_reason': resource_act_reason,
         'protocol': 'Есть' if context.dialog_data['protocol'] == 'protocol_yes' else 'Нет',
+        'card': 'Есть' if context.dialog_data['card'] == 'card_yes' else 'Нет',
         'is_fail': False,
         'fail_reason': '',
         'reject_reason': '',
+        'files': files,
         'stages': {
             '1': {
                 'status': 'pending',
@@ -309,7 +447,7 @@ async def on_confirm(callback, widget, manager: DialogManager):
     else:
         reqs.update_one(
             {'_id': req_id},
-            {'$set': {'is_complete': True}}
+            {'$set': {'is_complete': True, 'status': 'approved'}}
         )
         await send_information_to_major(req_id)
 
@@ -415,9 +553,14 @@ async def send_request_to_major(req_id, current_stage):
         stages_text = await build_stages_text(req_id, path_instance, current_stage)
         request_text = await build_req_text(req, gpa_instance, stages_text, author_name, new_req=True)
         kb = InlineKeyboardBuilder()
+        if req.get('files'):
+            kb.button(text='📁 Посмотреть файлы', callback_data=f'req_files_{req_id}')
         kb.button(text='🔴 Отклонить', callback_data=f'req_reject_{req_id}_{current_stage}')
         kb.button(text='🟢 Согласовать', callback_data=f'req_apply_{req_id}_{current_stage}')
-        kb.adjust(2)
+        if req.get('files'):
+            kb.adjust(1, 2)
+        else:
+            kb.adjust(2)
         try:
             await bot.send_message(major_stage_id, text=request_text, reply_markup=kb.as_markup())
             reqs.update_one({'_id': req_id}, {'$set': {
@@ -457,6 +600,7 @@ async def build_req_text(req, gpa_instance, stages_text, author_name, new_req=Fa
         f"Тип нагнетателя: {gpa_instance['cbn_type']}\n"
         f'МРР: {req["resource"]}\n'
         f'Акт продления МРР: {req["resource_act"]}\n'
+        f'Карта подготовки ГПА к пуску: {req["card"]}\n'
         f'Протокол сдачи защит: {req["protocol"]}\n\n'
         f"<b>Планируемое время запуска:</b>\n{req['request_datetime'].strftime('%d.%m.%Y %H:%M')}\n\n"
         f"<b>Текст запроса:</b>\n<i>{req['text']}</i>\n\n"
@@ -568,5 +712,19 @@ async def send_notify(req_id, gpa_instance, path, is_fallback=False, is_group=Tr
                 message_effect_id=message_effect,
                 text=request_text
             )
+    except Exception as e:
+        pass
+
+
+async def delete_callback_message(callback):
+    try:
+        await callback.delete()
+    except Exception as e:
+        pass
+    try:
+        await callback.bot.delete_message(
+            chat_id=callback.from_user.id,
+            message_id=callback.message_id - 1
+        )
     except Exception as e:
         pass

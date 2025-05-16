@@ -7,6 +7,8 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 from aiogram_dialog import Dialog, DialogManager, StartMode
 from bson import ObjectId
+from aiogram.types import InputMediaPhoto, InputMediaDocument
+from aiogram.utils.media_group import MediaGroupBuilder
 
 from config.bot_config import bot
 from config.mongo_config import gpa, paths, reqs
@@ -24,16 +26,22 @@ dialog =  Dialog(
     windows.stations_window(),
     windows.shops_window(),
     windows.gpa_window(),
+
     windows.select_epb_window(),
+
     windows.date_window(),
     windows.time_window(),
+
     windows.select_resource_window(),
     windows.select_resource_act_window(),
-    # windows.input_resource_act_file_window(),  # каждый 2-ой запрос
+    windows.input_resource_act_file_window(),  # каждый 2-ой запрос
+    windows.input_out_of_resource_reason_window(),
+
     windows.select_protocol_window(),
-    # windows.input_protocol_file_window(),  # каждый 4-ой запрос
-    # windows.select_card_window(),
-    # windows.input_card_window(),  # каждый 6-ой запрос
+    windows.input_protocol_file_window(),  # каждый 4-ой запрос
+
+    windows.select_card_window(),
+    windows.input_card_file_window(),  # каждый 6-ой запрос
 
     windows.show_reject_window(),
     windows.input_info_window(),
@@ -230,3 +238,50 @@ async def handle_success_launch(call: CallbackQuery):
             )
         except:
             pass
+
+
+
+@router.callback_query(F.data.startswith('req_files_'))
+async def show_request_files(call: CallbackQuery):
+    # Извлекаем ID заявки из callback_data
+    _, _, req_id_str, *_ = call.data.split('_')
+    req_id = ObjectId(req_id_str)  # Преобразуем строку в ObjectId
+
+    # Ищем заявку в базе данных
+    req = reqs.find_one({'_id': req_id})
+
+    if not req or not req.get('files'):
+        await call.answer("Файлы не найдены", show_alert=True)
+        return
+
+    files = req['files']
+
+    # Создаем медиагруппу для отправки нескольких файлов
+    media_group = MediaGroupBuilder()
+    files_sent = False
+
+    # Обрабатываем каждый тип файла
+    for file_type, file_data in files.items():
+        if not file_data:
+            continue
+
+        file_id = file_data['id']
+        file_name = file_data.get('name', 'file')
+
+        if file_data['type'] == 'photo':
+            media_group.add(type="photo", media=file_id, caption=f"📷 {file_type}")
+            files_sent = True
+        elif file_data['type'] == 'file':
+            media_group.add(type="document", media=file_id, caption=f"📄 {file_type}: {file_name}")
+            files_sent = True
+
+    if not files_sent:
+        await call.answer("Не удалось загрузить файлы", show_alert=True)
+        return
+
+    try:
+        # Отправляем медиагруппу
+        await call.message.answer_media_group(media=media_group.build())
+        await call.answer()
+    except Exception as e:
+        await call.answer(f"Ошибка при отправке файлов: {str(e)}", show_alert=True)
