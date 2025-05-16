@@ -22,12 +22,12 @@ def category_buttons():
             id='inwork_requests',
             on_click=selected.on_select_category,
         ),
-        Button(
-            Const('🗄️ Архив заявок'),
-            id='archive_requests',
-            on_click=selected.on_select_category,
-            when='is_admin',
-        ),
+        # Button(
+        #     Const('🗄️ Архив заявок'),
+        #     id='archive_requests',
+        #     on_click=selected.on_select_category,
+        #     when='is_admin',
+        # ),
         Button(
             Const('📚 Правила согласования заявок'),
             id='paths',
