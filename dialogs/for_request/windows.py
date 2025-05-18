@@ -386,6 +386,12 @@ def inwork_requests_window():
 def show_inwork_single_request_window():
     return Window(
         Format('{text}'),
+        Button(
+            Const('🔗 Посмотреть прикреплённые файлы'),
+            on_click=selected.send_req_files,
+            id='show_files',
+            when='has_files'
+        ),
         Back(Const(texts.BACK_BUTTON)),
         state=Request.show_inwork_single_request,
         getter=getters.get_single_request,

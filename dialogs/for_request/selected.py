@@ -1,10 +1,13 @@
 import datetime as dt
 import random
+import asyncio
 
 import aiohttp
 from bson import ObjectId
 from pytz import timezone
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
+from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram.utils.media_group import MediaGroupBuilder
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram_dialog import DialogManager, StartMode
 from aiogram.fsm.state import State
@@ -12,7 +15,7 @@ from aiogram.types import PhotoSize
 
 import utils.constants as const
 from config.bot_config import bot
-from config.mongo_config import gpa, paths, reqs
+from config.mongo_config import gpa, paths, reqs, buffer
 from config.pyrogram_config import app
 from config.telegram_config import BOT_ID, EXPLOIT_GROUP_ID, MY_TELEGRAM_ID
 from dialogs.for_request.states import Request
@@ -259,18 +262,18 @@ async def on_resource_act(callback, widget, manager: DialogManager):
     resource_act = widget.widget_id
     context = manager.current_context()
     context.dialog_data.update(resource_act=resource_act)
-    if resource_act == 'resource_act_yes':
-        await manager.switch_to(Request.input_resource_act_file)
-    elif resource_act == 'resource_act_no':
-        await manager.switch_to(Request.input_out_of_resource_reason)
     # if resource_act == 'resource_act_yes':
-    #     if random.random() < 0.5:
-    #         await manager.switch_to(Request.input_resource_act_file)
-    #     else:
-    #         manager.dialog_data["previous_state"] = str(Request.select_resource_act.state)
-    #         await manager.switch_to(Request.select_protocol)
+    #     await manager.switch_to(Request.input_resource_act_file)
     # elif resource_act == 'resource_act_no':
     #     await manager.switch_to(Request.input_out_of_resource_reason)
+    if resource_act == 'resource_act_yes':
+        if random.random() < 0.5:
+            await manager.switch_to(Request.input_resource_act_file)
+        else:
+            manager.dialog_data["previous_state"] = str(Request.select_resource_act.state)
+            await manager.switch_to(Request.select_protocol)
+    elif resource_act == 'resource_act_no':
+        await manager.switch_to(Request.input_out_of_resource_reason)
 
 
 async def on_resource_act_file(message, message_input, manager):
@@ -305,18 +308,18 @@ async def on_protocol(callback, widget, manager: DialogManager):
     protocol = widget.widget_id
     context = manager.current_context()
     context.dialog_data.update(protocol=protocol)
-    if protocol == 'protocol_yes':
-        await manager.switch_to(Request.input_protocol_file)
-    elif protocol == 'protocol_no':
-        await manager.switch_to(Request.show_reject_info)
     # if protocol == 'protocol_yes':
-    #     if random.random() < 0.25:
-    #         await manager.switch_to(Request.input_protocol_file)
-    #     else:
-    #         # manager.dialog_data["previous_state"] = str(Request.select_resource_act.state)
-    #         await manager.switch_to(Request.select_card)
+    #     await manager.switch_to(Request.input_protocol_file)
     # elif protocol == 'protocol_no':
     #     await manager.switch_to(Request.show_reject_info)
+    if protocol == 'protocol_yes':
+        if random.random() < 0.25:
+            await manager.switch_to(Request.input_protocol_file)
+        else:
+            # manager.dialog_data["previous_state"] = str(Request.select_resource_act.state)
+            await manager.switch_to(Request.select_card)
+    elif protocol == 'protocol_no':
+        await manager.switch_to(Request.show_reject_info)
 
 
 async def on_protocol_act_file(message, message_input, manager):
@@ -343,17 +346,17 @@ async def on_card(callback, widget, manager: DialogManager):
     card = widget.widget_id
     context = manager.current_context()
     context.dialog_data.update(card=card)
-    if card == 'card_yes':
-        await manager.switch_to(Request.input_card_file)
-    elif card == 'card_no':
-        await manager.switch_to(Request.show_reject_info)
     # if card == 'card_yes':
-    #     if random.random() < 0.17:
-    #         await manager.switch_to(Request.input_card_file)
-    #     else:
-    #         await manager.switch_to(Request.input_info)
+    #     await manager.switch_to(Request.input_card_file)
     # elif card == 'card_no':
     #     await manager.switch_to(Request.show_reject_info)
+    if card == 'card_yes':
+        if random.random() < 0.17:
+            await manager.switch_to(Request.input_card_file)
+        else:
+            await manager.switch_to(Request.input_info)
+    elif card == 'card_no':
+        await manager.switch_to(Request.show_reject_info)
 
 
 async def on_card_file(message, message_input, manager):
@@ -590,6 +593,7 @@ async def send_request_to_major(req_id, current_stage):
 async def build_req_text(req, gpa_instance, stages_text, author_name, new_req=False):
     tz = timezone(const.TIME_ZONE)
     request_text = (
+        f'🔢 Номер заявки: {req.get("req_num", "Нет данных")}\n'
         f"📅 Дата создания: {req['datetime'].astimezone(tz).strftime('%d.%m.%Y %H:%M')}\n"
         f"🏭 Станция: {req['ks']}\n"
         f"👤 Автор: {author_name}\n\n"
@@ -598,10 +602,14 @@ async def build_req_text(req, gpa_instance, stages_text, author_name, new_req=Fa
         f"Наименование ГПА: {gpa_instance['name_gpa']}\n"
         f"Тип ГПА: {gpa_instance['type_gpa']}\n"
         f"Тип нагнетателя: {gpa_instance['cbn_type']}\n"
-        f'МРР: {req["resource"]}\n'
-        f'Акт продления МРР: {req["resource_act"]}\n'
-        f'Карта подготовки ГПА к пуску: {req["card"]}\n'
-        f'Протокол сдачи защит: {req["protocol"]}\n\n'
+        f'МРР: {req.get("resource", "Нет данных")}\n'
+        f'Акт продления МРР: {req["resource_act"]}'
+    )
+    if req.get('resource_act_reason'):
+        request_text += f"\nПричина отсутствия акта: {req['resource_act_reason']}"
+    request_text += (
+        f'\nКарта подготовки ГПА к пуску: {req.get("card", "Нет данных")}\n'
+        f'Протокол сдачи защит: {req.get("protocol", "Нет данных")}\n\n'
         f"<b>Планируемое время запуска:</b>\n{req['request_datetime'].strftime('%d.%m.%Y %H:%M')}\n\n"
         f"<b>Текст запроса:</b>\n<i>{req['text']}</i>\n\n"
         f"<b>Статус согласования:</b>\n{stages_text}\n"
@@ -728,3 +736,69 @@ async def delete_callback_message(callback):
         )
     except Exception as e:
         pass
+
+
+async def send_req_files(callback, widget, manager: DialogManager):
+    context = manager.current_context()
+    req_id = context.dialog_data['req_id']
+    await show_req_files(callback, req_id)
+
+
+async def show_req_files(call, req_id):
+    try:
+        req_id = ObjectId(req_id)
+        # Ищем заявку в базе
+        req = reqs.find_one({'_id': req_id})
+        if not req or not req.get('files'):
+            await call.answer("Файлы не найдены", show_alert=True)
+            return
+        files = req['files']
+        sent_messages = []  # Список для хранения ID отправленных сообщений
+        sent_files = False
+        # Группируем фото
+        photos = [(t, f) for t, f in files.items() if f and f['type'] == 'photo']
+        # Отправляем фото группами по 10
+        if photos:
+            media_group = MediaGroupBuilder()
+            for i, (file_type, file_data) in enumerate(photos, 1):
+                media_group.add_photo(
+                    media=file_data['id'],
+                    caption=f"📷 {file_type}" if i == 1 else ""
+                )
+                if i % 10 == 0 or i == len(photos):
+                    messages = await call.message.answer_media_group(media=media_group.build())
+                    sent_messages.extend([msg.message_id for msg in messages])
+                    sent_files = True
+                    if i < len(photos):
+                        media_group = MediaGroupBuilder()
+                        await asyncio.sleep(1)
+        # Отправляем документы по одному
+        documents = [(t, f) for t, f in files.items() if f and f['type'] == 'file']
+        for file_type, file_data in documents:
+            try:
+                msg = await call.message.answer_document(
+                    document=file_data['id'],
+                    caption=f"📄 {file_type}: {file_data.get('name', 'файл')}"
+                )
+                sent_messages.append(msg.message_id)
+                sent_files = True
+                await asyncio.sleep(0.5)
+            except Exception:
+                pass
+        if not sent_files:
+            await call.answer("Не удалось загрузить файлы", show_alert=True)
+            return
+        buffer_msgs_id = buffer.insert_one({'sent_messages': sent_messages}).inserted_id
+        # Отправляем сообщение с кнопкой скрытия
+        kb = InlineKeyboardBuilder()
+        kb.button(
+            text="❌ Скрыть файлы",
+            callback_data=f"hide_files_{buffer_msgs_id}"
+        )
+        await call.message.answer(
+            "Для скрытия файлов нажмите кнопку",
+            reply_markup=kb.as_markup()
+        )
+        await call.answer()
+    except Exception as e:
+        await call.answer(f"Произошла ошибка при загрузке файлов {str(e)}", show_alert=True)
