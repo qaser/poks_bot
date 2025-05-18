@@ -83,7 +83,7 @@ async def get_inwork_requests(dialog_manager: DialogManager, **middleware_data):
         queryset = list(reqs.find({'status': 'inwork', 'author_id': user_id, 'req_type': 'with_approval'}))
     res = [
         {
-            'name': f"{q['ks']} - ГПА{gpa.find_one({'_id': q['gpa_id']})['num_gpa']}",
+            'name': f"#{q['req_num']} {q['ks']} - ГПА{gpa.find_one({'_id': q['gpa_id']})['num_gpa']} ({q['request_datetime'].strftime('%d.%m.%Y')})",
             'id': q['_id'],
         }
         for q in queryset
@@ -154,7 +154,7 @@ async def get_requests(dialog_manager: DialogManager, **middleware_data):
             data.update(not_empty=True)
     res = [
         {
-            'name': f"{q['ks']} - ГПА{gpa.find_one({'_id': q['gpa_id']})['num_gpa']}",
+            'name': f"#{q['req_num']} {q['ks']} - ГПА{gpa.find_one({'_id': q['gpa_id']})['num_gpa']} ({q['request_datetime'].strftime('%d.%m.%Y')})",
             'id': q['_id'],
         }
         for q in queryset
