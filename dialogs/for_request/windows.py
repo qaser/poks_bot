@@ -432,6 +432,16 @@ def ks_sort_requests_window():
     )
 
 
+def type_sort_requests_window():
+    return Window(
+        Const('Выберите требуемый тип ГПА:'),
+        keyboards.gpa_types_buttons(selected.on_type_done),
+        Button(Const(texts.BACK_BUTTON), on_click=return_sorting_menu, id='sorting_menu'),
+        state=Request.type_sort_requests,
+        getter=getters.get_gpa_types,
+    )
+
+
 def date_sort_requests_window():
     return Window(
         Const('Выберите дату, на которую планировался пуск ГПА'),
@@ -447,6 +457,7 @@ def date_sort_requests_window():
 def show_list_requests_window():
     return Window(
         Format('Заявки со статусом "{status}"', when='is_status'),
+        Format('Заявки для направления "{type}"', when='is_type'),
         Format('Заявки на компрессоной станции {ks}', when='is_ks'),
         Format('Заявки на {date}', when='is_date'),
         Const('отсутствуют', when='is_empty'),
@@ -473,6 +484,12 @@ def show_list_requests_window():
             on_click=selected.on_select_sorting,
             id='sort_date',
             when='is_date'
+        ),
+        Button(
+            Const(texts.BACK_BUTTON),
+            on_click=selected.on_select_sorting,
+            id='sort_type',
+            when='is_type'
         ),
         state=Request.show_list_requests,
         getter=getters.get_requests,

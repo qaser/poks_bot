@@ -54,6 +54,7 @@ dialog =  Dialog(
     windows.date_sort_requests_window(),
     windows.status_sort_requests_window(),
     windows.ks_sort_requests_window(),
+    windows.type_sort_requests_window(),
     windows.show_list_requests_window(),
     windows.show_single_request_window(),
     windows.confirm_delete_request_window(),

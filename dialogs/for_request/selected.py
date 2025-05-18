@@ -480,11 +480,19 @@ async def on_select_sorting(callback, widget, manager: DialogManager):
         await manager.switch_to(Request.status_sort_requests)
     elif category == 'sort_ks':
         await manager.switch_to(Request.ks_sort_requests)
+    elif category == 'sort_type':
+        await manager.switch_to(Request.type_sort_requests)
 
 
 async def on_status_done(callback, widget, manager: DialogManager, status):
     context = manager.current_context()
     context.dialog_data.update(status=status, sorting_order='status')
+    await manager.switch_to(Request.show_list_requests)
+
+
+async def on_type_done(callback, widget, manager: DialogManager, gpa_type):
+    context = manager.current_context()
+    context.dialog_data.update(gpa_type=gpa_type, sorting_order='type')
     await manager.switch_to(Request.show_list_requests)
 
 
@@ -551,7 +559,7 @@ async def send_information_to_major(req_id):
         f'Акт продления МРР: {req.get("resource_act", "Нет данных")}'
     )
     if req.get('resource_act_reason'):
-        info_text += f"\nПричина отсутствия акта: {req['resource_act_reason']}"
+        info_text += f"\nПричина отсутствия акта МРР: {req['resource_act_reason']}"
     info_text += (
         f'\nКарта подготовки ГПА к пуску: {req.get("card", "Нет данных")}\n'
         f'Протокол сдачи защит: {req.get("protocol", "Нет данных")}\n\n'
@@ -626,7 +634,7 @@ async def build_req_text(req, gpa_instance, stages_text, author_name, new_req=Fa
         f'Акт продления МРР: {req.get("resource_act", "Нет данных")}'
     )
     if req.get('resource_act_reason'):
-        request_text += f"\nПричина отсутствия акта: {req['resource_act_reason']}"
+        request_text += f"\nПричина отсутствия акта МРР: {req['resource_act_reason']}"
     request_text += (
         f'\nКарта подготовки ГПА к пуску: {req.get("card", "Нет данных")}\n'
         f'Протокол сдачи защит: {req.get("protocol", "Нет данных")}\n\n'

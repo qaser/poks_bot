@@ -132,6 +132,11 @@ def time_btns_ext(on_click):
 def sort_requests_buttons():
     return Column(
         Button(
+            Const('🏷️ По типу ГПА'),
+            id='sort_type',
+            on_click=selected.on_select_sorting,
+        ),
+        Button(
             Const('📅 По дате'),
             id='sort_date',
             on_click=selected.on_select_sorting,
@@ -159,6 +164,20 @@ def statuses_buttons(on_click):
             on_click=on_click,
         ),
         id='statuses_btns',
+        width=1,
+    )
+
+
+def gpa_types_buttons(on_click):
+    return Group(
+        Select(
+            Format('{item[1]}'),
+            id='s_types',
+            item_id_getter=lambda x: x[0],
+            items='gpa_types',
+            on_click=on_click,
+        ),
+        id='types_btns',
         width=1,
     )
 

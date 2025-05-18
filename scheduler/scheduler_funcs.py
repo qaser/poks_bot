@@ -245,7 +245,7 @@ async def send_evening_report():
             status_text = ""
         else:
             status = "⬜"
-            status_text = " (не завершён)"
+            status_text = " (нет обратной связи)"
         # Формируем строку для отчета
         time_str = req['request_datetime'].strftime('%H:%M')
         report_line = f"{status} {req['ks']} ГПА{gpa_data['num_gpa']} - {time_str}{status_text}"

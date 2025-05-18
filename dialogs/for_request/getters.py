@@ -117,6 +117,11 @@ async def get_statuses(dialog_manager: DialogManager, **middleware_data):
     return {'statuses': [(status, REQUEST_STATUS[status]) for status in statuses]}
 
 
+async def get_gpa_types(dialog_manager: DialogManager, **middleware_data):
+    gpa_types = list(paths.find({}))
+    return {'gpa_types': [(t['_id'], t['path_type']) for t in gpa_types]}
+
+
 async def get_ks(dialog_manager: DialogManager, **middleware_data):
     ks = reqs.find({'req_type': 'with_approval'}).distinct('ks')
     return {'ks': ks}
@@ -130,6 +135,11 @@ async def get_requests(dialog_manager: DialogManager, **middleware_data):
         queryset = list(reqs.find({'ks': ks}).sort('$natural', -1).limit(48))
         # queryset = list(reqs.find({'ks': ks,'req_type': 'with_approval'}).sort('$natural', -1).limit(24))
         data = {'ks': ks, 'is_ks': True, 'not_empty': True}
+    elif sorting_order == 'type':
+        path_id = context.dialog_data['gpa_type']
+        queryset = list(reqs.find({'path_id': ObjectId(path_id)}).sort('$natural', -1).limit(48))
+        # queryset = list(reqs.find({'ks': ks,'req_type': 'with_approval'}).sort('$natural', -1).limit(24))
+        data = {'type': paths.find_one({'_id': ObjectId(path_id)})['path_type'], 'is_type': True, 'not_empty': True}
     elif sorting_order == 'status':
         status = context.dialog_data['status']
         queryset = list(reqs.find({'status': status}).sort('$natural', -1).limit(48))
@@ -147,11 +157,11 @@ async def get_requests(dialog_manager: DialogManager, **middleware_data):
             },
             # 'req_type': 'with_approval'
         }).sort('$natural', -1).limit(24))
-        data = {'date': req_date_str, 'is_date': True}
-        if len(queryset) == 0:
-            data.update(is_empty=True)
-        else:
-            data.update(not_empty=True)
+        data = {'date': req_date_str, 'is_date': True, 'not_empty': True}
+    if len(queryset) == 0:
+        data.update(is_empty=True)
+    else:
+        data.update(not_empty=True)
     res = [
         {
             'name': f"#{q['req_num']} {q['ks']} - ГПА{gpa.find_one({'_id': q['gpa_id']})['num_gpa']} ({q['request_datetime'].strftime('%d.%m.%Y')})",
