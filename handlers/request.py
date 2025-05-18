@@ -1,3 +1,4 @@
+import asyncio
 import datetime as dt
 
 from aiogram import F, Router
@@ -7,11 +8,11 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 from aiogram_dialog import Dialog, DialogManager, StartMode
 from bson import ObjectId
-from aiogram.types import InputMediaPhoto, InputMediaDocument
 from aiogram.utils.media_group import MediaGroupBuilder
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from config.bot_config import bot
-from config.mongo_config import gpa, paths, reqs
+from config.mongo_config import gpa, paths, reqs, buffer
 # from config.telegram_config import EXPLOIT_GROUP_ID, MY_TELEGRAM_ID
 from dialogs.for_request import windows
 from dialogs.for_request.selected import send_notify, send_request_to_major
@@ -240,48 +241,83 @@ async def handle_success_launch(call: CallbackQuery):
             pass
 
 
-
 @router.callback_query(F.data.startswith('req_files_'))
 async def show_request_files(call: CallbackQuery):
-    # Извлекаем ID заявки из callback_data
-    _, _, req_id_str, *_ = call.data.split('_')
-    req_id = ObjectId(req_id_str)  # Преобразуем строку в ObjectId
-
-    # Ищем заявку в базе данных
-    req = reqs.find_one({'_id': req_id})
-
-    if not req or not req.get('files'):
-        await call.answer("Файлы не найдены", show_alert=True)
-        return
-
-    files = req['files']
-
-    # Создаем медиагруппу для отправки нескольких файлов
-    media_group = MediaGroupBuilder()
-    files_sent = False
-
-    # Обрабатываем каждый тип файла
-    for file_type, file_data in files.items():
-        if not file_data:
-            continue
-
-        file_id = file_data['id']
-        file_name = file_data.get('name', 'file')
-
-        if file_data['type'] == 'photo':
-            media_group.add(type="photo", media=file_id, caption=f"📷 {file_type}")
-            files_sent = True
-        elif file_data['type'] == 'file':
-            media_group.add(type="document", media=file_id, caption=f"📄 {file_type}: {file_name}")
-            files_sent = True
-
-    if not files_sent:
-        await call.answer("Не удалось загрузить файлы", show_alert=True)
-        return
-
     try:
-        # Отправляем медиагруппу
-        await call.message.answer_media_group(media=media_group.build())
+        # Извлекаем ID заявки
+        _, _, req_id_str = call.data.split('_')[:3]
+        req_id = ObjectId(req_id_str)
+        # Ищем заявку в базе
+        req = reqs.find_one({'_id': req_id})
+        if not req or not req.get('files'):
+            await call.answer("Файлы не найдены", show_alert=True)
+            return
+        files = req['files']
+        sent_messages = []  # Список для хранения ID отправленных сообщений
+        sent_files = False
+        # Группируем фото
+        photos = [(t, f) for t, f in files.items() if f and f['type'] == 'photo']
+        # Отправляем фото группами по 10
+        if photos:
+            media_group = MediaGroupBuilder()
+            for i, (file_type, file_data) in enumerate(photos, 1):
+                media_group.add_photo(
+                    media=file_data['id'],
+                    caption=f"📷 {file_type}" if i == 1 else ""
+                )
+                if i % 10 == 0 or i == len(photos):
+                    messages = await call.message.answer_media_group(media=media_group.build())
+                    sent_messages.extend([msg.message_id for msg in messages])
+                    sent_files = True
+                    if i < len(photos):
+                        media_group = MediaGroupBuilder()
+                        await asyncio.sleep(1)
+        # Отправляем документы по одному
+        documents = [(t, f) for t, f in files.items() if f and f['type'] == 'file']
+        for file_type, file_data in documents:
+            try:
+                msg = await call.message.answer_document(
+                    document=file_data['id'],
+                    caption=f"📄 {file_type}: {file_data.get('name', 'файл')}"
+                )
+                sent_messages.append(msg.message_id)
+                sent_files = True
+                await asyncio.sleep(0.5)
+            except Exception:
+                pass
+        if not sent_files:
+            await call.answer("Не удалось загрузить файлы", show_alert=True)
+            return
+        buffer_msgs_id = buffer.insert_one({'sent_messages': sent_messages}).inserted_id
+        # Отправляем сообщение с кнопкой скрытия
+        kb = InlineKeyboardBuilder()
+        kb.button(
+            text="❌ Скрыть файлы",
+            callback_data=f"hide_files_{buffer_msgs_id}"
+        )
+        await call.message.answer(
+            "Для скрытия файлов нажмите кнопку",
+            reply_markup=kb.as_markup()
+        )
         await call.answer()
     except Exception as e:
-        await call.answer(f"Ошибка при отправке файлов: {str(e)}", show_alert=True)
+        await call.answer(f"Произошла ошибка при загрузке файлов {str(e)}", show_alert=True)
+
+
+@router.callback_query(F.data.startswith('hide_files_'))
+async def hide_files(call: CallbackQuery):
+    _, _, msg_ids = call.data.split('_')
+    try:
+        data = buffer.find_one({'_id': ObjectId(msg_ids)})
+        for msg_id in data.get('sent_messages', []):
+            try:
+                await call.bot.delete_message(chat_id=call.message.chat.id, message_id=msg_id)
+            except Exception as e:
+                pass
+        try:
+            await call.message.delete()
+        except Exception as e:
+            pass
+        buffer.delete_one({'_id': ObjectId(msg_ids)})
+    except Exception:
+        await call.answer("Ошибка при скрытии файлов", show_alert=True)

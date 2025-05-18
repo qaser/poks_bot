@@ -21,8 +21,6 @@ from middlewares.admin_check import AdminCheckMiddleware
 from scheduler.scheduler_funcs import (clear_msgs, find_overdue_requests,
                                        send_backups, send_remainder, send_evening_report,
                                        send_work_time_reminder, send_morning_report)
-import datetime as dt
-from collections import defaultdict
 
 
 def get_peer_type_new(peer_id: int) -> str:
