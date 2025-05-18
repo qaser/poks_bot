@@ -108,7 +108,7 @@ async def get_single_request(dialog_manager: DialogManager, **middleware_data):
     text = await build_req_text(req, gpa_instance, stages_text, author_name)
     return {
         'text': text,
-        'has_files': True if req['files'] else False
+        'has_files': True if req.get('files', {}) else False
     }
 
 

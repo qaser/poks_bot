@@ -10,6 +10,8 @@ db = client['poks_bot_db']
 gpa = db['gpa']
 emergency_stops = db['emergency_stops']
 groups = db['groups']
+reqs = db['requests']
+req_counter = db['req_counter']
 # msgs = db['msgs']
 
 GROUP_NAMES = [
@@ -48,8 +50,17 @@ MSGS = [
     'Правохеттинское ЛПУМГ, ГПА№64, в 1:50 АО - помпаж двигателя (ложное).',
 ]
 
-res = gpa.find({}).distinct('group_gpa')
-print(res)
+req_count = reqs.count_documents({})
+queryset = list(reqs.find({}))
+req_counter.insert_one({
+    '_id': 'request_id',
+    'seq': req_count
+})
+for num, req in enumerate(queryset):
+    reqs.update_one(
+        {'_id': req['_id']},
+        {'$set': {'req_num': num+1}}
+    )
 
 # for msg in MSGS:
 #     date_find = re.compile(r'\d\d\.\d\d\.(\d\d\d\d|\d\d)')

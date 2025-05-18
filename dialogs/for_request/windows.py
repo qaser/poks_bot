@@ -483,6 +483,12 @@ def show_single_request_window():
     return Window(
         Format('{text}'),
         Button(
+            Const('🔗 Посмотреть прикреплённые файлы'),
+            on_click=selected.send_req_files,
+            id='show_files',
+            when='has_files'
+        ),
+        Button(
             Const('🗑️ Удалить заявку'),
             on_click=selected.on_delete_req,
             id='delete_req',
@@ -490,6 +496,21 @@ def show_single_request_window():
         Back(Const(texts.BACK_BUTTON)),
         state=Request.show_single_request,
         getter=getters.get_single_request,
+    )
+
+
+def confirm_delete_request_window():
+    return Window(
+        Format('❗ Вы уверены, что хотите удалить заявку?'),
+        Row(
+            Button(
+                Const('✅ Да, удалить'),
+                id='delete_confirm_yes',
+                on_click=selected.on_delete_req_confirm
+            ),
+            Back(Const('❌ Нет')),
+        ),
+        state=Request.confirm_delete_request,
     )
 
 

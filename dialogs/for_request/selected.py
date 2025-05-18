@@ -15,7 +15,7 @@ from aiogram.types import PhotoSize
 
 import utils.constants as const
 from config.bot_config import bot
-from config.mongo_config import gpa, paths, reqs, buffer
+from config.mongo_config import gpa, paths, reqs, buffer, req_counter
 from config.pyrogram_config import app
 from config.telegram_config import BOT_ID, EXPLOIT_GROUP_ID, MY_TELEGRAM_ID
 from dialogs.for_request.states import Request
@@ -38,6 +38,15 @@ STATE_MAPPING = {
     "Request:input_out_of_resource_reason": Request.input_out_of_resource_reason,
     "Request:select_protocol": Request.select_protocol,
 }
+
+
+def get_next_sequence_value(sequence_name):
+    counter = req_counter.find_one_and_update(
+        {'_id': sequence_name},
+        {'$inc': {'seq': 1}},
+        return_document=True
+    )
+    return counter['seq']
 
 
 async def is_holiday(target_date: dt.date) -> bool:
@@ -413,7 +422,9 @@ async def on_confirm(callback, widget, manager: DialogManager):
             'type': context.dialog_data['card_file_type'],
             'id': context.dialog_data['card_file_id'],
         }
+    req_num = get_next_sequence_value('request_id')
     req_id = reqs.insert_one({
+        'req_num': req_num,
         'req_type': req_type,
         'author_id': manager.event.from_user.id,
         'ks': context.dialog_data['station'],
@@ -450,7 +461,7 @@ async def on_confirm(callback, widget, manager: DialogManager):
     else:
         reqs.update_one(
             {'_id': req_id},
-            {'$set': {'is_complete': True, 'status': 'approved'}}
+            {'$set': {'status': 'approved'}}
         )
         await send_information_to_major(req_id)
 
@@ -496,6 +507,10 @@ async def on_selected_request(callback, widget, manager: DialogManager, req_id):
 
 
 async def on_delete_req(callback, widget, manager: DialogManager):
+    await manager.switch_to(Request.confirm_delete_request)
+
+
+async def on_delete_req_confirm(callback, widget, manager: DialogManager):
     context = manager.current_context()
     req_id = context.dialog_data['req_id']
     reqs.delete_one({'_id': ObjectId(req_id)})
@@ -523,7 +538,7 @@ async def send_information_to_major(req_id):
     author_name = (await bot.get_chat(req['author_id'])).full_name
     stages = path_instance['stages']
     info_text = (
-        '<b>Информация о запросе на пуск ГПА:</b>\n'
+        f'🔢 Номер заявки: {req.get("req_num", "Нет данных")}\n'
         f"📅 Дата создания: {req['datetime'].astimezone(tz).strftime('%d.%m.%Y %H:%M')}\n"
         f"🏭 Станция: {req['ks']}\n"
         f"👤 Автор: {author_name}\n\n"
@@ -532,10 +547,15 @@ async def send_information_to_major(req_id):
         f"Наименование ГПА: {gpa_instance['name_gpa']}\n"
         f"Тип ГПА: {gpa_instance['type_gpa']}\n"
         f"Тип нагнетателя: {gpa_instance['cbn_type']}\n"
-        f'МРР: {req["resource"]}\n'
-        f'Акт продления МРР: {req["resource_act"]}\n'
-        f'Протокол сдачи защит: {req["protocol"]}\n\n'
-        "<b>Планируемое время запуска:</b> с момента подачи заявки\n\n"
+        f'МРР: {req.get("resource", "Нет данных")}\n'
+        f'Акт продления МРР: {req.get("resource_act", "Нет данных")}'
+    )
+    if req.get('resource_act_reason'):
+        info_text += f"\nПричина отсутствия акта: {req['resource_act_reason']}"
+    info_text += (
+        f'\nКарта подготовки ГПА к пуску: {req.get("card", "Нет данных")}\n'
+        f'Протокол сдачи защит: {req.get("protocol", "Нет данных")}\n\n'
+        f"<b>Планируемое время запуска: с момента подачи заявки"
         f"<b>Текст запроса:</b>\n<i>{req['text']}</i>\n\n"
         'Данный запрос не требует согласования'
     )
@@ -603,7 +623,7 @@ async def build_req_text(req, gpa_instance, stages_text, author_name, new_req=Fa
         f"Тип ГПА: {gpa_instance['type_gpa']}\n"
         f"Тип нагнетателя: {gpa_instance['cbn_type']}\n"
         f'МРР: {req.get("resource", "Нет данных")}\n'
-        f'Акт продления МРР: {req["resource_act"]}'
+        f'Акт продления МРР: {req.get("resource_act", "Нет данных")}'
     )
     if req.get('resource_act_reason'):
         request_text += f"\nПричина отсутствия акта: {req['resource_act_reason']}"
@@ -617,7 +637,7 @@ async def build_req_text(req, gpa_instance, stages_text, author_name, new_req=Fa
     request_text = f'<b>Новый запрос на пуск ГПА</b>\n{request_text}' if new_req else f'<b>Запрос на пуск ГПА</b>\n{request_text}'
     request_text = f'{request_text}Пожалуйста, согласуйте или отклоните запрос:' if new_req else request_text
     if req['status'] == 'rejected':
-        request_text = f'{request_text}<b>Причина отклонения заявки:</b>\n<i>{req["reject_reason"]}</i>'
+        request_text = f'{request_text}<b>Причина отклонения заявки:</b>\n<i>{req.get("reject_reason", "Информация отсутствует")}</i>'
     return request_text
 
 
@@ -763,7 +783,6 @@ async def show_req_files(call, req_id):
             for i, (file_type, file_data) in enumerate(photos, 1):
                 media_group.add_photo(
                     media=file_data['id'],
-                    caption=f"📷 {file_type}" if i == 1 else ""
                 )
                 if i % 10 == 0 or i == len(photos):
                     messages = await call.message.answer_media_group(media=media_group.build())
@@ -778,7 +797,6 @@ async def show_req_files(call, req_id):
             try:
                 msg = await call.message.answer_document(
                     document=file_data['id'],
-                    caption=f"📄 {file_type}: {file_data.get('name', 'файл')}"
                 )
                 sent_messages.append(msg.message_id)
                 sent_files = True

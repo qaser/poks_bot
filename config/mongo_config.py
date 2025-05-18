@@ -21,6 +21,7 @@ operating_time = db['operating_time']
 otkaz_msgs = db['otkaz_msgs']
 paths = db['paths']
 reqs = db['requests']
+req_counter = db['req_counter']
 
 
 '''

@@ -45,6 +45,7 @@ class Request(StatesGroup):
     ks_sort_requests = State()
     show_list_requests = State()  # c этого состояния нужно переходить туда откуда пришел
     show_single_request = State()
+    confirm_delete_request = State()
 
     # категория "Настройка"
     paths_info = State()  # с этого состояния перепрыгиваем на select_category

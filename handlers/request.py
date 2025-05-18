@@ -56,6 +56,7 @@ dialog =  Dialog(
     windows.ks_sort_requests_window(),
     windows.show_list_requests_window(),
     windows.show_single_request_window(),
+    windows.confirm_delete_request_window(),
 
     windows.paths_info_window(),
     windows.select_num_stage(),
