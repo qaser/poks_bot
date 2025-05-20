@@ -160,7 +160,7 @@ def input_epb_file_window():
             selected.on_epb_file,
             content_types=[ContentType.DOCUMENT, ContentType.PHOTO]
         ),
-        Back(Const(texts.BACK_BUTTON)),
+        # Back(Const(texts.BACK_BUTTON)),
         state=Request.input_epb_file,
     )
 
@@ -241,11 +241,11 @@ def input_resource_act_file_window():
             selected.on_resource_act_file,
             content_types=[ContentType.DOCUMENT, ContentType.PHOTO]
         ),
-        Button(
-            Const(texts.BACK_BUTTON),
-            on_click=selected.return_to_resource_act,
-            id='return_to_resource_act'
-        ),
+        # Button(
+        #     Const(texts.BACK_BUTTON),
+        #     on_click=selected.return_to_resource_act,
+        #     id='return_to_resource_act'
+        # ),
         state=Request.input_resource_act_file,
     )
 
@@ -298,7 +298,7 @@ def input_protocol_file_window():
             selected.on_protocol_act_file,
             content_types=[ContentType.DOCUMENT, ContentType.PHOTO]
         ),
-        Back(Const(texts.BACK_BUTTON)),
+        # Back(Const(texts.BACK_BUTTON)),
         state=Request.input_protocol_file,
     )
 
@@ -323,7 +323,7 @@ def input_card_file_window():
             selected.on_card_file,
             content_types=[ContentType.DOCUMENT, ContentType.PHOTO]
         ),
-        Back(Const(texts.BACK_BUTTON)),
+        # Back(Const(texts.BACK_BUTTON)),
         state=Request.input_card_file,
     )
 

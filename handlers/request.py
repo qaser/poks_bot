@@ -8,12 +8,12 @@ from aiogram.types import CallbackQuery, Message
 from aiogram_dialog import Dialog, DialogManager, StartMode
 from bson import ObjectId
 
-
 from config.bot_config import bot
-from config.mongo_config import gpa, paths, reqs, buffer
+from config.mongo_config import buffer, gpa, paths, reqs
 # from config.telegram_config import EXPLOIT_GROUP_ID, MY_TELEGRAM_ID
 from dialogs.for_request import windows
-from dialogs.for_request.selected import send_notify, send_request_to_major, show_req_files
+from dialogs.for_request.selected import (send_notify, send_request_to_major,
+                                          show_req_files)
 from dialogs.for_request.states import Request
 
 router = Router()

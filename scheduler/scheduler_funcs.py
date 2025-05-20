@@ -1,17 +1,17 @@
 import datetime as dt
 import imaplib
 import os
+from collections import defaultdict
 
 from aiogram.exceptions import AiogramError
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from pytz import timezone
-from collections import defaultdict
 
 import utils.constants as const
 from config.bot_config import bot
 from config.mail_config import (ADMIN_EMAIL, IMAP_MAIL_SERVER, MAIL_LOGIN,
                                 MAIL_PASS)
-from config.mongo_config import groups, msgs, reqs, users, gpa, paths
+from config.mongo_config import gpa, groups, msgs, paths, reqs, users
 from config.telegram_config import (EXPLOIT_GROUP_ID, MY_TELEGRAM_ID,
                                     SPCH_THREAD_ID)
 from utils.backup_db import send_dbs_mail

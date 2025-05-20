@@ -4,8 +4,8 @@ import logging
 from aiogram import F
 from aiogram.filters.command import Command
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, ReplyKeyboardRemove
-from aiogram.types import BotCommand, BotCommandScopeAllPrivateChats
+from aiogram.types import (BotCommand, BotCommandScopeAllPrivateChats, Message,
+                           ReplyKeyboardRemove)
 from aiogram_dialog import setup_dialogs
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from pyrogram import utils
@@ -19,8 +19,9 @@ from handlers import (administrators, ao, archive, copy, edit, groups, iskra,
                       request, service)
 from middlewares.admin_check import AdminCheckMiddleware
 from scheduler.scheduler_funcs import (clear_msgs, find_overdue_requests,
-                                       send_backups, send_remainder, send_evening_report,
-                                       send_work_time_reminder, send_morning_report)
+                                       send_backups, send_evening_report,
+                                       send_morning_report, send_remainder,
+                                       send_work_time_reminder)
 
 
 def get_peer_type_new(peer_id: int) -> str:
