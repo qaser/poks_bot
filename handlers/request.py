@@ -9,6 +9,7 @@ from aiogram_dialog import Dialog, DialogManager, StartMode
 from bson import ObjectId
 from pytz import timezone
 
+from scheduler.scheduler_funcs import send_evening_report, send_morning_report
 import utils.constants as const
 from config.bot_config import bot
 from config.mongo_config import buffer, gpa, paths, reqs
@@ -177,6 +178,7 @@ async def handle_apply_request(call: CallbackQuery):
         except Exception as e:
             print(f'Ошибка уведомления группы: {e}')
         await call.answer('Запрос полностью согласован!')
+        await send_morning_report(update=True)
     else:
         reqs.update_one({'_id': req_id}, {'$set': {**update_data, 'current_stage': next_stage}})
         try:
@@ -234,6 +236,7 @@ async def process_reject_reason(message: Message, state: FSMContext, bot):
         except:
             pass
     await message.answer("Отправлено. Специалисты ПОЭКС уведомлены о причине.")
+    await send_evening_report(update=True)
     await state.clear()
 
 
@@ -259,6 +262,7 @@ async def handle_success_launch(call: CallbackQuery):
             )
         except:
             pass
+    await send_evening_report(update=True)
 
 
 @router.callback_query(F.data.startswith('req_files_'))

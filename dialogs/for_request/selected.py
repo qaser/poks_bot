@@ -11,6 +11,7 @@ from aiogram_dialog import DialogManager, ShowMode, StartMode
 from bson import ObjectId
 from pytz import timezone
 
+from scheduler.scheduler_funcs import send_morning_report
 import utils.constants as const
 from config.bot_config import bot
 from config.mongo_config import buffer, gpa, paths, req_counter, reqs
@@ -625,11 +626,15 @@ async def send_information_to_major(req_id):
         f"<b>Текст запроса:</b>\n<i>{req['text']}</i>\n\n"
         'Данный запрос не требует согласования'
     )
+    kb = InlineKeyboardBuilder()
+    if req.get('files'):
+        kb.button(text='📁 Посмотреть файлы', callback_data=f'req_files_{req_id}')
     for major_id in stages.values():
         try:
-            await bot.send_message(chat_id=major_id, text=info_text)
+            await bot.send_message(chat_id=major_id, text=info_text, reply_markup=kb.as_markup())
         except Exception as err:
             print(err)
+    await send_morning_report(update=True)
 
 
 async def send_request_to_major(req_id, current_stage):

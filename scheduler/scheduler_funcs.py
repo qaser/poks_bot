@@ -11,11 +11,13 @@ import utils.constants as const
 from config.bot_config import bot
 from config.mail_config import (ADMIN_EMAIL, IMAP_MAIL_SERVER, MAIL_LOGIN,
                                 MAIL_PASS)
-from config.mongo_config import gpa, groups, msgs, paths, reqs, users
+from config.mongo_config import gpa, groups, msgs, paths, reqs, users, report_buffer
 from config.telegram_config import (EXPLOIT_GROUP_ID, MY_TELEGRAM_ID,
                                     SPCH_THREAD_ID)
 from utils.backup_db import send_dbs_mail
 from utils.get_mail import get_letters
+from collections import defaultdict
+
 
 SPCH_TIME_WORK_MSG = ('В срок до 12:00 текущего дня прошу выложить фактическую наработку за прошедший месяц.\n\n'
                       'Пример:\n\nКС «Примерная»:\nГПА 12 - 720\nГПА 24 - 9\n\n'
@@ -145,9 +147,8 @@ async def find_overdue_requests():
             )
 
 
-async def send_morning_report():
+async def send_morning_report(update=False):
     today = dt.datetime.now().date()
-    # Фильтр для поиска актуальных заявок на сегодня
     req_filter = {
         '$expr': {
             '$eq': [
@@ -158,55 +159,18 @@ async def send_morning_report():
         'status': 'approved',
         'is_complete': False,
     }
-    # Получаем все заявки на сегодня
     queryset = list(reqs.find(req_filter).sort('request_datetime', 1))
-    # Группируем заявки по типам ГПА
-    gpa_types = defaultdict(list)
-    for req in queryset:
-        gpa_data = gpa.find_one({'_id': req['gpa_id']})
-        if not gpa_data:
-            continue
-        # Определяем тип ГПА с учетом особого случая для ГТК-10-4
-        if gpa_data['type_gpa'] == 'Стационарные' and gpa_data.get('group_gpa') == 'ГТК-10-4':
-            gpa_type = 'Стационарные ГПА (ГТК-10-4)'
-        elif gpa_data['type_gpa'] == 'Стационарные':
-            gpa_type = 'Стационарные ГПА'
-        elif gpa_data['type_gpa'] == 'Авиационный привод':
-            gpa_type = 'ГПА с авиа. приводом'
-        elif gpa_data['type_gpa'] == 'Судовой привод':
-            gpa_type = 'ГПА с судовым приводом'
-        else:
-            gpa_type = gpa_data['type_gpa']
-
-        # Формируем строку для отчета
-        time_str = req['request_datetime'].strftime('%H:%M')
-        report_line = f"{req['ks']} ГПА{gpa_data['num_gpa']} - {time_str}"
-        gpa_types[gpa_type].append(report_line)
-
-    # Формируем итоговый отчет
-    report_lines = []
-    for gpa_type in TYPE_ORDER:
-        if gpa_type in gpa_types:
-            report_lines.append(f"<b>{gpa_type}</b>:")
-            report_lines.extend(gpa_types[gpa_type])
-        else:
-            report_lines.append(f"<b>{gpa_type}</b>: на сегодня заявок нет\n")
-    # Объединяем все строки отчета
-    report_text = "\n".join(report_lines)
-    # Добавляем заголовок с текущей датой
-    full_report = f"<u>План запусков ГПА на {today.strftime('%d.%m.%Y')}</u>\n{report_text}"
-    admin_ids = get_unique_admin_ids()
-    for admin_id in admin_ids:
-        try:
-            await bot.send_message(chat_id=admin_id, text=full_report)
-        except Exception as err:
-            await bot.send_message(chat_id=MY_TELEGRAM_ID, text=str(err))
-    await bot.send_message(chat_id=MY_TELEGRAM_ID, text=full_report)
+    gpa_types = build_report_by_gpa_type(queryset, include_status=False)
+    report_text = format_report_text(
+        gpa_types,
+        title=f"План запусков ГПА на {today.strftime('%d.%m.%Y')}",
+        no_data_message="на сегодня заявок пока нет"
+    )
+    await send_report("morning_report", report_text, update)
 
 
-async def send_evening_report():
+async def send_evening_report(update=False):
     today = dt.datetime.now().date()
-    # Фильтр для поиска всех одобренных заявок на сегодня
     req_filter = {
         '$expr': {
             '$eq': [
@@ -216,76 +180,100 @@ async def send_evening_report():
         },
         'status': 'approved',
     }
-    # Получаем все заявки на сегодня
     queryset = list(reqs.find(req_filter).sort('request_datetime', 1))
-    # Группируем заявки по типам ГПА
-    gpa_types = defaultdict(list)
-    for req in queryset:
-        gpa_data = gpa.find_one({'_id': req['gpa_id']})
-        if not gpa_data:
-            continue
-        # Определяем тип ГПА
-        if gpa_data['type_gpa'] == 'Стационарные' and gpa_data.get('group_gpa') == 'ГТК-10-4':
-            gpa_type = 'Стационарные ГПА (ГТК-10-4)'
-        elif gpa_data['type_gpa'] == 'Стационарные':
-            gpa_type = 'Стационарные ГПА'
-        elif gpa_data['type_gpa'] == 'Авиационный привод':
-            gpa_type = 'ГПА с авиа. приводом'
-        elif gpa_data['type_gpa'] == 'Судовой привод':
-            gpa_type = 'ГПА с судовым приводом'
-        else:
-            gpa_type = gpa_data['type_gpa']
-        # Определяем статус пуска
-        if req.get('is_fail') is True:
-            reason = req.get('fail_reason', 'без указания причины')
-            status = "🟥"
-            status_text = f" ({reason})"
-        elif req.get('is_complete') is True:
-            status = "🟩"
-            status_text = ""
-        else:
-            status = "⬜"
-            status_text = " (нет обратной связи)"
-        # Формируем строку для отчета
-        time_str = req['request_datetime'].strftime('%H:%M')
-        report_line = f"{status} {req['ks']} ГПА{gpa_data['num_gpa']} - {time_str}{status_text}"
-        gpa_types[gpa_type].append(report_line)
-    # Формируем итоговый отчет
-    report_lines = []
-    # Порядок вывода типов ГПА в отчете
-    for gpa_type in TYPE_ORDER:
-        if gpa_type in gpa_types:
-            report_lines.append(f"<b>{gpa_type}</b>:")
-            report_lines.extend(gpa_types[gpa_type])
-            report_lines.append("")  # Пустая строка между группами
-        else:
-            report_lines.append(f"<b>{gpa_type}</b>: заявок не было\n")
-    # Объединяем все строки отчета
-    report_text = "\n".join(report_lines)
-    # Добавляем заголовок с текущей датой
-    full_report = (
-        f"<u>Отчет по пускам ГПА за {today.strftime('%d.%m.%Y')}</u>\n"
-        f"{report_text}"
+    gpa_types = build_report_by_gpa_type(queryset, include_status=True)
+    report_text = format_report_text(
+        gpa_types,
+        title=f"Отчет по пускам ГПА за {today.strftime('%d.%m.%Y')}",
+        no_data_message="заявок не было"
     )
-    admin_ids = get_unique_admin_ids()
-    for admin_id in admin_ids:
-        try:
-            await bot.send_message(chat_id=admin_id, text=full_report)
-        except Exception as err:
-            await bot.send_message(chat_id=MY_TELEGRAM_ID, text=str(err))
-    await bot.send_message(chat_id=MY_TELEGRAM_ID, text=full_report)
+    await send_report("evening_report", report_text, update)
+
+
+def get_gpa_type(gpa_data):
+    if gpa_data['type_gpa'] == 'Стационарные' and gpa_data.get('group_gpa') == 'ГТК-10-4':
+        return 'Стационарные ГПА (ГТК-10-4)'
+    elif gpa_data['type_gpa'] == 'Стационарные':
+        return 'Стационарные ГПА'
+    elif gpa_data['type_gpa'] == 'Авиационный привод':
+        return 'ГПА с авиа. приводом'
+    elif gpa_data['type_gpa'] == 'Судовой привод':
+        return 'ГПА с судовым приводом'
+    return gpa_data['type_gpa']
 
 
 def get_unique_admin_ids():
     pipeline = [
-        # Разворачиваем массив stages
         {'$project': {'stages': {'$objectToArray': '$stages'}}},
         {'$unwind': '$stages'},
-        # Группируем по значениям stages.v (admin_id)
         {'$group': {'_id': '$stages.v'}},
-        # Получаем только уникальные значения
         {'$group': {'_id': None, 'admin_ids': {'$addToSet': '$_id'}}},
         {'$project': {'_id': 0, 'admin_ids': 1}}
     ]
     result = list(paths.aggregate(pipeline))
     return result[0]['admin_ids'] if result else []
+
+
+def build_report_by_gpa_type(queryset, include_status=False):
+    gpa_types = defaultdict(list)
+    for req in queryset:
+        gpa_data = gpa.find_one({'_id': req['gpa_id']})
+        if not gpa_data:
+            continue
+        gpa_type = get_gpa_type(gpa_data)
+        time_str = req['request_datetime'].strftime('%H:%M')
+
+        if include_status:
+            if req.get('is_fail'):
+                reason = req.get('fail_reason', 'без указания причины')
+                status = "🟥"
+                status_text = f" ({reason})"
+            elif req.get('is_complete'):
+                status = "🟩"
+                status_text = ""
+            else:
+                status = "⬜"
+                status_text = " (нет обратной связи)"
+            line = f"{status} {req['ks']} ГПА{gpa_data['num_gpa']} - {time_str}{status_text}"
+        else:
+            line = f"{req['ks']} ГПА{gpa_data['num_gpa']} - {time_str}"
+
+        gpa_types[gpa_type].append(line)
+    return gpa_types
+
+
+def format_report_text(gpa_types, title, no_data_message):
+    lines = [f"<u>{title}</u>"]
+    for gpa_type in TYPE_ORDER:
+        lines.append(f"<b>{gpa_type}</b>:")
+        if gpa_type in gpa_types:
+            lines.extend(gpa_types[gpa_type])
+        else:
+            lines.append(no_data_message)
+        lines.append("")
+    return "\n".join(lines)
+
+
+async def send_report(report_id, report_text, update):
+    if not update:
+        report_buffer.update_one({'_id': report_id}, {'$set': {'chats_data': {}}}, upsert=True)
+    admin_ids = get_unique_admin_ids()
+    if update:
+        report_data = report_buffer.find_one({'_id': report_id})
+        chats_data = report_data.get('chats_data', {}) if report_data else {}
+        for admin_id, msg_id in chats_data.items():
+            try:
+                await bot.edit_message_text(chat_id=admin_id, message_id=msg_id, text=report_text)
+            except Exception as e:
+                print(f"Ошибка при обновлении сообщения {msg_id} для админа {admin_id}: {e}")
+    else:
+        for admin_id in admin_ids:
+            try:
+                msg = await bot.send_message(chat_id=admin_id, text=report_text)
+                report_buffer.update_one(
+                    {'_id': report_id},
+                    {'$set': {f'chats_data.{admin_id}': msg.message_id}}
+                )
+            except Exception as err:
+                await bot.send_message(chat_id=MY_TELEGRAM_ID, text=str(err))
+    await bot.send_message(chat_id=MY_TELEGRAM_ID, text=report_text)
