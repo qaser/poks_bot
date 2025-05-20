@@ -271,18 +271,18 @@ async def on_resource_act(callback, widget, manager: DialogManager):
     resource_act = widget.widget_id
     context = manager.current_context()
     context.dialog_data.update(resource_act=resource_act)
-    # if resource_act == 'resource_act_yes':
-    #     await manager.switch_to(Request.input_resource_act_file)
-    # elif resource_act == 'resource_act_no':
-    #     await manager.switch_to(Request.input_out_of_resource_reason)
     if resource_act == 'resource_act_yes':
-        if random.random() < 0.5:
-            await manager.switch_to(Request.input_resource_act_file)
-        else:
-            manager.dialog_data["previous_state"] = str(Request.select_resource_act.state)
-            await manager.switch_to(Request.select_protocol)
+        await manager.switch_to(Request.input_resource_act_file)
     elif resource_act == 'resource_act_no':
         await manager.switch_to(Request.input_out_of_resource_reason)
+    # if resource_act == 'resource_act_yes':
+    #     if random.random() < 0.5:
+    #         await manager.switch_to(Request.input_resource_act_file)
+    #     else:
+    #         manager.dialog_data["previous_state"] = str(Request.select_resource_act.state)
+    #         await manager.switch_to(Request.select_protocol)
+    # elif resource_act == 'resource_act_no':
+    #     await manager.switch_to(Request.input_out_of_resource_reason)
 
 
 async def on_resource_act_file(message, message_input, manager):
@@ -317,18 +317,18 @@ async def on_protocol(callback, widget, manager: DialogManager):
     protocol = widget.widget_id
     context = manager.current_context()
     context.dialog_data.update(protocol=protocol)
-    # if protocol == 'protocol_yes':
-    #     await manager.switch_to(Request.input_protocol_file)
-    # elif protocol == 'protocol_no':
-    #     await manager.switch_to(Request.show_reject_info)
     if protocol == 'protocol_yes':
-        if random.random() < 0.25:
-            await manager.switch_to(Request.input_protocol_file)
-        else:
-            # manager.dialog_data["previous_state"] = str(Request.select_resource_act.state)
-            await manager.switch_to(Request.select_card)
+        await manager.switch_to(Request.input_protocol_file)
     elif protocol == 'protocol_no':
         await manager.switch_to(Request.show_reject_info)
+    # if protocol == 'protocol_yes':
+    #     if random.random() < 0.25:
+    #         await manager.switch_to(Request.input_protocol_file)
+    #     else:
+    #         # manager.dialog_data["previous_state"] = str(Request.select_resource_act.state)
+    #         await manager.switch_to(Request.select_card)
+    # elif protocol == 'protocol_no':
+    #     await manager.switch_to(Request.show_reject_info)
 
 
 async def on_protocol_act_file(message, message_input, manager):
@@ -355,17 +355,17 @@ async def on_card(callback, widget, manager: DialogManager):
     card = widget.widget_id
     context = manager.current_context()
     context.dialog_data.update(card=card)
-    # if card == 'card_yes':
-    #     await manager.switch_to(Request.input_card_file)
-    # elif card == 'card_no':
-    #     await manager.switch_to(Request.show_reject_info)
     if card == 'card_yes':
-        if random.random() < 0.17:
-            await manager.switch_to(Request.input_card_file)
-        else:
-            await manager.switch_to(Request.input_info)
+        await manager.switch_to(Request.input_card_file)
     elif card == 'card_no':
         await manager.switch_to(Request.show_reject_info)
+    # if card == 'card_yes':
+    #     if random.random() < 0.17:
+    #         await manager.switch_to(Request.input_card_file)
+    #     else:
+    #         await manager.switch_to(Request.input_info)
+    # elif card == 'card_no':
+    #     await manager.switch_to(Request.show_reject_info)
 
 
 async def on_card_file(message, message_input, manager):

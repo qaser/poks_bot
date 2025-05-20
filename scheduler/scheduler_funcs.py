@@ -194,7 +194,7 @@ async def send_morning_report():
     # Объединяем все строки отчета
     report_text = "\n".join(report_lines)
     # Добавляем заголовок с текущей датой
-    full_report = f"<u>Отчет по запланированным пускам ГПА на {today.strftime('%d.%m.%Y')}</u>\n{report_text}"
+    full_report = f"<u>План запусков ГПА на {today.strftime('%d.%m.%Y')}</u>\n{report_text}"
     admin_ids = get_unique_admin_ids()
     for admin_id in admin_ids:
         try:
