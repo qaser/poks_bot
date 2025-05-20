@@ -7,7 +7,9 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 from aiogram_dialog import Dialog, DialogManager, StartMode
 from bson import ObjectId
+from pytz import timezone
 
+import utils.constants as const
 from config.bot_config import bot
 from config.mongo_config import buffer, gpa, paths, reqs
 # from config.telegram_config import EXPLOIT_GROUP_ID, MY_TELEGRAM_ID
@@ -95,6 +97,7 @@ async def handle_reject_request(call: CallbackQuery, state: FSMContext):
 
 @router.message(F.text, StateFilter("waiting_reject_reason"))
 async def process_reject_reason(message: Message, state: FSMContext, bot):
+    tz = timezone(const.TIME_ZONE)
     data = await state.get_data()
     req_id = ObjectId(data['req_id'])
     current_stage = int(data['current_stage'])
@@ -127,7 +130,22 @@ async def process_reject_reason(message: Message, state: FSMContext, bot):
         await send_notify(req_id, gpa_instance, path, is_fallback=True, is_group=False, reason=message.text, is_rejected=True)
     except Exception as e:
         pass
-    await message.answer("Запрос отклонён. Автор заявки уведомлён о причине.")
+    author_name = (await bot.get_chat(req['author_id'])).full_name
+    gpa_info = (
+        f'<b>Ст.№ ГПА:</b> {gpa_instance["num_gpa"]}\n'
+        f'<b>Наименование ГПА:</b> {gpa_instance["name_gpa"]}\n'
+        f'<b>Тип ГПА:</b> {gpa_instance["type_gpa"]}\n'
+        f'<b>Тип нагнетателя:</b> {gpa_instance["cbn_type"]}'
+    )
+    msg = (
+        f'Вы <u>отклонили</u> запрос <b>#{req["req_num"]}</b>.\n\n'
+        f"📅 Дата запроса: {req['datetime'].astimezone(tz).strftime('%d.%m.%Y %H:%M')}\n"
+        f"🏭 Станция: {req['ks']}\n"
+        f"👤 Автор: {author_name}\n\n"
+        f"<u>Информация о ГПА:</u>\n{gpa_info}\n\n"
+        f"<b>Текст запроса:</b>\n<i>{req['text']}</i>\n"
+    )
+    await message.answer(msg)
     await state.clear()
 
 
