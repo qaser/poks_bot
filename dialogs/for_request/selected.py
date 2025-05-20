@@ -711,11 +711,12 @@ async def build_req_text(req, gpa_instance, stages_text, author_name, new_req=Fa
 async def build_stages_text(req_id, path_instance, current_stage):
     result = ''
     req = reqs.find_one({'_id': req_id})
+    if req['req_type'] == 'without_approval':
+        return 'без согласования'
     for stage_num in range(1, path_instance['num_stages'] + 1):
         stage_data = req['stages'].get(str(stage_num), {})
         status = stage_data.get('status', 'inwork' if stage_num == current_stage else 'pending')
         icon = {'apply': '🟢', 'reject': '🔴', 'pass': '⚫'}.get(status, '⚪')
-
         # Определяем имя ответственного
         if stage_num == current_stage and status not in ('inwork', 'pending'):
             # Для текущего этапа с завершенным статусом показываем ответственного
@@ -735,7 +736,6 @@ async def build_stages_text(req_id, path_instance, current_stage):
         tz = timezone(const.TIME_ZONE)
         date_str = stage_data.get('datetime', '').astimezone(tz).strftime('%d.%m.%Y %H:%M') if 'datetime' in stage_data else ""
         result += f"{icon} Этап {stage_num} - {major_name}" + (f" ({date_str})" if date_str else "") + "\n"
-
     return result
 
 

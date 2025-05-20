@@ -37,6 +37,7 @@ REQUEST_STATUS = {
     'approved': '🟢 Согласовано',
     'inwork': '⚪ В работе',
     'rejected': '🔴 Отклонено',
+    'without_approval': '🟣 Без согласования'
 }
 
 KS = [

@@ -114,6 +114,7 @@ async def get_single_request(dialog_manager: DialogManager, **middleware_data):
 
 async def get_statuses(dialog_manager: DialogManager, **middleware_data):
     statuses = reqs.find({'req_type': 'with_approval'}).distinct('status')
+    statuses.append('without_approval')
     return {'statuses': [(status, REQUEST_STATUS[status]) for status in statuses]}
 
 
@@ -133,7 +134,7 @@ async def get_requests(dialog_manager: DialogManager, **middleware_data):
     if sorting_order == 'ks':
         ks = context.dialog_data['ks']
         queryset = list(reqs.find({'ks': ks}).sort('$natural', -1).limit(48))
-        # queryset = list(reqs.find({'ks': ks,'req_type': 'with_approval'}).sort('$natural', -1).limit(24))
+        # queryset = list(reqs.find({'ks': ks,'req_type': 'with_approval'}).sort('$natural', -1).limit(48))
         data = {'ks': ks, 'is_ks': True, 'not_empty': True}
     elif sorting_order == 'type':
         path_id = context.dialog_data['gpa_type']
@@ -142,8 +143,11 @@ async def get_requests(dialog_manager: DialogManager, **middleware_data):
         data = {'type': paths.find_one({'_id': ObjectId(path_id)})['path_type'], 'is_type': True, 'not_empty': True}
     elif sorting_order == 'status':
         status = context.dialog_data['status']
-        queryset = list(reqs.find({'status': status}).sort('$natural', -1).limit(48))
-        # queryset = list(reqs.find({'status': status, 'req_type': 'with_approval'}).sort('$natural', -1).limit(24))
+        if status == 'without_approval':
+            queryset = list(reqs.find({'req_type': status}).sort('$natural', -1).limit(48))
+        else:
+            queryset = list(reqs.find({'status': status}).sort('$natural', -1).limit(48))
+            # queryset = list(reqs.find({'status': status, 'req_type': 'with_approval'}).sort('$natural', -1).limit(24))
         data = {'status': REQUEST_STATUS[status], 'is_status': True, 'not_empty': True}
     elif sorting_order == 'date':
         req_date_str = context.dialog_data.get('date')
