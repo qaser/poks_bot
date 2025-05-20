@@ -32,11 +32,12 @@ TIME_ERROR_MSG = (
     'Если ни одно время не подходит, то запланируйте пуск на следующий день.'
 )
 STATE_MAPPING = {
-    "Request:select_resource": Request.select_resource,
-    "Request:select_resource_act": Request.select_resource_act,
-    "Request:input_resource_act_file": Request.input_resource_act_file,
-    "Request:input_out_of_resource_reason": Request.input_out_of_resource_reason,
-    "Request:select_protocol": Request.select_protocol,
+    'Request:select_resource': Request.select_resource,
+    'Request:select_resource_act': Request.select_resource_act,
+    'Request:input_resource_act_file': Request.input_resource_act_file,
+    'Request:input_out_of_resource_reason': Request.input_out_of_resource_reason,
+    'Request:select_protocol': Request.select_protocol,
+    'Request:input_epb_file.state': Request.input_epb_file.state,
 }
 
 
@@ -180,7 +181,7 @@ async def on_epb(callback, widget, manager: DialogManager):
     if epb == 'epb_yes':
         context.dialog_data.update(epb=epb)
         if req_type == 'with_approval':
-            await manager.switch_to(Request.select_date)
+            await manager.switch_to(Request.input_epb_file)
         else:
             today = dt.datetime.now()
             context.dialog_data.update(req_date=today.strftime('%d.%m.%Y'))
@@ -188,6 +189,26 @@ async def on_epb(callback, widget, manager: DialogManager):
             await manager.switch_to(Request.select_resource)
     else:
         await manager.switch_to(Request.show_reject_info)
+
+
+async def on_epb_file(message, message_input, manager):
+    manager.show_mode = ShowMode.DELETE_AND_SEND
+    if message.document:
+        file_id = message.document.file_id
+        manager.dialog_data["epb_file_id"] = file_id
+        manager.dialog_data["epb_file_type"] = 'file'
+        await message.answer("📎 Файл загружен.")
+    elif message.photo:
+        photo: PhotoSize = message.photo[-1]  # самое большое фото
+        file_id = photo.file_id
+        manager.dialog_data["epb_file_id"] = file_id
+        manager.dialog_data["epb_file_type"] = 'photo'
+        await message.answer("📷 Фото загружено.")
+    else:
+        await message.answer("⚠️ Пожалуйста, загрузите документ или фото.")
+        return
+    manager.dialog_data["previous_state"] = str(Request.input_epb_file.state)
+    await manager.switch_to(Request.select_date)
 
 
 async def on_select_date(callback, widget, manager: DialogManager, clicked_date):
@@ -422,6 +443,12 @@ async def on_confirm(callback, widget, manager: DialogManager):
             'type': context.dialog_data['card_file_type'],
             'id': context.dialog_data['card_file_id'],
         }
+    # Добавляем card, если она есть и была загружена
+    if context.dialog_data.get('epb') == 'epb_yes' and 'epb_file_id' in context.dialog_data:
+        files['epb'] = {
+            'type': context.dialog_data['epb_file_type'],
+            'id': context.dialog_data['epb_file_id'],
+        }
     req_num = get_next_sequence_value('request_id')
     req_id = reqs.insert_one({
         'req_num': req_num,
@@ -439,10 +466,11 @@ async def on_confirm(callback, widget, manager: DialogManager):
         'notification_datetime': request_datetime + dt.timedelta(hours=3),
         'is_complete': False,
         'resource': 'Выработан' if context.dialog_data['resource'] == 'resource_yes' else 'Не выработан',
-        'resource_act': 'Есть' if context.dialog_data['resource_act'] == 'resource_act_yes' else 'Нет',
+        'resource_act': 'В наличии' if context.dialog_data['resource_act'] == 'resource_act_yes' else 'Отсутствует',
         'resource_act_reason': resource_act_reason,
-        'protocol': 'Есть' if context.dialog_data['protocol'] == 'protocol_yes' else 'Нет',
-        'card': 'Есть' if context.dialog_data['card'] == 'card_yes' else 'Нет',
+        'protocol': 'В наличии' if context.dialog_data['protocol'] == 'protocol_yes' else 'Отсутствует',
+        'card': 'В наличии' if context.dialog_data['card'] == 'card_yes' else 'Отсутствует',
+        'epb': 'В наличии' if context.dialog_data['epb'] == 'epb_yes' else 'Отсутствует',
         'is_fail': False,
         'fail_reason': '',
         'reject_reason': '',
@@ -561,7 +589,8 @@ async def send_information_to_major(req_id):
     if req.get('resource_act_reason'):
         info_text += f"\nПричина отсутствия акта МРР: {req['resource_act_reason']}"
     info_text += (
-        f'\nКарта подготовки ГПА к пуску: {req.get("card", "Нет данных")}\n'
+        f'\nЗаключение ЭПБ: {req.get("epb", "Нет данных")}\n'
+        f'Карта подготовки ГПА к пуску: {req.get("card", "Нет данных")}\n'
         f'Протокол сдачи защит: {req.get("protocol", "Нет данных")}\n\n'
         f"<b>Планируемое время запуска: с момента подачи заявки"
         f"<b>Текст запроса:</b>\n<i>{req['text']}</i>\n\n"
@@ -636,7 +665,8 @@ async def build_req_text(req, gpa_instance, stages_text, author_name, new_req=Fa
     if req.get('resource_act_reason'):
         request_text += f"\nПричина отсутствия акта МРР: {req['resource_act_reason']}"
     request_text += (
-        f'\nКарта подготовки ГПА к пуску: {req.get("card", "Нет данных")}\n'
+        f'\nЗаключение ЭПБ: {req.get("epb", "Нет данных")}\n'
+        f'Карта подготовки ГПА к пуску: {req.get("card", "Нет данных")}\n'
         f'Протокол сдачи защит: {req.get("protocol", "Нет данных")}\n\n'
         f"<b>Планируемое время запуска:</b>\n{req['request_datetime'].strftime('%d.%m.%Y %H:%M')}\n\n"
         f"<b>Текст запроса:</b>\n<i>{req['text']}</i>\n\n"

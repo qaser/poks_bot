@@ -46,6 +46,7 @@ PROTOCOL_FILE_TEXT = (
 )
 CARD_TEXT = '📑 Имеется ли Карта подготовки ГПА к пуску?'
 CARD_FILE_TEXT = '💾 Отправьте скан-копию Карты подготовки ГПА к пуску выбрав файл и нажав кнопку ➤\n\n<i>💡 Можно отправить фото или файл .pdf</i>'
+EPB_FILE_TEXT = '💾 Отправьте скан-копию Заключения ЭПБ выбрав файл и нажав кнопку ➤\n\n<i>💡 Можно отправить фото или файл .pdf</i>'
 REJECT_TEXT = '❗ Заявка при таких условиях не может быть согласована'
 TYPE_REQUEST_TEXT = (
     'Выберите тип заявки:\n\n'
@@ -147,6 +148,20 @@ def select_epb_window():
         ),
         Back(Const(texts.BACK_BUTTON)),
         state=Request.select_epb,
+    )
+
+
+
+
+def input_epb_file_window():
+    return Window(
+        Const(EPB_FILE_TEXT),
+        MessageInput(
+            selected.on_epb_file,
+            content_types=[ContentType.DOCUMENT, ContentType.PHOTO]
+        ),
+        Back(Const(texts.BACK_BUTTON)),
+        state=Request.input_epb_file,
     )
 
 

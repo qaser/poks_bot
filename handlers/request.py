@@ -27,6 +27,7 @@ dialog =  Dialog(
     windows.gpa_window(),
 
     windows.select_epb_window(),
+    windows.input_epb_file_window(),
 
     windows.date_window(),
     windows.time_window(),

@@ -13,6 +13,7 @@ class Request(StatesGroup):
     select_gpa = State()
 
     select_epb = State()
+    input_epb_file = State()
 
     select_date = State()
     select_time = State()
