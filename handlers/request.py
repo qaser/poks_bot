@@ -35,6 +35,7 @@ dialog =  Dialog(
     windows.time_window(),
 
     windows.select_resource_window(),
+    windows.input_logbook_file_window(),
     windows.select_resource_act_window(),
     windows.input_resource_act_file_window(),  # каждый 2-ой запрос
     windows.input_out_of_resource_reason_window(),

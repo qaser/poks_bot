@@ -33,7 +33,8 @@ STATE_MAPPING = {
     'Request:input_resource_act_file': Request.input_resource_act_file,
     'Request:input_out_of_resource_reason': Request.input_out_of_resource_reason,
     'Request:select_protocol': Request.select_protocol,
-    'Request:input_epb_file.state': Request.input_epb_file.state,
+    'Request:input_epb_file': Request.input_epb_file,
+    'Request:input_logbook_file': Request.input_logbook_file,
 }
 
 
@@ -179,16 +180,15 @@ async def on_epb(callback, widget, manager: DialogManager):
         if req_type == 'with_approval':
             await manager.switch_to(Request.input_epb_file)
         else:
-            today = dt.datetime.now()
-            context.dialog_data.update(req_date=today.strftime('%d.%m.%Y'))
-            context.dialog_data.update(req_time=today.strftime('%H:%M'))
-            await manager.switch_to(Request.select_resource)
+            await manager.switch_to(Request.input_epb_file)
     else:
         await manager.switch_to(Request.show_reject_info)
 
 
 async def on_epb_file(message, message_input, manager):
     manager.show_mode = ShowMode.DELETE_AND_SEND
+    context = manager.current_context()
+    req_type = context.dialog_data['req_type']
     if message.document:
         file_id = message.document.file_id
         manager.dialog_data["epb_file_id"] = file_id
@@ -204,7 +204,13 @@ async def on_epb_file(message, message_input, manager):
         await message.answer("⚠️ Пожалуйста, загрузите документ или фото.")
         return
     manager.dialog_data["previous_state"] = str(Request.input_epb_file.state)
-    await manager.switch_to(Request.select_date)
+    if req_type == 'with_approval':
+        await manager.switch_to(Request.select_date)
+    else:
+        today = dt.datetime.now()
+        context.dialog_data.update(req_date=today.strftime('%d.%m.%Y'))
+        context.dialog_data.update(req_time=today.strftime('%H:%M'))
+        await manager.switch_to(Request.select_resource)
 
 
 async def on_select_date(callback, widget, manager: DialogManager, clicked_date):
@@ -281,7 +287,28 @@ async def on_resource(callback, widget, manager: DialogManager):
     elif resource == 'resource_no':
         context.dialog_data.update(resource_act='Не требуется')
         manager.dialog_data["previous_state"] = str(Request.select_resource.state)
-        await manager.switch_to(Request.select_protocol)
+        context.dialog_data.update(logbook='logbook_yes')
+        await manager.switch_to(Request.input_logbook_file)
+
+
+async def on_logbook_file(message, message_input, manager):
+    manager.show_mode = ShowMode.DELETE_AND_SEND
+    if message.document:
+        file_id = message.document.file_id
+        manager.dialog_data["logbook_file_id"] = file_id
+        manager.dialog_data["logbook_file_type"] = 'file'
+        await message.answer("📎 Файл загружен.")
+    elif message.photo:
+        photo: PhotoSize = message.photo[-1]  # самое большое фото
+        file_id = photo.file_id
+        manager.dialog_data["logbook_file_id"] = file_id
+        manager.dialog_data["logbook_file_type"] = 'photo'
+        await message.answer("📷 Фото загружено.")
+    else:
+        await message.answer("⚠️ Пожалуйста, загрузите документ или фото.")
+        return
+    manager.dialog_data["previous_state"] = str(Request.input_logbook_file.state)
+    await manager.switch_to(Request.select_protocol)
 
 
 async def on_resource_act(callback, widget, manager: DialogManager):
@@ -439,11 +466,17 @@ async def on_confirm(callback, widget, manager: DialogManager):
             'type': context.dialog_data['card_file_type'],
             'id': context.dialog_data['card_file_id'],
         }
-    # Добавляем card, если она есть и была загружена
+    # Добавляем epb, если она есть и была загружена
     if context.dialog_data.get('epb') == 'epb_yes' and 'epb_file_id' in context.dialog_data:
         files['epb'] = {
             'type': context.dialog_data['epb_file_type'],
             'id': context.dialog_data['epb_file_id'],
+        }
+    # Добавляем logbook, если она есть и была загружена
+    if context.dialog_data.get('logbook') == 'logbook_yes' and 'logbook_file_id' in context.dialog_data:
+        files['logbook'] = {
+            'type': context.dialog_data['logbook_file_type'],
+            'id': context.dialog_data['logbook_file_id'],
         }
     req_num = get_next_sequence_value('request_id')
     req_id = reqs.insert_one({
@@ -588,7 +621,7 @@ async def send_information_to_major(req_id):
         f'\nЗаключение ЭПБ: {req.get("epb", "Нет данных")}\n'
         f'Карта подготовки ГПА к пуску: {req.get("card", "Нет данных")}\n'
         f'Протокол сдачи защит: {req.get("protocol", "Нет данных")}\n\n'
-        f"<b>Планируемое время запуска: с момента подачи заявки"
+        f"<b>Планируемое время запуска:</b> с момента подачи заявки\n\n"
         f"<b>Текст запроса:</b>\n<i>{req['text']}</i>\n\n"
         'Данный запрос не требует согласования'
     )
@@ -596,7 +629,7 @@ async def send_information_to_major(req_id):
         try:
             await bot.send_message(chat_id=major_id, text=info_text)
         except Exception as err:
-            pass
+            print(err)
 
 
 async def send_request_to_major(req_id, current_stage):

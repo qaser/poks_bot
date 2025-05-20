@@ -20,6 +20,7 @@ class Request(StatesGroup):
 
     # опрос о соответствии ГПА требованиям
     select_resource = State()
+    input_logbook_file = State()
     select_resource_act = State()
     input_resource_act_file = State()  # каждый 2-ой запрос
 
