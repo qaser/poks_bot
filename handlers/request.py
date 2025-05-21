@@ -146,6 +146,7 @@ async def process_reject_reason(message: Message, state: FSMContext, bot):
         f"👤 Автор: {author_name}\n\n"
         f"<u>Информация о ГПА:</u>\n{gpa_info}\n\n"
         f"<b>Текст запроса:</b>\n<blockquote>{req['text']}</blockquote>\n"
+        f"<b>Причина отклонения:</b>\n<blockquote>{message.text}</blockquote>"
     )
     await message.answer(msg)
     await state.clear()
