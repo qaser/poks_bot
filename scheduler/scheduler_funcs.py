@@ -236,8 +236,7 @@ def build_report_by_gpa_type(queryset, include_status=False):
                 status_text = " (нет обратной связи)"
             line = f"{status} {req['ks']} ГПА{gpa_data['num_gpa']} - {time_str}{status_text}"
         else:
-            line = f"{req['ks']} ГПА{gpa_data['num_gpa']} - {time_str}"
-
+            line = f"{req['ks']} ГПА{gpa_data['num_gpa']} - {time_str}<blockquote>{req['text']}</blockquote>"
         gpa_types[gpa_type].append(line)
     return gpa_types
 
