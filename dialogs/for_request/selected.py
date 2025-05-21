@@ -623,7 +623,7 @@ async def send_information_to_major(req_id):
         f'Карта подготовки ГПА к пуску: {req.get("card", "Нет данных")}\n'
         f'Протокол сдачи защит: {req.get("protocol", "Нет данных")}\n\n'
         f"<b>Планируемое время запуска:</b> с момента подачи заявки\n\n"
-        f"<b>Текст запроса:</b>\n<i>{req['text']}</i>\n\n"
+        f"<b>Текст запроса:</b>\n<blockquote>{req['text']}</blockquote>\n\n"
         'Данный запрос не требует согласования'
     )
     kb = InlineKeyboardBuilder()
@@ -703,13 +703,13 @@ async def build_req_text(req, gpa_instance, stages_text, author_name, new_req=Fa
         f'Карта подготовки ГПА к пуску: {req.get("card", "Нет данных")}\n'
         f'Протокол сдачи защит: {req.get("protocol", "Нет данных")}\n\n'
         f"<b>Планируемое время запуска:</b>\n{req['request_datetime'].strftime('%d.%m.%Y %H:%M')}\n\n"
-        f"<b>Текст запроса:</b>\n<i>{req['text']}</i>\n\n"
+        f"<b>Текст запроса:</b>\n<blockquote>{req['text']}</blockquote>\n\n"
         f"<b>Статус согласования:</b>\n{stages_text}\n"
     )
     request_text = f'<b>Новый запрос на пуск ГПА</b>\n{request_text}' if new_req else f'<b>Запрос на пуск ГПА</b>\n{request_text}'
     request_text = f'{request_text}Пожалуйста, согласуйте или отклоните запрос:' if new_req else request_text
     if req['status'] == 'rejected':
-        request_text = f'{request_text}<b>Причина отклонения заявки:</b>\n<i>{req.get("reject_reason", "Информация отсутствует")}</i>'
+        request_text = f'{request_text}<b>Причина отклонения заявки:</b>\n<blockquote>{req.get("reject_reason", "Информация отсутствует")}</blockquote>'
     return request_text
 
 
@@ -764,7 +764,7 @@ async def send_notify(req_id, gpa_instance, path, is_fallback=False, is_group=Tr
             header = '✅ Запрос на пуск ГПА согласован\n\n'
     else:
         if is_rejected:
-            header = f'🔴 Ваш запрос не согласован по причине:\n<i>{reason}</i>\n\n'
+            header = f'🔴 Ваш запрос не согласован по причине:\n<blockquote>{reason}</blockquote>\n\n'
         else:
             header = '🟢 Ваш запрос согласован!\n\n'
     # Формируем информацию о стадиях согласования
@@ -792,7 +792,7 @@ async def send_notify(req_id, gpa_instance, path, is_fallback=False, is_group=Tr
         f"🏭 Станция: {req['ks']}\n"
         f"👤 Автор: {author_name}\n\n"
         f"<u>Информация о ГПА:</u>\n{gpa_info}\n\n"
-        f"<b>Текст запроса:</b>\n<i>{req['text']}</i>\n"
+        f"<b>Текст запроса:</b>\n<blockquote>{req['text']}</blockquote>\n"
     )
     # Добавляем информацию о стадиях для успешного согласования
     if not is_fallback and not is_rejected and stages_text:

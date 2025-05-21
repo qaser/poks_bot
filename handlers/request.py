@@ -145,7 +145,7 @@ async def process_reject_reason(message: Message, state: FSMContext, bot):
         f"🏭 Станция: {req['ks']}\n"
         f"👤 Автор: {author_name}\n\n"
         f"<u>Информация о ГПА:</u>\n{gpa_info}\n\n"
-        f"<b>Текст запроса:</b>\n<i>{req['text']}</i>\n"
+        f"<b>Текст запроса:</b>\n<blockquote>{req['text']}</blockquote>\n"
     )
     await message.answer(msg)
     await state.clear()
@@ -230,7 +230,7 @@ async def process_reject_reason(message: Message, state: FSMContext, bot):
                 chat_id=stage['major_id'],
                 text=(
                     f'🟠 Пуск <b>ГПА №{gpa_instance["num_gpa"]}</b> ({req["ks"]}), '
-                    f'который планировался на <u>{req_date}</u>, <b>не завершён</b> по причине:\n<i>{reason}</i>'
+                    f'который планировался на <u>{req_date}</u>, <b>не завершён</b> по причине:\n<blockquote>{reason}</blockquote>'
                 ),
             )
         except:

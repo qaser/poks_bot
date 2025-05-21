@@ -188,7 +188,8 @@ async def main():
         archive.router,
     )
     await setup_bot_commands(bot)
-    await send_morning_report()
+    # await find_overdue_requests()
+    # await send_morning_report()
     # await send_evening_report()
     setup_dialogs(dp)
     await app.start()
