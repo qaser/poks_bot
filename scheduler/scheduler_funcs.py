@@ -257,6 +257,7 @@ async def send_report(report_id, report_text, update):
     if not update:
         report_buffer.update_one({'_id': report_id}, {'$set': {'chats_data': {}}}, upsert=True)
     admin_ids = get_unique_admin_ids()
+    admin_ids.append(MY_TELEGRAM_ID)
     if update:
         report_data = report_buffer.find_one({'_id': report_id})
         chats_data = report_data.get('chats_data', {}) if report_data else {}
@@ -275,4 +276,3 @@ async def send_report(report_id, report_text, update):
                 )
             except Exception as err:
                 await bot.send_message(chat_id=MY_TELEGRAM_ID, text=str(err))
-    await bot.send_message(chat_id=MY_TELEGRAM_ID, text=report_text)

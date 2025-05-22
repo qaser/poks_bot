@@ -244,14 +244,18 @@ async def process_reject_reason(message: Message, state: FSMContext, bot):
 @router.callback_query(F.data.startswith('launch_success_'))
 async def handle_success_launch(call: CallbackQuery):
     _, _, req_id = call.data.split('_')
-    await call.message.delete()
     req_id = ObjectId(req_id)
+    result = reqs.update_one(
+        {'_id': req_id, 'is_complete': {'$ne': True}},
+        {'$set': {'is_complete': True}}
+    )
+    await call.message.delete()
+    if result.modified_count == 0:
+        return
     req = reqs.find_one({'_id': req_id})
-    reqs.update_one({'_id': req_id}, {'$set': {'is_complete': True}})
     req_date = req['request_datetime'].strftime('%d.%m.%Y %H:%M')
     gpa_instance = gpa.find_one({'_id': req['gpa_id']})
-    stages = req['stages']
-    for stage in stages.values():
+    for stage in req['stages'].values():
         try:
             await bot.send_message(
                 chat_id=stage['major_id'],
@@ -261,8 +265,8 @@ async def handle_success_launch(call: CallbackQuery):
                 ),
                 message_effect_id='5046509860389126442'
             )
-        except:
-            pass
+        except Exception:
+            pass  # Можно залогировать, если нужно
     await send_evening_report(update=True)
 
 

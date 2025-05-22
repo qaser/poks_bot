@@ -34,6 +34,7 @@ paths {
 }
 
 reqs {
+    req_num: номер заявки,
     req_type: [with_approval, without_approval]
     author_id: user_id,
     ks: станция,
@@ -50,6 +51,7 @@ reqs {
     is_complete: False/True  -  при полном завершении цикла от заявки до пуска
     is_fail: False/True - удачен пуск или нет
     fail_reason: причина неудавшегося пуска
+    reject_reason: причина отклонения,
     stages {
         '1': {
             datatime: datetime,
