@@ -55,7 +55,8 @@ async def on_confirm(callback, widget, manager: DialogManager):
             'date': date,
             'station': station,
             'gpa': gpa_num,
-            'gpa_id': gpa_instance['_id']
+            'gpa_id': gpa_instance['_id'],
+            'is_unfinished_start': False
         }
     ).inserted_id
     await create_group(manager, ao_id, 'dialog')

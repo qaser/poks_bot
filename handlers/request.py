@@ -1,3 +1,4 @@
+import asyncio
 import datetime as dt
 
 from aiogram import F, Router
@@ -6,14 +7,18 @@ from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 from aiogram_dialog import Dialog, DialogManager, StartMode
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 from bson import ObjectId
 from pytz import timezone
 
+from dialogs.for_ao.selected import add_admin_to_group, send_chat_links
 from scheduler.scheduler_funcs import send_evening_report, send_morning_report
+from pyrogram.types import ChatPermissions, ChatPrivileges
 import utils.constants as const
 from config.bot_config import bot
-from config.mongo_config import buffer, gpa, paths, reqs
-# from config.telegram_config import EXPLOIT_GROUP_ID, MY_TELEGRAM_ID
+from config.pyrogram_config import app
+from config.mongo_config import buffer, gpa, paths, reqs, emergency_stops, groups, admins
+from config.telegram_config import BOT_ID, MY_TELEGRAM_ID, OTKAZ_GROUP_ID
 from dialogs.for_request import windows
 from dialogs.for_request.selected import (send_notify, send_request_to_major,
                                           show_req_files)
@@ -223,17 +228,23 @@ async def process_reject_reason(message: Message, state: FSMContext, bot):
         )
         await message.delete()
     except Exception as e:
-        print(f"Ошибка при удалении сообщений: {e}")
-    stages = req['stages']
-    for stage in stages.values():
-        try:
+        pass
+    msg_text = (f'🟠 Пуск <b>ГПА №{gpa_instance["num_gpa"]}</b> ({req["ks"]}), '
+                f'который планировался на <u>{req_date}</u>, <b>не завершён</b> по причине:\n<blockquote>{reason}</blockquote>')
+    stages_list = list(req['stages'].values())
+    for i, stage in enumerate(stages_list):
+        if i == len(stages_list) - 1:
+            kb = InlineKeyboardBuilder()
+            kb.button(text='🚫 Не создавать', callback_data=f"group_reject_{data['req_id']}")
+            kb.button(text='👥 Создать группу', callback_data=f"group_apply_{data['req_id']}")
+            msg_text = f'{msg_text}\n\nПри необходимости можете создать группу для расследования незавершенного пуска'
             await bot.send_message(
                 chat_id=stage['major_id'],
-                text=(
-                    f'🟠 Пуск <b>ГПА №{gpa_instance["num_gpa"]}</b> ({req["ks"]}), '
-                    f'который планировался на <u>{req_date}</u>, <b>не завершён</b> по причине:\n<blockquote>{reason}</blockquote>'
-                ),
+                text=msg_text,
+                reply_markup=kb.as_markup()
             )
+        try:
+            await bot.send_message(chat_id=stage['major_id'], text=msg_text,)
         except:
             pass
     await message.answer("Отправлено. Специалисты ПОЭКС уведомлены о причине.")
@@ -249,7 +260,10 @@ async def handle_success_launch(call: CallbackQuery):
         {'_id': req_id, 'is_complete': {'$ne': True}},
         {'$set': {'is_complete': True}}
     )
-    await call.message.delete()
+    try:
+        await call.message.delete()
+    except:
+        pass
     if result.modified_count == 0:
         return
     req = reqs.find_one({'_id': req_id})
@@ -293,3 +307,121 @@ async def hide_files(call: CallbackQuery):
         buffer.delete_one({'_id': ObjectId(msg_ids)})
     except Exception:
         await call.answer("Ошибка при скрытии файлов", show_alert=True)
+
+
+@router.callback_query(F.data.startswith('group_'))
+async def make_group_decision(call: CallbackQuery):
+    _, decision, req_id = call.data.split('_')
+    if decision == 'reject':
+        await call.message.delete()
+    else:
+        await create_group(req_id)
+
+
+async def create_group(req_id):
+    try:
+        await app.start()
+    except:
+        pass
+    req_id = ObjectId(req_id)
+    req = reqs.find_one({'_id': req_id})
+    date = req['request_datetime'].strftime('%d.%m.%Y')
+    gpa_instance = gpa.find_one({'_id': req['gpa_id']})
+    ks = req['ks']
+    gpa_num = gpa_instance['num_gpa']
+    ao_id = emergency_stops.insert_one({
+        'date': date,
+        'station': ks,
+        'gpa': gpa_num,
+        'gpa_id': gpa_instance['_id'],
+        'is_unfinished_start': True
+    }).inserted_id
+    gpa_name = gpa_instance.get('name_gpa')
+    ao_count = emergency_stops.count_documents(
+        {'gpa_id': gpa_instance['_id'], '_id': { '$ne': ao_id }}
+    )
+    group_name = f'{ks} ГПА{gpa_num} {gpa_name} ({date})'
+    try:
+        group = await app.create_supergroup(group_name)
+    except Exception:
+        await bot.send_message(
+            MY_TELEGRAM_ID,
+            text=f'Проблема при создании группы "{group_name}"'
+        )
+        return
+    group_id = group.id
+    groups.insert_one(
+        {
+            '_id': group_id,
+            'group_name': group_name,
+            'sub_banned': 'false',
+            'ao_id': ao_id,
+            'gpa_id': gpa_instance['_id']
+        }
+    )
+    await app.set_chat_protected_content(chat_id=group_id, enabled=True)
+    await app.set_chat_permissions(
+        chat_id=group_id,
+        permissions=ChatPermissions(
+            can_send_messages=True,
+            can_send_media_messages=True,
+            can_send_other_messages=True,
+            can_send_polls=True,
+            can_add_web_page_previews=True,
+            can_change_info=True,
+            can_invite_users=True,
+            can_pin_messages=True
+        )
+    )
+    try:
+        link = await app.create_chat_invite_link(group_id)
+    except:
+        await bot.send_message(
+            MY_TELEGRAM_ID,
+            text=f'Ссылка для группы "{group_name}" не создана'
+        )
+    try:
+        await add_admin_to_group(BOT_ID, group_id)
+    except:
+        await bot.send_message(
+            MY_TELEGRAM_ID,
+            text=f'Бот не смог войти в группу {group_name}'
+        )
+    admin_users = list(admins.find({
+        "$and": [
+            {"$or": [{"sub": True}, {"sub": {"$exists": False}}]},
+            {"user_id": {"$ne": int(MY_TELEGRAM_ID)}}
+        ]
+    }))
+    invite_text = f'Группа для расследования незавершенного пуска: {link.invite_link}'
+    for admin in admin_users:
+        admin_id = admin.get('user_id')
+        try:
+            await add_admin_to_group(admin_id, group_id)
+            # Задержка между добавлениями
+            await asyncio.sleep(1)
+        except:
+            try:
+                await bot.send_message(chat_id=admin_id, text=invite_text)
+            except:
+                pass
+    try:
+        await app.leave_chat(group_id)
+    except:
+        await bot.send_message(
+            MY_TELEGRAM_ID,
+            text=f'Почему-то я не покинул группу {group_name}'
+        )
+    try:
+        await bot.send_message(chat_id=OTKAZ_GROUP_ID, text=invite_text)
+    except:
+        await bot.send_message(MY_TELEGRAM_ID, text='Не отправлена ссылка в группу "Отказы"')
+    post = await bot.send_message(chat_id=group_id, text=const.MANUAL)
+    try:
+        await bot.pin_chat_message(group_id, post.message_id)
+        await bot.send_message(group_id, const.NEW_GROUP_TEXT)
+    except:
+        pass
+    if ao_count > 0:
+        await send_chat_links(gpa_instance, group_id, ao_id)
+    await bot.send_message(MY_TELEGRAM_ID, text=f'Создана группа {group_name}')
