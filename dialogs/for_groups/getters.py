@@ -5,6 +5,7 @@ from aiogram_dialog import DialogManager
 from config.bot_config import bot
 from config.mongo_config import emergency_stops, gpa, groups
 from utils.constants import KS
+from utils.utils import report_error
 
 
 async def get_stations(dialog_manager: DialogManager, **middleware_data):
@@ -30,7 +31,7 @@ async def get_groups_links(dialog_manager: DialogManager, **middleware_data):
             invite_link = await bot.create_chat_invite_link(chat_id=group['_id'])
             links.append((remove_ks_prefix(group['group_name']), invite_link.invite_link))
         except Exception as e:
-            pass
+            await report_error(e)
     len_links = len(links)
     return {
         'links': links,

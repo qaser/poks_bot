@@ -7,6 +7,7 @@ from config.mongo_config import emergency_stops, groups, otkaz_msgs
 from config.pyrogram_config import app
 from config.telegram_config import OTKAZ_GROUP_ID
 from dialogs.for_edit.states import Edit
+from utils.utils import report_error
 
 
 async def on_group_done(callback, widget, manager: DialogManager, group_id):
@@ -48,7 +49,7 @@ async def delete_group_members(group_id):
             await app.kick_chat_member(group_id, user_id)
             await asyncio.sleep(1)  # Чтобы не получить FloodWait
         except Exception as e:
-            pass
+            await report_error(e)
 
 
 async def get_all_members(app, chat_id):

@@ -10,6 +10,7 @@ from bs4 import BeautifulSoup
 
 from config.bot_config import bot
 from config.telegram_config import MY_TELEGRAM_ID
+from utils.utils import report_error
 
 
 def date_parse(msg_date):
@@ -45,8 +46,7 @@ def get_letter_text_from_html(body):
         for paragraph in paragraphs:
             text += paragraph.text + "\n"
         return text.replace("\xa0", " ")
-    except (Exception) as exp:
-        print("text ftom html err ", exp)
+    except Exception as e:
         return False
 
 

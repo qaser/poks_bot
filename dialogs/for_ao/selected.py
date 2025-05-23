@@ -12,6 +12,7 @@ from config.mongo_config import (admins, emergency_stops, gpa, groups,
 from config.pyrogram_config import app
 from config.telegram_config import BOT_ID, MY_TELEGRAM_ID, OTKAZ_GROUP_ID
 from dialogs.for_ao.states import Ao
+from utils.utils import report_error
 
 from . import states
 
@@ -79,11 +80,8 @@ async def create_group(manager, ao_id, mark):
     group_name = f'{ks} ГПА{gpa_num} {gpa_name} ({date})'
     try:
         group = await app.create_supergroup(group_name)
-    except Exception:
-        await bot.send_message(
-            MY_TELEGRAM_ID,
-            text=f'Проблема при создании группы "{group_name}"'
-        )
+    except Exception as e:
+        await report_error(e)
     group_id = group.id
     groups.insert_one(
         {

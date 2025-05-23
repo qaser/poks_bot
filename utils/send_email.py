@@ -8,6 +8,7 @@ import utils.constants as const
 from config.bot_config import bot
 from config.mail_config import MAIL_LOGIN, MAIL_PASS, PORT, SMTP_MAIL_SERVER
 from config.telegram_config import MY_TELEGRAM_ID
+from utils.utils import report_error
 
 
 async def send_email(emails, f_path, user_id=MY_TELEGRAM_ID, ):
@@ -23,11 +24,8 @@ async def send_email(emails, f_path, user_id=MY_TELEGRAM_ID, ):
             part = MIMEApplication(f.read(), Name=f_path)
             part['Content-Disposition'] = 'attachment; filename="Сводная таблица"'
             msg.attach(part)
-    except IOError:
-        await bot.send_message(
-            chat_id=MY_TELEGRAM_ID,
-            text='Ошибка при открытии файла вложения'
-        )
+    except IOError as e:
+        await report_error(e)
     try:
         smtp = smtplib.SMTP(SMTP_MAIL_SERVER, PORT)
         smtp.starttls()
@@ -39,8 +37,5 @@ async def send_email(emails, f_path, user_id=MY_TELEGRAM_ID, ):
             chat_id=user_id,
             text='Письмо успешно отправлено'
         )
-    except smtplib.SMTPException as err:
-        await bot.send_message(
-            chat_id=MY_TELEGRAM_ID,
-            text=f'Что - то пошло не так...\n\n{err}'
-        )
+    except smtplib.SMTPException as e:
+        await report_error(e)

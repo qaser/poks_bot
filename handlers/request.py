@@ -13,7 +13,7 @@ from pytz import timezone
 
 from dialogs.for_ao.selected import add_admin_to_group, send_chat_links
 from scheduler.scheduler_funcs import send_evening_report, send_morning_report
-from pyrogram.types import ChatPermissions, ChatPrivileges
+from pyrogram.types import ChatPermissions
 import utils.constants as const
 from config.bot_config import bot
 from config.pyrogram_config import app
@@ -22,6 +22,7 @@ from config.telegram_config import BOT_ID, MY_TELEGRAM_ID, OTKAZ_GROUP_ID
 from dialogs.for_request import windows
 from dialogs.for_request.selected import (send_notify, send_request_to_major,
                                           show_req_files)
+from utils.utils import report_error
 from dialogs.for_request.states import Request
 
 router = Router()
@@ -120,7 +121,7 @@ async def process_reject_reason(message: Message, state: FSMContext, bot):
         )
         await message.delete()
     except Exception as e:
-        print(f"Ошибка при удалении сообщений: {e}")
+        await report_error(e)
     if not req:
         await message.answer("Запрос не найден!")
         return
@@ -136,7 +137,7 @@ async def process_reject_reason(message: Message, state: FSMContext, bot):
     try:
         await send_notify(req_id, gpa_instance, path, is_fallback=True, is_group=False, reason=message.text, is_rejected=True)
     except Exception as e:
-        pass
+        await report_error(e)
     author_name = (await bot.get_chat(req['author_id'])).full_name
     gpa_info = (
         f'<b>Ст.№ ГПА:</b> {gpa_instance["num_gpa"]}\n'
@@ -182,7 +183,7 @@ async def handle_apply_request(call: CallbackQuery):
             # await send_notify(req_id, gpa_instance, path, is_fallback=False, is_group=True)  # Успешное согласование в группу
             await send_notify(req_id, gpa_instance, path, is_fallback=False, is_group=False)  # Успешное согласование автору
         except Exception as e:
-            print(f'Ошибка уведомления группы: {e}')
+            await report_error(e)
         await call.answer('Запрос полностью согласован!')
         await send_morning_report(update=True)
     else:
@@ -191,8 +192,7 @@ async def handle_apply_request(call: CallbackQuery):
             await send_request_to_major(req_id, next_stage)
             await call.answer('Запрос передан следующему согласующему')
         except Exception as e:
-            print(f'Ошибка отправки следующему согласующему: {e}')
-            await call.answer('Ошибка при передаче запроса', show_alert=True)
+            await report_error(e)
     await call.message.delete()
 
 
@@ -228,7 +228,7 @@ async def process_reject_reason(message: Message, state: FSMContext, bot):
         )
         await message.delete()
     except Exception as e:
-        pass
+        await report_error(e)
     msg_text = (f'🟠 Пуск <b>ГПА №{gpa_instance["num_gpa"]}</b> ({req["ks"]}), '
                 f'который планировался на <u>{req_date}</u>, <b>не завершён</b> по причине:\n<blockquote>{reason}</blockquote>')
     stages_list = list(req['stages'].values())
@@ -245,8 +245,8 @@ async def process_reject_reason(message: Message, state: FSMContext, bot):
             )
         try:
             await bot.send_message(chat_id=stage['major_id'], text=msg_text,)
-        except:
-            pass
+        except Exception as e:
+            await report_error(e)
     await message.answer("Отправлено. Специалисты ПОЭКС уведомлены о причине.")
     await send_evening_report(update=True)
     await state.clear()
@@ -262,8 +262,8 @@ async def handle_success_launch(call: CallbackQuery):
     )
     try:
         await call.message.delete()
-    except:
-        pass
+    except Exception as e:
+        await report_error(e)
     if result.modified_count == 0:
         return
     req = reqs.find_one({'_id': req_id})
@@ -279,8 +279,8 @@ async def handle_success_launch(call: CallbackQuery):
                 ),
                 message_effect_id='5046509860389126442'
             )
-        except Exception:
-            pass  # Можно залогировать, если нужно
+        except Exception as e:
+            await report_error(e)
     await send_evening_report(update=True)
 
 
@@ -299,14 +299,14 @@ async def hide_files(call: CallbackQuery):
             try:
                 await call.bot.delete_message(chat_id=call.message.chat.id, message_id=msg_id)
             except Exception as e:
-                pass
+                await report_error(e)
         try:
             await call.message.delete()
         except Exception as e:
-            pass
+            await report_error(e)
         buffer.delete_one({'_id': ObjectId(msg_ids)})
-    except Exception:
-        await call.answer("Ошибка при скрытии файлов", show_alert=True)
+    except Exception as e:
+        await report_error(e)
 
 
 @router.callback_query(F.data.startswith('group_'))
@@ -321,8 +321,8 @@ async def make_group_decision(call: CallbackQuery):
 async def create_group(req_id):
     try:
         await app.start()
-    except:
-        pass
+    except Exception as e:
+        await report_error(e)
     req_id = ObjectId(req_id)
     req = reqs.find_one({'_id': req_id})
     date = req['request_datetime'].strftime('%d.%m.%Y')
@@ -343,11 +343,8 @@ async def create_group(req_id):
     group_name = f'{ks} ГПА{gpa_num} {gpa_name} ({date})'
     try:
         group = await app.create_supergroup(group_name)
-    except Exception:
-        await bot.send_message(
-            MY_TELEGRAM_ID,
-            text=f'Проблема при создании группы "{group_name}"'
-        )
+    except Exception as e:
+        await report_error(e)
         return
     group_id = group.id
     groups.insert_one(
@@ -375,18 +372,12 @@ async def create_group(req_id):
     )
     try:
         link = await app.create_chat_invite_link(group_id)
-    except:
-        await bot.send_message(
-            MY_TELEGRAM_ID,
-            text=f'Ссылка для группы "{group_name}" не создана'
-        )
+    except Exception as e:
+        await report_error(e)
     try:
         await add_admin_to_group(BOT_ID, group_id)
-    except:
-        await bot.send_message(
-            MY_TELEGRAM_ID,
-            text=f'Бот не смог войти в группу {group_name}'
-        )
+    except Exception as e:
+        await report_error(e)
     admin_users = list(admins.find({
         "$and": [
             {"$or": [{"sub": True}, {"sub": {"$exists": False}}]},
@@ -403,25 +394,22 @@ async def create_group(req_id):
         except:
             try:
                 await bot.send_message(chat_id=admin_id, text=invite_text)
-            except:
-                pass
+            except Exception as e:
+                await report_error(e)
     try:
         await app.leave_chat(group_id)
-    except:
-        await bot.send_message(
-            MY_TELEGRAM_ID,
-            text=f'Почему-то я не покинул группу {group_name}'
-        )
+    except Exception as e:
+        await report_error(e)
     try:
         await bot.send_message(chat_id=OTKAZ_GROUP_ID, text=invite_text)
-    except:
-        await bot.send_message(MY_TELEGRAM_ID, text='Не отправлена ссылка в группу "Отказы"')
+    except Exception as e:
+        await report_error(e)
     post = await bot.send_message(chat_id=group_id, text=const.MANUAL)
     try:
         await bot.pin_chat_message(group_id, post.message_id)
         await bot.send_message(group_id, const.NEW_GROUP_TEXT)
-    except:
-        pass
+    except Exception as e:
+        await report_error(e)
     if ao_count > 0:
         await send_chat_links(gpa_instance, group_id, ao_id)
     await bot.send_message(MY_TELEGRAM_ID, text=f'Создана группа {group_name}')

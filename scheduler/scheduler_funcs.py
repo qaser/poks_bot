@@ -18,6 +18,8 @@ from utils.backup_db import send_dbs_mail
 from utils.get_mail import get_letters
 from collections import defaultdict
 
+from utils.utils import report_error
+
 
 SPCH_TIME_WORK_MSG = ('В срок до 12:00 текущего дня прошу выложить фактическую наработку за прошедший месяц.\n\n'
                       'Пример:\n\nКС «Примерная»:\nГПА 12 - 720\nГПА 24 - 9\n\n'
@@ -140,11 +142,8 @@ async def find_overdue_requests():
                 text=msg_text,
                 reply_markup=kb.as_markup()
             )
-        except Exception as err:
-            await bot.send_message(
-                chat_id=MY_TELEGRAM_ID,
-                text='🔴 Не отправлено сообщение с кнопками подтверждения пуска'
-            )
+        except Exception as e:
+            await report_error(e)
 
 
 async def send_morning_report(update=False):
@@ -265,7 +264,7 @@ async def send_report(report_id, report_text, update):
             try:
                 await bot.edit_message_text(chat_id=admin_id, message_id=msg_id, text=report_text)
             except Exception as e:
-                print(f"Ошибка при обновлении сообщения {msg_id} для админа {admin_id}: {e}")
+                await report_error(e)
     else:
         for admin_id in admin_ids:
             try:
@@ -274,5 +273,5 @@ async def send_report(report_id, report_text, update):
                     {'_id': report_id},
                     {'$set': {f'chats_data.{admin_id}': msg.message_id}}
                 )
-            except Exception as err:
-                await bot.send_message(chat_id=MY_TELEGRAM_ID, text=str(err))
+            except Exception as e:
+                await report_error(e)

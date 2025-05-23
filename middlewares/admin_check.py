@@ -4,6 +4,7 @@ from aiogram import BaseMiddleware
 from aiogram.types import Message, TelegramObject
 
 from config.mongo_config import admins
+from utils.utils import report_error
 
 
 class AdminCheckMiddleware(BaseMiddleware):
@@ -43,8 +44,8 @@ class AdminCheckMiddleware(BaseMiddleware):
             if first_word in self.PUBLIC_COMMANDS:
                 try:
                     await event.delete()
-                except Exception as e:
-                    print(f"Не удалось удалить сообщение: {e}")
+                except:
+                    pass
                 return
             return await handler(event, data)
 
@@ -57,8 +58,8 @@ class AdminCheckMiddleware(BaseMiddleware):
         if not admin:
             try:
                 await event.delete()
-            except Exception as e:
-                print(f"Не удалось удалить сообщение не-админа: {e}")
+            except:
+                pass
             return
 
         return await handler(event, data)

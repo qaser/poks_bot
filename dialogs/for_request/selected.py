@@ -1,6 +1,5 @@
 import asyncio
 import datetime as dt
-import random
 
 import aiohttp
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
@@ -15,9 +14,9 @@ from scheduler.scheduler_funcs import send_morning_report
 import utils.constants as const
 from config.bot_config import bot
 from config.mongo_config import buffer, gpa, paths, req_counter, reqs
-from config.pyrogram_config import app
-from config.telegram_config import BOT_ID, EXPLOIT_GROUP_ID, MY_TELEGRAM_ID
+from config.telegram_config import EXPLOIT_GROUP_ID
 from dialogs.for_request.states import Request
+from utils.utils import report_error
 
 DATE_ERROR_MSG = (
     'Выбранная дата уже прошла.\n'
@@ -61,7 +60,7 @@ async def is_holiday(target_date: dt.date) -> bool:
                     day_of_year = target_date.timetuple().tm_yday - 1
                     return data[day_of_year] == '1'  # '1' - праздник/выходной
     except Exception as e:
-        print(f"Ошибка при проверке праздников: {e}")
+        await report_error(e)
     return False
 
 
@@ -632,8 +631,8 @@ async def send_information_to_major(req_id):
     for major_id in stages.values():
         try:
             await bot.send_message(chat_id=major_id, text=info_text, reply_markup=kb.as_markup())
-        except Exception as err:
-            print(err)
+        except Exception as e:
+            await report_error(e)
     await send_morning_report(update=True)
 
 
@@ -813,21 +812,21 @@ async def send_notify(req_id, gpa_instance, path, is_fallback=False, is_group=Tr
                 text=request_text
             )
     except Exception as e:
-        pass
+        await report_error(e)
 
 
 async def delete_callback_message(callback):
     try:
         await callback.delete()
     except Exception as e:
-        pass
+        await report_error(e)
     try:
         await callback.bot.delete_message(
             chat_id=callback.from_user.id,
             message_id=callback.message_id - 1
         )
     except Exception as e:
-        pass
+        await report_error(e)
 
 
 async def send_req_files(callback, widget, manager: DialogManager):
@@ -874,7 +873,7 @@ async def show_req_files(call, req_id):
                 sent_files = True
                 await asyncio.sleep(0.5)
             except Exception:
-                pass
+                await report_error(e)
         if not sent_files:
             await call.answer("Не удалось загрузить файлы", show_alert=True)
             return
