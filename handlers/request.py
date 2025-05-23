@@ -286,8 +286,8 @@ async def handle_success_launch(call: CallbackQuery):
 
 @router.callback_query(F.data.startswith('req_files_'))
 async def send_request_files(call: CallbackQuery):
-    _, _, req_id = call.data.split('_')[:3]
-    await show_req_files(call, req_id)
+    _, _, doc_type, req_id = call.data.split('_', 3)
+    await show_req_files(call, doc_type, req_id)
 
 
 @router.callback_query(F.data.startswith('hide_files_'))

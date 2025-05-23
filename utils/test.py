@@ -50,17 +50,40 @@ MSGS = [
     'Правохеттинское ЛПУМГ, ГПА№64, в 1:50 АО - помпаж двигателя (ложное).',
 ]
 
-# req_count = reqs.count_documents({})
-# queryset = list(reqs.find({}))
-# req_counter.insert_one({
-#     '_id': 'request_id',
-#     'seq': req_count
-# })
-# for num, req in enumerate(queryset):
-#     reqs.update_one(
-#         {'_id': req['_id']},
-#         {'$set': {'req_num': num+1}}
-#     )
+def convert_files_format(old_files):
+    if not isinstance(old_files, dict):
+        return {}
+
+    new_files = {}
+    for key, value in old_files.items():
+        # Старый формат: value — словарь {'id': ..., 'type': ...}
+        if isinstance(value, dict) and 'id' in value and 'type' in value:
+            new_files[key] = [{
+                'file_id': value['id'],
+                'file_type': value['type']
+            }]
+        # Возможно, уже новый формат — ничего не делаем
+        elif isinstance(value, list):
+            new_files[key] = value
+        else:
+            # Неизвестный формат — пропускаем
+            continue
+    return new_files
+
+queryset = list(reqs.find({}))
+for req in queryset:
+    old_files = req.get('files')
+    if not old_files:
+        continue
+
+    new_files = convert_files_format(old_files)
+    if new_files != old_files:  # Только если реально изменилось
+        reqs.update_one(
+            {'_id': req['_id']},
+            {'$set': {'files': new_files}}
+        )
+
+print("Migration completed.")
 
 # for msg in MSGS:
 #     date_find = re.compile(r'\d\d\.\d\d\.(\d\d\d\d|\d\d)')

@@ -1,5 +1,4 @@
 import datetime as dt
-from collections import Counter
 
 from aiogram_dialog import DialogManager
 from bson.objectid import ObjectId
@@ -259,3 +258,32 @@ async def get_users_info(dialog_manager: DialogManager, **middleware_data):
     admin = admins.find_one({'user_id': user_id})
     is_admin = bool(admin)
     return {'is_admin': is_admin, 'is_user': not is_admin}
+
+
+async def get_epb_files(dialog_manager: DialogManager, **middleware_data):
+    return await get_files_context(dialog_manager, key='epb_files')
+
+
+async def get_logbook_files(dialog_manager: DialogManager, **middleware_data):
+    return await get_files_context(dialog_manager, key='logbook_files')
+
+
+async def get_resource_files(dialog_manager: DialogManager, **middleware_data):
+    return await get_files_context(dialog_manager, key='resource_act_files')
+
+
+async def get_protocol_files(dialog_manager: DialogManager, **middleware_data):
+    return await get_files_context(dialog_manager, key='protocol_files')
+
+
+async def get_card_files(dialog_manager: DialogManager, **middleware_data):
+    return await get_files_context(dialog_manager, key='card_files')
+
+
+async def get_files_context(dialog_manager: DialogManager, key: str):
+    files = dialog_manager.dialog_data.setdefault(key, [])
+    count_files = len(files)
+    return {
+        'has_files': count_files > 0,
+        'count_files': count_files,
+    }

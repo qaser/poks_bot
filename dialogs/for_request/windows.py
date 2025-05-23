@@ -6,11 +6,11 @@ from aiogram_dialog.widgets.kbd import (Back, Button, CurrentPage, NextPage,
 from aiogram_dialog.widgets.text import Const, Format, Multi
 
 import utils.constants as texts
-from config.pyrogram_config import app
 from dialogs.custom_widgets.custom_calendar import CustomCalendar
 from dialogs.for_request.states import Request
 
 from . import getters, keyboards, selected
+
 
 ID_SCROLL_PAGER = 'stations_pager'
 MAJOR_SCROLL_PAGER = 'majors_pager'
@@ -33,7 +33,7 @@ RESOURCE_ACT_TEXT = '📝 Имеется ли согласованный ПОЭ�
 RESOURCE_ACT_FILE_TEXT = (
     '💾 Отправьте скан-копию <b>согласованного</b> <u>Акта продления МРР</u> или <u>Эксплуатационного '
     'формуляра</u>, где указана наработка после КР и СР. Выберите файл и нажмите кнопку ➤\n\n'
-    '<i>💡 Можно отправить <u><b>одно</b></u> фото или <u><b>один</b></u> файл формата .pdf</i>'
+    '<i>💡 Вы можете отправить несколько файлов одновременно или по одному</i>'
 )
 OUT_RESOURCE_REASON_TEXT = (
     'Эксплуатация ГПА без продления МРР не допускается. Если Вам <u>необходимо</u> '
@@ -42,21 +42,21 @@ OUT_RESOURCE_REASON_TEXT = (
 PROTOCOL_TEXT = '🛡️ Имеется ли Протокол сдачи защит перед пуском?'
 PROTOCOL_FILE_TEXT = (
     '💾 Отправьте скан-копию <u>Протокола сдачи защит</u> выбрав файл и нажав кнопку ➤\n\n'
-    '<i>💡 Можно отправить <u><b>одно</b></u> фото или <u><b>один</b></u> файл формата .pdf</i>'
+    '<i>💡 Вы можете отправить несколько файлов одновременно или по одному</i>'
 )
 CARD_TEXT = '📑 Имеется ли Карта подготовки ГПА к пуску?'
 CARD_FILE_TEXT = (
     '💾 Отправьте скан-копию <u>Карты подготовки ГПА к пуску</u> выбрав файл и нажав кнопку ➤\n\n'
-    '<i>💡 Можно отправить <u><b>одно</b></u> фото или <u><b>один</b></u> файл формата .pdf</i>'
+    '<i>💡 Вы можете отправить несколько файлов одновременно или по одному</i>'
 )
 EPB_FILE_TEXT = (
     '💾 Отправьте скан-копию <u>Заключения ЭПБ</u> выбрав файл и нажав кнопку ➤\n\n'
-    '<i>💡 Можно отправить <u><b>одно</b></u> фото или <u><b>один</b></u> файл формата .pdf</i>'
+    '<i>💡 Вы можете отправить несколько файлов одновременно или по одному</i>'
 )
 LOGBOOK_FILE_TEXT = (
-    '💾 Отправьте скан-копию <u>Эксплутационного формуляра</u>, '
+    '💾 Отправьте скан-копию <u>Эксплуатационного формуляра</u>, '
     'где указана наработка после КР и СР. Выберите файл и нажмите кнопку ➤\n\n'
-    '<i>💡 Можно отправить <u><b>одно</b></u> фото или <u><b>один</b></u> файл формата .pdf</i>'
+    '<i>💡 Вы можете отправить несколько файлов одновременно или по одному</i>'
 )
 REJECT_TEXT = '❗ Заявка при таких условиях не может быть согласована'
 TYPE_REQUEST_TEXT = (
@@ -162,17 +162,25 @@ def select_epb_window():
     )
 
 
-
-
 def input_epb_file_window():
     return Window(
         Const(EPB_FILE_TEXT),
+        Format(
+            '\nНа данный момент загружено файлов/фото: <b>{count_files}</b>',
+            when='has_files'
+        ),
         MessageInput(
             selected.on_epb_file,
             content_types=[ContentType.DOCUMENT, ContentType.PHOTO]
         ),
-        # Back(Const(texts.BACK_BUTTON)),
+        Button(
+            Const('Закончить загрузку документов'),
+            'files_stop',
+            on_click=selected.on_epb_file_done,
+            when='has_files'
+        ),
         state=Request.input_epb_file,
+        getter=getters.get_epb_files
     )
 
 
@@ -227,16 +235,22 @@ def select_resource_window():
 def input_logbook_file_window():
     return Window(
         Const(LOGBOOK_FILE_TEXT),
+        Format(
+            '\nНа данный момент загружено файлов/фото: <b>{count_files}</b>',
+            when='has_files'
+        ),
         MessageInput(
             selected.on_logbook_file,
             content_types=[ContentType.DOCUMENT, ContentType.PHOTO]
         ),
-        # Button(
-        #     Const(texts.BACK_BUTTON),
-        #     on_click=selected.return_to_resource_act,
-        #     id='return_to_resource_act'
-        # ),
+        Button(
+            Const('Закончить загрузку документов'),
+            'files_stop',
+            on_click=selected.on_logbook_file_done,
+            when='has_files'
+        ),
         state=Request.input_logbook_file,
+        getter=getters.get_logbook_files
     )
 
 
@@ -264,16 +278,22 @@ def select_resource_act_window():
 def input_resource_act_file_window():
     return Window(
         Const(RESOURCE_ACT_FILE_TEXT),
+        Format(
+            '\nНа данный момент загружено файлов/фото: <b>{count_files}</b>',
+            when='has_files'
+        ),
         MessageInput(
             selected.on_resource_act_file,
             content_types=[ContentType.DOCUMENT, ContentType.PHOTO]
         ),
-        # Button(
-        #     Const(texts.BACK_BUTTON),
-        #     on_click=selected.return_to_resource_act,
-        #     id='return_to_resource_act'
-        # ),
+        Button(
+            Const('Закончить загрузку документов'),
+            'files_stop',
+            on_click=selected.on_resource_act_file_done,
+            when='has_files'
+        ),
         state=Request.input_resource_act_file,
+        getter=getters.get_resource_files
     )
 
 
@@ -321,12 +341,22 @@ def select_protocol_window():
 def input_protocol_file_window():
     return Window(
         Const(PROTOCOL_FILE_TEXT),
+        Format(
+            '\nНа данный момент загружено файлов/фото: <b>{count_files}</b>',
+            when='has_files'
+        ),
         MessageInput(
             selected.on_protocol_act_file,
             content_types=[ContentType.DOCUMENT, ContentType.PHOTO]
         ),
-        # Back(Const(texts.BACK_BUTTON)),
+        Button(
+            Const('Закончить загрузку документов'),
+            'files_stop',
+            on_click=selected.on_protocol_act_file_done,
+            when='has_files'
+        ),
         state=Request.input_protocol_file,
+        getter=getters.get_protocol_files
     )
 
 
@@ -346,12 +376,23 @@ def select_card_window():
 def input_card_file_window():
     return Window(
         Const(CARD_FILE_TEXT),
+        Format(
+            '\nНа данный момент загружено файлов/фото: <b>{count_files}</b>',
+            when='has_files'
+        ),
         MessageInput(
             selected.on_card_file,
             content_types=[ContentType.DOCUMENT, ContentType.PHOTO]
         ),
-        # Back(Const(texts.BACK_BUTTON)),
+        Button(
+            Const('Закончить загрузку документов'),
+            'files_stop',
+            on_click=selected.on_card_file_done,
+            when='has_files'
+        ),
         state=Request.input_card_file,
+        getter=getters.get_card_files,
+
     )
 
 
@@ -366,7 +407,7 @@ def show_reject_window():
 def input_info_window():
     return Window(
         Const(INPUT_TEXT),
-        Button(Const(texts.BACK_BUTTON), on_click=return_main_menu, id='main_menu'),
+        # Button(Const(texts.BACK_BUTTON), on_click=return_main_menu, id='main_menu'),
         TextInput(
             id='request_info',
             on_success=selected.on_input_info,
@@ -429,12 +470,12 @@ def inwork_requests_window():
 def show_inwork_single_request_window():
     return Window(
         Format('{text}'),
-        Button(
-            Const('🔗 Посмотреть прикреплённые файлы'),
-            on_click=selected.send_req_files,
-            id='show_files',
-            when='has_files'
-        ),
+        # Button(
+        #     Const('🔗 Посмотреть прикреплённые файлы'),
+        #     on_click=selected.send_req_files,
+        #     id='show_files',
+        #     when='has_files'
+        # ),
         Back(Const(texts.BACK_BUTTON)),
         state=Request.show_inwork_single_request,
         getter=getters.get_single_request,
@@ -542,12 +583,12 @@ def show_list_requests_window():
 def show_single_request_window():
     return Window(
         Format('{text}'),
-        Button(
-            Const('🔗 Посмотреть прикреплённые файлы'),
-            on_click=selected.send_req_files,
-            id='show_files',
-            when='has_files'
-        ),
+        # Button(
+        #     Const('🔗 Посмотреть прикреплённые файлы'),
+        #     on_click=selected.send_req_files,
+        #     id='show_files',
+        #     when='has_files'
+        # ),
         Button(
             Const('🗑️ Удалить заявку'),
             on_click=selected.on_delete_req,

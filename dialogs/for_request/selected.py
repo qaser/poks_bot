@@ -1,11 +1,9 @@
-import asyncio
 import datetime as dt
 
 import aiohttp
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
-from aiogram.types import PhotoSize
+from aiogram.types import PhotoSize, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from aiogram.utils.media_group import MediaGroupBuilder
 from aiogram_dialog import DialogManager, ShowMode, StartMode
 from bson import ObjectId
 from pytz import timezone
@@ -17,6 +15,15 @@ from config.mongo_config import buffer, gpa, paths, req_counter, reqs
 from config.telegram_config import EXPLOIT_GROUP_ID
 from dialogs.for_request.states import Request
 from utils.utils import report_error
+
+
+FILE_LABELS = {
+    'protocol': '📄 Протокол сдачи защит',
+    'act': '📄 Акт продления МРР',
+    'card': '📄 Карта подготовки ГПА к пуску',
+    'epb': '📄 ЭПБ',
+    'logbook': '📄 Эксплуатационный формуляр',
+}
 
 DATE_ERROR_MSG = (
     'Выбранная дата уже прошла.\n'
@@ -185,24 +192,19 @@ async def on_epb(callback, widget, manager: DialogManager):
         await manager.switch_to(Request.show_reject_info)
 
 
-async def on_epb_file(message, message_input, manager):
-    manager.show_mode = ShowMode.DELETE_AND_SEND
+async def on_epb_file(message, message_input, manager: DialogManager):
+    await handle_file_upload(
+        message=message,
+        manager=manager,
+        dialog_key='epb_files',
+        next_state=Request.input_epb_file,
+    )
+
+
+async def on_epb_file_done(message, message_input, manager):
+    # manager.show_mode = ShowMode.DELETE_AND_SEND
     context = manager.current_context()
     req_type = context.dialog_data['req_type']
-    if message.document:
-        file_id = message.document.file_id
-        manager.dialog_data["epb_file_id"] = file_id
-        manager.dialog_data["epb_file_type"] = 'file'
-        await message.answer("📎 Файл загружен.")
-    elif message.photo:
-        photo: PhotoSize = message.photo[-1]  # самое большое фото
-        file_id = photo.file_id
-        manager.dialog_data["epb_file_id"] = file_id
-        manager.dialog_data["epb_file_type"] = 'photo'
-        await message.answer("📷 Фото загружено.")
-    else:
-        await message.answer("⚠️ Пожалуйста, загрузите документ или фото.")
-        return
     manager.dialog_data["previous_state"] = str(Request.input_epb_file.state)
     if req_type == 'with_approval':
         await manager.switch_to(Request.select_date)
@@ -291,22 +293,16 @@ async def on_resource(callback, widget, manager: DialogManager):
         await manager.switch_to(Request.input_logbook_file)
 
 
-async def on_logbook_file(message, message_input, manager):
-    manager.show_mode = ShowMode.DELETE_AND_SEND
-    if message.document:
-        file_id = message.document.file_id
-        manager.dialog_data["logbook_file_id"] = file_id
-        manager.dialog_data["logbook_file_type"] = 'file'
-        await message.answer("📎 Файл загружен.")
-    elif message.photo:
-        photo: PhotoSize = message.photo[-1]  # самое большое фото
-        file_id = photo.file_id
-        manager.dialog_data["logbook_file_id"] = file_id
-        manager.dialog_data["logbook_file_type"] = 'photo'
-        await message.answer("📷 Фото загружено.")
-    else:
-        await message.answer("⚠️ Пожалуйста, загрузите документ или фото.")
-        return
+async def on_logbook_file(message, message_input, manager: DialogManager):
+    await handle_file_upload(
+        message=message,
+        manager=manager,
+        dialog_key='logbook_files',
+        next_state=Request.input_logbook_file,
+    )
+
+
+async def on_logbook_file_done(message, message_input, manager):
     manager.dialog_data["previous_state"] = str(Request.input_logbook_file.state)
     await manager.switch_to(Request.select_protocol)
 
@@ -319,32 +315,18 @@ async def on_resource_act(callback, widget, manager: DialogManager):
         await manager.switch_to(Request.input_resource_act_file)
     elif resource_act == 'resource_act_no':
         await manager.switch_to(Request.input_out_of_resource_reason)
-    # if resource_act == 'resource_act_yes':
-    #     if random.random() < 0.5:
-    #         await manager.switch_to(Request.input_resource_act_file)
-    #     else:
-    #         manager.dialog_data["previous_state"] = str(Request.select_resource_act.state)
-    #         await manager.switch_to(Request.select_protocol)
-    # elif resource_act == 'resource_act_no':
-    #     await manager.switch_to(Request.input_out_of_resource_reason)
 
 
 async def on_resource_act_file(message, message_input, manager):
-    manager.show_mode = ShowMode.DELETE_AND_SEND
-    if message.document:
-        file_id = message.document.file_id
-        manager.dialog_data["resource_file_id"] = file_id
-        manager.dialog_data["resource_file_type"] = 'file'
-        await message.answer("📎 Файл загружен.")
-    elif message.photo:
-        photo: PhotoSize = message.photo[-1]  # самое большое фото
-        file_id = photo.file_id
-        manager.dialog_data["resource_file_id"] = file_id
-        manager.dialog_data["resource_file_type"] = 'photo'
-        await message.answer("📷 Фото загружено.")
-    else:
-        await message.answer("⚠️ Пожалуйста, загрузите документ или фото.")
-        return
+    await handle_file_upload(
+        message=message,
+        manager=manager,
+        dialog_key='resource_act_files',
+        next_state=Request.input_resource_act_file,
+    )
+
+
+async def on_resource_act_file_done(message, message_input, manager):
     manager.dialog_data["previous_state"] = str(Request.input_resource_act_file.state)
     await manager.switch_to(Request.select_protocol)
 
@@ -365,32 +347,18 @@ async def on_protocol(callback, widget, manager: DialogManager):
         await manager.switch_to(Request.input_protocol_file)
     elif protocol == 'protocol_no':
         await manager.switch_to(Request.show_reject_info)
-    # if protocol == 'protocol_yes':
-    #     if random.random() < 0.25:
-    #         await manager.switch_to(Request.input_protocol_file)
-    #     else:
-    #         # manager.dialog_data["previous_state"] = str(Request.select_resource_act.state)
-    #         await manager.switch_to(Request.select_card)
-    # elif protocol == 'protocol_no':
-    #     await manager.switch_to(Request.show_reject_info)
 
 
 async def on_protocol_act_file(message, message_input, manager):
-    manager.show_mode = ShowMode.DELETE_AND_SEND
-    if message.document:
-        file_id = message.document.file_id
-        manager.dialog_data["protocol_file_id"] = file_id
-        manager.dialog_data["protocol_file_type"] = 'file'
-        await message.answer("📎 Файл загружен.")
-    elif message.photo:
-        photo: PhotoSize = message.photo[-1]  # самое большое фото
-        file_id = photo.file_id
-        manager.dialog_data["protocol_file_id"] = file_id
-        manager.dialog_data["protocol_file_type"] = 'photo'
-        await message.answer('📷 Фото загружено.')
-    else:
-        await message.answer('⚠️ Пожалуйста, загрузите документ или фото.')
-        return
+    await handle_file_upload(
+        message=message,
+        manager=manager,
+        dialog_key='protocol_files',
+        next_state=Request.input_protocol_file,
+    )
+
+
+async def on_protocol_act_file_done(message, message_input, manager):
     manager.dialog_data["previous_state"] = str(Request.input_protocol_file.state)
     await manager.switch_to(Request.select_card)
 
@@ -403,31 +371,18 @@ async def on_card(callback, widget, manager: DialogManager):
         await manager.switch_to(Request.input_card_file)
     elif card == 'card_no':
         await manager.switch_to(Request.show_reject_info)
-    # if card == 'card_yes':
-    #     if random.random() < 0.17:
-    #         await manager.switch_to(Request.input_card_file)
-    #     else:
-    #         await manager.switch_to(Request.input_info)
-    # elif card == 'card_no':
-    #     await manager.switch_to(Request.show_reject_info)
 
 
 async def on_card_file(message, message_input, manager):
-    manager.show_mode = ShowMode.DELETE_AND_SEND
-    if message.document:
-        file_id = message.document.file_id
-        manager.dialog_data["card_file_id"] = file_id
-        manager.dialog_data["card_file_type"] = 'file'
-        await message.answer("📎 Файл загружен.")
-    elif message.photo:
-        photo: PhotoSize = message.photo[-1]  # самое большое фото
-        file_id = photo.file_id
-        manager.dialog_data["card_file_id"] = file_id
-        manager.dialog_data["card_file_type"] = 'photo'
-        await message.answer("📷 Фото загружено.")
-    else:
-        await message.answer("⚠️ Пожалуйста, загрузите документ или фото.")
-        return
+    await handle_file_upload(
+        message=message,
+        manager=manager,
+        dialog_key='card_files',
+        next_state=Request.input_card_file,
+    )
+
+
+async def on_card_file_done(message, message_input, manager):
     await manager.switch_to(Request.input_info)
 
 
@@ -448,36 +403,16 @@ async def on_confirm(callback, widget, manager: DialogManager):
     req_type = context.dialog_data['req_type']
     resource_act_reason = context.dialog_data.get('out_of_resource_reason_text')
     files = {}
-    # Добавляем protocol, если он есть и был загружен
-    if context.dialog_data.get('protocol') == 'protocol_yes' and 'protocol_file_id' in context.dialog_data:
-        files['protocol'] = {
-            'type': context.dialog_data['protocol_file_type'],
-            'id': context.dialog_data['protocol_file_id'],
-        }
-    # Добавляем act, если он есть и был загружен
-    if context.dialog_data.get('resource_act') == 'resource_act_yes' and 'resource_file_id' in context.dialog_data:
-        files['act'] = {
-            'type': context.dialog_data['resource_file_type'],
-            'id': context.dialog_data['resource_file_id'],
-        }
-    # Добавляем card, если она есть и была загружена
-    if context.dialog_data.get('card') == 'card_yes' and 'card_file_id' in context.dialog_data:
-        files['card'] = {
-            'type': context.dialog_data['card_file_type'],
-            'id': context.dialog_data['card_file_id'],
-        }
-    # Добавляем epb, если она есть и была загружена
-    if context.dialog_data.get('epb') == 'epb_yes' and 'epb_file_id' in context.dialog_data:
-        files['epb'] = {
-            'type': context.dialog_data['epb_file_type'],
-            'id': context.dialog_data['epb_file_id'],
-        }
-    # Добавляем logbook, если она есть и была загружена
-    if context.dialog_data.get('logbook') == 'logbook_yes' and 'logbook_file_id' in context.dialog_data:
-        files['logbook'] = {
-            'type': context.dialog_data['logbook_file_type'],
-            'id': context.dialog_data['logbook_file_id'],
-        }
+    if context.dialog_data.get('protocol') == 'protocol_yes':
+        files['protocol'] = context.dialog_data['protocol_files']
+    if context.dialog_data.get('resource_act') == 'resource_act_yes':
+        files['act'] = context.dialog_data['resource_act_files']
+    if context.dialog_data.get('card') == 'card_yes':
+        files['card'] = context.dialog_data['card_files']
+    if context.dialog_data.get('epb') == 'epb_yes':
+        files['epb'] = context.dialog_data['epb_files']
+    if context.dialog_data.get('logbook') == 'logbook_yes':
+        files['logbook'] = context.dialog_data['logbook_files']
     req_num = get_next_sequence_value('request_id')
     req_id = reqs.insert_one({
         'req_num': req_num,
@@ -495,11 +430,11 @@ async def on_confirm(callback, widget, manager: DialogManager):
         'notification_datetime': request_datetime + dt.timedelta(hours=3),
         'is_complete': False,
         'resource': 'Выработан' if context.dialog_data['resource'] == 'resource_yes' else 'Не выработан',
-        'resource_act': 'В наличии' if context.dialog_data['resource_act'] == 'resource_act_yes' else 'Отсутствует',
+        'resource_act': '✅' if context.dialog_data['resource_act'] == 'resource_act_yes' else '❌',
         'resource_act_reason': resource_act_reason,
-        'protocol': 'В наличии' if context.dialog_data['protocol'] == 'protocol_yes' else 'Отсутствует',
-        'card': 'В наличии' if context.dialog_data['card'] == 'card_yes' else 'Отсутствует',
-        'epb': 'В наличии' if context.dialog_data['epb'] == 'epb_yes' else 'Отсутствует',
+        'protocol': '✅' if context.dialog_data['protocol'] == 'protocol_yes' else '❌',
+        'card': '✅' if context.dialog_data['card'] == 'card_yes' else '❌',
+        'epb': '✅' if context.dialog_data['epb'] == 'epb_yes' else '❌',
         'is_fail': False,
         'fail_reason': '',
         'reject_reason': '',
@@ -626,8 +561,11 @@ async def send_information_to_major(req_id):
         'Данный запрос не требует согласования'
     )
     kb = InlineKeyboardBuilder()
-    if req.get('files'):
-        kb.button(text='📁 Посмотреть файлы', callback_data=f'req_files_{req_id}')
+    files = req.get('files', {})
+    for key, label in FILE_LABELS.items():
+        if key in files and isinstance(files[key], list) and len(files[key]) > 0:
+            kb.button(text=label, callback_data=f'req_files_{key}_{req_id}')
+    kb.adjust(1)
     for major_id in stages.values():
         try:
             await bot.send_message(chat_id=major_id, text=info_text, reply_markup=kb.as_markup())
@@ -646,14 +584,17 @@ async def send_request_to_major(req_id, current_stage):
         stages_text = await build_stages_text(req_id, path_instance, current_stage)
         request_text = await build_req_text(req, gpa_instance, stages_text, author_name, new_req=True)
         kb = InlineKeyboardBuilder()
-        if req.get('files'):
-            kb.button(text='📁 Посмотреть файлы', callback_data=f'req_files_{req_id}')
+        files = req.get('files', {})
+        file_buttons_count = 0
+
+        # Добавляем кнопки на каждый файл, считаем их количество
+        for key, label in FILE_LABELS.items():
+            if key in files and isinstance(files[key], list) and len(files[key]) > 0:
+                kb.button(text=label, callback_data=f'req_files_{key}_{req_id}')
+                file_buttons_count += 1
         kb.button(text='🔴 Отклонить', callback_data=f'req_reject_{req_id}_{current_stage}')
         kb.button(text='🟢 Согласовать', callback_data=f'req_apply_{req_id}_{current_stage}')
-        if req.get('files'):
-            kb.adjust(1, 2)
-        else:
-            kb.adjust(2)
+        kb.adjust(*([1] * file_buttons_count), 2)
         try:
             await bot.send_message(major_stage_id, text=request_text, reply_markup=kb.as_markup())
             reqs.update_one({'_id': req_id}, {'$set': {
@@ -835,59 +776,65 @@ async def send_req_files(callback, widget, manager: DialogManager):
     await show_req_files(callback, req_id)
 
 
-async def show_req_files(call, req_id):
+async def show_req_files(call, file_key: str, req_id: str):
     try:
         req_id = ObjectId(req_id)
-        # Ищем заявку в базе
         req = reqs.find_one({'_id': req_id})
-        if not req or not req.get('files'):
+        if not req or 'files' not in req or file_key not in req['files']:
             await call.answer("Файлы не найдены", show_alert=True)
             return
-        files = req['files']
-        sent_messages = []  # Список для хранения ID отправленных сообщений
-        sent_files = False
-        # Группируем фото
-        photos = [(t, f) for t, f in files.items() if f and f['type'] == 'photo']
-        # Отправляем фото группами по 10
-        if photos:
-            media_group = MediaGroupBuilder()
-            for i, (file_type, file_data) in enumerate(photos, 1):
-                media_group.add_photo(
-                    media=file_data['id'],
-                )
-                if i % 10 == 0 or i == len(photos):
-                    messages = await call.message.answer_media_group(media=media_group.build())
-                    sent_messages.extend([msg.message_id for msg in messages])
-                    sent_files = True
-                    if i < len(photos):
-                        media_group = MediaGroupBuilder()
-                        await asyncio.sleep(1)
-        # Отправляем документы по одному
-        documents = [(t, f) for t, f in files.items() if f and f['type'] == 'file']
-        for file_type, file_data in documents:
+        file_list = req['files'][file_key]
+        if not isinstance(file_list, list) or not file_list:
+            await call.answer("Нет файлов для отображения", show_alert=True)
+            return
+        sent_messages = []
+        for file_info in file_list:
+            file_id = file_info.get('file_id')
+            file_type = file_info.get('file_type')
+            if not file_id or not file_type:
+                continue  # Пропускаем некорректные записи
             try:
-                msg = await call.message.answer_document(
-                    document=file_data['id'],
-                )
+                if file_type == 'photo':
+                    msg = await call.message.answer_photo(photo=file_id)
+                elif file_type == 'file':
+                    msg = await call.message.answer_document(document=file_id)
+                else:
+                    continue  # Неизвестный тип — пропускаем
                 sent_messages.append(msg.message_id)
-                sent_files = True
-                await asyncio.sleep(0.5)
-            except Exception:
+            except Exception as e:
                 await report_error(e)
-        if not sent_files:
+        if not sent_messages:
             await call.answer("Не удалось загрузить файлы", show_alert=True)
             return
         buffer_msgs_id = buffer.insert_one({'sent_messages': sent_messages}).inserted_id
-        # Отправляем сообщение с кнопкой скрытия
         kb = InlineKeyboardBuilder()
         kb.button(
             text="❌ Скрыть файлы",
             callback_data=f"hide_files_{buffer_msgs_id}"
         )
-        await call.message.answer(
-            "Для скрытия файлов нажмите кнопку",
-            reply_markup=kb.as_markup()
-        )
+        await call.message.answer("Для скрытия файла нажмите кнопку", reply_markup=kb.as_markup())
         await call.answer()
     except Exception as e:
-        await call.answer(f"Произошла ошибка при загрузке файлов {str(e)}", show_alert=True)
+        await report_error(e)
+
+
+async def handle_file_upload(message, manager: DialogManager, dialog_key, next_state):
+    manager.show_mode = ShowMode.DELETE_AND_SEND
+    file_id = None
+    file_type = None
+    if message.document:
+        file_id = message.document.file_id
+        file_type = 'file'
+        await message.answer('📎 Файл загружен')
+    elif message.photo:
+        photo: PhotoSize = message.photo[-1]
+        file_id = photo.file_id
+        file_type = 'photo'
+        await message.answer('📷 Фото загружено')
+    else:
+        await message.answer('⚠️ Пожалуйста, загрузите документ или фото')
+        return
+    files = manager.dialog_data.setdefault(dialog_key, [])
+    files.append({'file_id': file_id, 'file_type': file_type})
+    manager.dialog_data[dialog_key] = files
+    await manager.switch_to(next_state)
