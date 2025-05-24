@@ -2,7 +2,7 @@ import datetime as dt
 
 import aiohttp
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
-from aiogram.types import PhotoSize, InlineKeyboardButton
+from aiogram.types import PhotoSize
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram_dialog import DialogManager, ShowMode, StartMode
 from bson import ObjectId
@@ -18,11 +18,11 @@ from utils.utils import report_error
 
 
 FILE_LABELS = {
-    'protocol': '📄 Протокол сдачи защит',
+    'protocol': '📝 Протокол сдачи защит',
     'act': '📄 Акт продления МРР',
-    'card': '📄 Карта подготовки ГПА к пуску',
-    'epb': '📄 ЭПБ',
-    'logbook': '📄 Эксплуатационный формуляр',
+    'card': '📜 Карта подготовки ГПА к пуску',
+    'epb': '📋 ЭПБ',
+    'logbook': '📑 Эксплуатационный формуляр',
 }
 
 DATE_ERROR_MSG = (
@@ -771,9 +771,10 @@ async def delete_callback_message(callback):
 
 
 async def send_req_files(callback, widget, manager: DialogManager):
+    file_key = widget.widget_id
     context = manager.current_context()
     req_id = context.dialog_data['req_id']
-    await show_req_files(callback, req_id)
+    await show_req_files(callback, file_key, req_id)
 
 
 async def show_req_files(call, file_key: str, req_id: str):

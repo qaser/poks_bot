@@ -105,9 +105,14 @@ async def get_single_request(dialog_manager: DialogManager, **middleware_data):
     author_name = (await bot.get_chat(req['author_id'])).full_name
     stages_text = await build_stages_text(ObjectId(req_id), path_instance, current_stage)
     text = await build_req_text(req, gpa_instance, stages_text, author_name)
+    files = req.get("files", {})
     return {
-        'text': text,
-        'has_files': True if req.get('files', {}) else False
+        "text": text,
+        "has_protocol": "protocol" in files,
+        "has_act": "act" in files,
+        "has_card": "card" in files,
+        "has_epb": "epb" in files,
+        "has_logbook": "logbook" in files,
     }
 
 

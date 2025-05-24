@@ -284,3 +284,13 @@ def paginated_majors(id_pager):
         hide_pager=True,
         hide_on_single_page=True
     )
+
+
+def files_btns():
+    return Column(
+        Button(Const("📝 Протокол сдачи защит"), id="protocol", on_click=selected.send_req_files, when="has_protocol"),
+        Button(Const("📄 Акт продления МРР"), id="act", on_click=selected.send_req_files, when="has_act"),
+        Button(Const("📜 Карта подготовки ГПА к пуску"), id="card", on_click=selected.send_req_files, when="has_card"),
+        Button(Const("📋 ЭПБ"), id="epb", on_click=selected.send_req_files, when="has_epb"),
+        Button(Const("📑 Эксплуатационный формуляр"), id="logbook", on_click=selected.send_req_files, when="has_logbook"),
+    )
