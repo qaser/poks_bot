@@ -4,7 +4,6 @@ from aiogram import BaseMiddleware
 from aiogram.types import Message, TelegramObject
 
 from config.mongo_config import admins
-from utils.utils import report_error
 
 
 class AdminCheckMiddleware(BaseMiddleware):

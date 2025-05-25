@@ -2,7 +2,7 @@ import asyncio
 import logging
 
 from aiogram import F
-from aiogram.filters.command import Command
+from aiogram.filters.command import Command, CommandObject
 from aiogram.fsm.context import FSMContext
 from aiogram.types import (BotCommand, BotCommandScopeAllPrivateChats, Message,
                            ReplyKeyboardRemove)
@@ -14,7 +14,7 @@ import utils.constants as const
 from config.bot_config import bot, dp
 from config.mongo_config import admins
 from config.pyrogram_config import app
-from config.telegram_config import MY_TELEGRAM_ID
+from config.telegram_config import MY_TELEGRAM_ID, ADMIN_PASSWORD
 from handlers import (administrators, ao, archive, copy, edit, groups, iskra,
                       request, service)
 from middlewares.admin_check import AdminCheckMiddleware
@@ -50,18 +50,30 @@ async def help_handler(message: Message):
     await message.answer(const.HELP_ADMIN)
 
 
-@dp.message(Command('admin'))
-async def admin_handler(message: Message):
+@dp.message(Command("admin"))
+async def admin_handler(message: Message, command: CommandObject):
     user = message.from_user
+    # Проверка: передан ли пароль
+    if not command.args:
+        await message.answer(
+            "❗ Пожалуйста, укажите пароль: `/admin пароль`",
+            parse_mode="Markdown"
+        )
+        return
+    # Проверка: правильный ли пароль
+    if command.args.strip() != ADMIN_PASSWORD:
+        await message.answer("🚫 Неверный пароль")
+        return
+    # Регистрация администратора
     admins.update_one(
-        {'user_id': user.id},
-        {'$set': {'directions': ['gpa'], 'username': user.full_name}},
+        {"user_id": user.id},
+        {"$set": {"directions": ["gpa"], "username": user.full_name}},
         upsert=True
     )
-    await message.answer('Администратор добавлен')
+    await message.answer("✅ Администратор добавлен")
     await bot.send_message(
         MY_TELEGRAM_ID,
-        f'Добавлен администратор {user.full_name}'
+        f"➕ Добавлен администратор {user.full_name}"
     )
     await message.delete()
 
@@ -87,7 +99,6 @@ async def setup_bot_commands(bot):
         BotCommand(command="reset", description="Отмена текущего действия, сброс ошибок"),
     ]
     await bot.set_my_commands(private_commands, scope=BotCommandScopeAllPrivateChats())
-
     # Очистим команды по умолчанию (чтобы в группах ничего не отображалось)
     await bot.set_my_commands([], scope=None)
 
