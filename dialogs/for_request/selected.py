@@ -551,7 +551,7 @@ async def send_information_to_major(req_id):
         f'Акт продления МРР: {req.get("resource_act", "Нет данных")}'
     )
     if req.get('resource_act_reason'):
-        info_text += f"\nПричина отсутствия акта МРР: {req['resource_act_reason']}"
+        info_text += f"\n<blockquote>Причина отсутствия акта МРР: {req['resource_act_reason']}</blockquote>"
     info_text += (
         f'\nЗаключение ЭПБ: {req.get("epb", "Нет данных")}\n'
         f'Карта подготовки ГПА к пуску: {req.get("card", "Нет данных")}\n'
@@ -637,7 +637,7 @@ async def build_req_text(req, gpa_instance, stages_text, author_name, new_req=Fa
         f'Акт продления МРР: {req.get("resource_act", "Нет данных")}'
     )
     if req.get('resource_act_reason'):
-        request_text += f"\nПричина отсутствия акта МРР: {req['resource_act_reason']}"
+        request_text += f"\n<blockquote>Причина отсутствия акта МРР: {req['resource_act_reason']}</blockquote>"
     request_text += (
         f'\nЗаключение ЭПБ: {req.get("epb", "Нет данных")}\n'
         f'Карта подготовки ГПА к пуску: {req.get("card", "Нет данных")}\n'
