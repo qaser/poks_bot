@@ -33,6 +33,11 @@ class Request(StatesGroup):
     input_card_file = State()  # каждый 6-ой запрос
 
     input_info = State()  # с этого состояния перепрыгиваем на select_category
+
+    select_priority_gpa=State()
+    select_priority_criteria=State()
+    input_priority_file=State()
+
     request_confirm = State()
     request_finish = State()
 

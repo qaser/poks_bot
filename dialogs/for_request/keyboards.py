@@ -294,3 +294,29 @@ def files_btns():
         Button(Const("📋 ЭПБ"), id="epb", on_click=selected.send_req_files, when="has_epb"),
         Button(Const("📑 Эксплуатационный формуляр"), id="logbook", on_click=selected.send_req_files, when="has_logbook"),
     )
+
+
+def priority_btns(on_click):
+    buttons = []
+    for i in range(1, 4):
+        buttons.append(
+            Button(
+                Const(f'{i}'),
+                id=f'{i}',
+                on_click=partial(on_click, priority=i)
+            )
+        )
+    return Group(*buttons, id='priority_btns', width=3)
+
+
+def priority_criteria_btns(on_click):
+    buttons = []
+    for i in range(1, 12):
+        buttons.append(
+            Button(
+                Const(f'{i}'),
+                id=f'{i}',
+                on_click=partial(on_click, criteria=i)
+            )
+        )
+    return Group(*buttons, id='criteria_btns', width=3)

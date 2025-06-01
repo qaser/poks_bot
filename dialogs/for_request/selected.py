@@ -23,6 +23,7 @@ FILE_LABELS = {
     'card': '📜 Карта подготовки ГПА к пуску',
     'epb': '📋 ЭПБ',
     'logbook': '📑 Эксплуатационный формуляр',
+    'priority': '🧾 Приоритеты запуска ГПА',
 }
 
 DATE_ERROR_MSG = (
@@ -390,6 +391,31 @@ async def on_input_info(callback, widget, manager: DialogManager, request_text):
     context = manager.current_context()
     context.dialog_data.update(request_text=request_text)
     await delete_callback_message(callback)
+    await manager.switch_to(Request.select_priority_gpa)
+
+
+async def on_select_priority(callback, widget, manager: DialogManager, priority: str):
+    context = manager.current_context()
+    context.dialog_data['priority'] = priority
+    await manager.switch_to(Request.select_priority_criteria)
+
+
+async def on_select_priority_criteria(callback, widget, manager: DialogManager, criteria: str):
+    context = manager.current_context()
+    context.dialog_data['priority_criteria'] = criteria
+    await manager.switch_to(Request.input_priority_file)
+
+
+async def on_priority_file(message, message_input, manager):
+    await handle_file_upload(
+        message=message,
+        manager=manager,
+        dialog_key='priority_files',
+        next_state=Request.input_priority_file,
+    )
+
+
+async def on_priority_file_done(message, message_input, manager):
     await manager.switch_to(Request.request_confirm)
 
 
@@ -413,6 +439,7 @@ async def on_confirm(callback, widget, manager: DialogManager):
         files['epb'] = context.dialog_data['epb_files']
     if context.dialog_data.get('logbook') == 'logbook_yes':
         files['logbook'] = context.dialog_data['logbook_files']
+    files['priority'] = context.dialog_data['priority_files']
     req_num = get_next_sequence_value('request_id')
     req_id = reqs.insert_one({
         'req_num': req_num,
@@ -435,6 +462,8 @@ async def on_confirm(callback, widget, manager: DialogManager):
         'protocol': '✅' if context.dialog_data['protocol'] == 'protocol_yes' else '❌',
         'card': '✅' if context.dialog_data['card'] == 'card_yes' else '❌',
         'epb': '✅' if context.dialog_data['epb'] == 'epb_yes' else '❌',
+        'priority': context.dialog_data['priority'],
+        'priority_criteria': context.dialog_data['priority_criteria'],
         'is_fail': False,
         'fail_reason': '',
         'reject_reason': '',
@@ -556,6 +585,7 @@ async def send_information_to_major(req_id):
         f'\nЗаключение ЭПБ: {req.get("epb", "Нет данных")}\n'
         f'Карта подготовки ГПА к пуску: {req.get("card", "Нет данных")}\n'
         f'Протокол сдачи защит: {req.get("protocol", "Нет данных")}\n\n'
+        f'<b>Приоритет запуска (критерий):</b> {req.get("priority", "Нет данных")} ({req.get("priority_criteria", "Нет данных")})\n\n'
         f"<b>Планируемое время запуска:</b> с момента подачи заявки\n\n"
         f"<b>Текст запроса:</b>\n<blockquote>{req['text']}</blockquote>\n\n"
         'Данный запрос не требует согласования'
@@ -642,6 +672,7 @@ async def build_req_text(req, gpa_instance, stages_text, author_name, new_req=Fa
         f'\nЗаключение ЭПБ: {req.get("epb", "Нет данных")}\n'
         f'Карта подготовки ГПА к пуску: {req.get("card", "Нет данных")}\n'
         f'Протокол сдачи защит: {req.get("protocol", "Нет данных")}\n\n'
+        f'<b>Приоритет запуска (критерий):</b> {req.get("priority", "Нет данных")} ({req.get("priority_criteria", "Нет данных")})\n\n'
         f"<b>Планируемое время запуска:</b>\n{req['request_datetime'].strftime('%d.%m.%Y %H:%M')}\n\n"
         f"<b>Текст запроса:</b>\n<blockquote>{req['text']}</blockquote>\n\n"
         f"<b>Статус согласования:</b>\n{stages_text}\n"

@@ -63,7 +63,7 @@ async def parse_operating_data(message: Message):
     await archive_messages(message)
     ks_find = re.compile(r'\w+ая|\w+-\w+ая')
     msg = message.text.replace(u'\xa0', u' ')
-    find_gpa = re.findall(r'ГПА\s*(?:ст\.-/)?(\d{2,3})\s*-\s*(\d+)', msg)
+    find_gpa = re.findall('ГПА\s*\d+\s*-\s*\d+', msg)
     if len(find_gpa) > 0:
         ks = ks_find.search(msg)
         ks = f'{ks.group()} КС' if ks is not None else ''

@@ -68,6 +68,13 @@ TYPE_REQUEST_TEXT = (
     '⚠️ Если заявка не требует срочного исполнения, выбирайте вариант <b>с согласованием</b> – '
     'это поможет избежать дополнительных уточнений и задержек.'
 )
+PRIORITY_GPA_TEXT = 'Укажите приоритет запускаемого ГПА'
+PRIORITY_CRITERIA_TEXT = 'Укажите критерий приоритета запускаемого ГПА'
+PRIORITY_FILE_TEXT = (
+    '💾 Отправьте скан-копию согласованных с ПОЭКС приоритетов запуска ГПА.\n'
+    'Выберите файл и нажмите кнопку ➤\n\n'
+    '<i>💡 Вы можете отправить несколько файлов одновременно или по одному</i>'
+)
 
 
 async def exit_click(callback, button, dialog_manager):
@@ -413,6 +420,47 @@ def input_info_window():
             on_success=selected.on_input_info,
         ),
         state=Request.input_info,
+    )
+
+
+def select_priority_gpa_window():
+    return Window(
+        Const(PRIORITY_GPA_TEXT),
+        keyboards.priority_btns(selected.on_select_priority),
+        Back(Const(texts.BACK_BUTTON)),
+        state=Request.select_priority_gpa
+    )
+
+
+def select_priority_criteria_window():
+    return Window(
+        Const(PRIORITY_CRITERIA_TEXT),
+        keyboards.priority_criteria_btns(selected.on_select_priority_criteria),
+        Back(Const(texts.BACK_BUTTON)),
+        state=Request.select_priority_criteria
+    )
+
+
+def input_priority_file_window():
+    return Window(
+        Const(PRIORITY_FILE_TEXT),
+        Format(
+            '\nНа данный момент загружено файлов/фото: <b>{count_files}</b>',
+            when='has_files'
+        ),
+        MessageInput(
+            selected.on_priority_file,
+            content_types=[ContentType.DOCUMENT, ContentType.PHOTO]
+        ),
+        Button(
+            Const('Закончить загрузку документов'),
+            'files_stop',
+            on_click=selected.on_priority_file_done,
+            when='has_files'
+        ),
+        state=Request.input_priority_file,
+        getter=getters.get_priority_files,
+
     )
 
 

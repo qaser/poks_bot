@@ -285,6 +285,10 @@ async def get_card_files(dialog_manager: DialogManager, **middleware_data):
     return await get_files_context(dialog_manager, key='card_files')
 
 
+async def get_priority_files(dialog_manager: DialogManager, **middleware_data):
+    return await get_files_context(dialog_manager, key='priority_files')
+
+
 async def get_files_context(dialog_manager: DialogManager, key: str):
     files = dialog_manager.dialog_data.setdefault(key, [])
     count_files = len(files)

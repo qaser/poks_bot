@@ -55,6 +55,11 @@ dialog =  Dialog(
 
     windows.show_reject_window(),
     windows.input_info_window(),
+
+    windows.select_priority_gpa_window(),
+    windows.select_priority_criteria_window(),
+    windows.input_priority_file_window(),
+
     windows.request_confirm_window(),
     windows.finish_window(),
 
