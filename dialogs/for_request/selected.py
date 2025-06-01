@@ -585,7 +585,7 @@ async def send_information_to_major(req_id):
         f'\nЗаключение ЭПБ: {req.get("epb", "Нет данных")}\n'
         f'Карта подготовки ГПА к пуску: {req.get("card", "Нет данных")}\n'
         f'Протокол сдачи защит: {req.get("protocol", "Нет данных")}\n\n'
-        f'<b>Приоритет запуска (критерий):</b> {req.get("priority", "Нет данных")} ({req.get("priority_criteria", "Нет данных")})\n\n'
+        f'<b>Приоритет запуска (критерий):</b> {req.get("priority", "н/д")} ({req.get("priority_criteria", "н/д")})\n\n'
         f"<b>Планируемое время запуска:</b> с момента подачи заявки\n\n"
         f"<b>Текст запроса:</b>\n<blockquote>{req['text']}</blockquote>\n\n"
         'Данный запрос не требует согласования'
@@ -672,7 +672,7 @@ async def build_req_text(req, gpa_instance, stages_text, author_name, new_req=Fa
         f'\nЗаключение ЭПБ: {req.get("epb", "Нет данных")}\n'
         f'Карта подготовки ГПА к пуску: {req.get("card", "Нет данных")}\n'
         f'Протокол сдачи защит: {req.get("protocol", "Нет данных")}\n\n'
-        f'<b>Приоритет запуска (критерий):</b> {req.get("priority", "Нет данных")} ({req.get("priority_criteria", "Нет данных")})\n\n'
+        f'<b>Приоритет запуска (критерий):</b> {req.get("priority", "н/д")} ({req.get("priority_criteria", "н/д")})\n\n'
         f"<b>Планируемое время запуска:</b>\n{req['request_datetime'].strftime('%d.%m.%Y %H:%M')}\n\n"
         f"<b>Текст запроса:</b>\n<blockquote>{req['text']}</blockquote>\n\n"
         f"<b>Статус согласования:</b>\n{stages_text}\n"
