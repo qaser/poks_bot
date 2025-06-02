@@ -113,6 +113,7 @@ async def get_single_request(dialog_manager: DialogManager, **middleware_data):
         "has_card": "card" in files,
         "has_epb": "epb" in files,
         "has_logbook": "logbook" in files,
+        "has_priority": "priority" in files,
     }
 
 

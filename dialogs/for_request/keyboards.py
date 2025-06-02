@@ -293,6 +293,7 @@ def files_btns():
         Button(Const("📜 Карта подготовки ГПА к пуску"), id="card", on_click=selected.send_req_files, when="has_card"),
         Button(Const("📋 ЭПБ"), id="epb", on_click=selected.send_req_files, when="has_epb"),
         Button(Const("📑 Эксплуатационный формуляр"), id="logbook", on_click=selected.send_req_files, when="has_logbook"),
+        Button(Const("🧾 Приоритеты запуска ГПА"), id="priority", on_click=selected.send_req_files, when="has_priority"),
     )
 
 
