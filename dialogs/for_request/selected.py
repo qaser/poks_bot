@@ -422,7 +422,7 @@ async def on_priority_file_done(message, message_input, manager):
 async def on_confirm(callback, widget, manager: DialogManager):
     context = manager.current_context()
     request_datetime = dt.datetime.strptime(f"{context.dialog_data['req_date']} {context.dialog_data['req_time']}", "%d.%m.%Y %H:%M")
-    gpa_instance = gpa.find_one({'ks': context.dialog_data['station'], 'num_gpa': context.dialog_data['gpa']})
+    gpa_instance = gpa.find_one({'ks': context.dialog_data['station'], 'num_shop': context.dialog_data['shop'], 'num_gpa': context.dialog_data['gpa']})
     path_type = get_path_type(gpa_instance)
     path_instance = paths.find_one({'path_type': path_type})
     current_stage = 1

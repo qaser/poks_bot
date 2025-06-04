@@ -55,10 +55,13 @@ async def get_date_options(dialog_manager: DialogManager, **middleware_data):
 
 async def get_request_info(dialog_manager: DialogManager, **middleware_data):
     context = dialog_manager.current_context()
+    print(context.dialog_data)
     num_gpa = context.dialog_data['gpa']
+    shop = context.dialog_data['shop']
     station = context.dialog_data['station']
     req_type = context.dialog_data['req_type']
-    gpa_instance = gpa.find_one({'ks': station, 'num_gpa': num_gpa})
+    gpa_instance = gpa.find_one({'ks': station, 'num_shop': shop, 'num_gpa': num_gpa})
+    print(gpa_instance)
     without_approval = True if req_type == 'without_approval' else False
     return {
         'station': station,
