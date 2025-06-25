@@ -50,40 +50,18 @@ MSGS = [
     'Правохеттинское ЛПУМГ, ГПА№64, в 1:50 АО - помпаж двигателя (ложное).',
 ]
 
-def convert_files_format(old_files):
-    if not isinstance(old_files, dict):
-        return {}
 
-    new_files = {}
-    for key, value in old_files.items():
-        # Старый формат: value — словарь {'id': ..., 'type': ...}
-        if isinstance(value, dict) and 'id' in value and 'type' in value:
-            new_files[key] = [{
-                'file_id': value['id'],
-                'file_type': value['type']
-            }]
-        # Возможно, уже новый формат — ничего не делаем
-        elif isinstance(value, list):
-            new_files[key] = value
-        else:
-            # Неизвестный формат — пропускаем
-            continue
-    return new_files
-
-queryset = list(reqs.find({}))
-for req in queryset:
-    old_files = req.get('files')
-    if not old_files:
-        continue
-
-    new_files = convert_files_format(old_files)
-    if new_files != old_files:  # Только если реально изменилось
-        reqs.update_one(
-            {'_id': req['_id']},
-            {'$set': {'files': new_files}}
-        )
-
-print("Migration completed.")
+queryset = gpa.find({'engine_type': 'ПС-90 ГП-1'})
+count_1 = 0
+count_2 = 0
+for i in queryset:
+    gpa.update_one({'_id': i['_id']}, {'$set': {'type_gpa': "Судовой привод"}})
+    count_1 += 1
+queryset = gpa.find({'engine_type': 'ПС-90 ГП-2'})
+for i in queryset:
+    gpa.update_one({'_id': i['_id']}, {'$set': {'type_gpa': "Судовой привод"}})
+    count_2 += 1
+print(count_1, count_2)
 
 # for msg in MSGS:
 #     date_find = re.compile(r'\d\d\.\d\d\.(\d\d\d\d|\d\d)')
