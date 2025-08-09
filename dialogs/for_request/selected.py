@@ -11,7 +11,7 @@ from pytz import timezone
 from scheduler.scheduler_funcs import send_morning_report
 import utils.constants as const
 from config.bot_config import bot
-from config.mongo_config import buffer, gpa, paths, req_counter, reqs
+from config.mongo_config import buffer, gpa, paths, req_counter, reqs, admins
 from config.telegram_config import EXPLOIT_GROUP_ID
 from dialogs.for_request.states import Request
 from utils.utils import report_error
@@ -720,6 +720,7 @@ async def send_notify(req_id, gpa_instance, path, is_fallback=False, is_group=Tr
     req = reqs.find_one({'_id': req_id})
     if not req:
         return
+
     author_name = (await bot.get_chat(req['author_id'])).full_name
     gpa_info = (
         f'<b>Ст.№ ГПА:</b> {gpa_instance["num_gpa"]}\n'
@@ -727,7 +728,21 @@ async def send_notify(req_id, gpa_instance, path, is_fallback=False, is_group=Tr
         f'<b>Тип ГПА:</b> {gpa_instance["type_gpa"]}\n'
         f'<b>Тип нагнетателя:</b> {gpa_instance["cbn_type"]}'
     )
-    # Формируем заголовок в зависимости от получателя и статуса
+
+    # Ищем отклонившего при необходимости
+    reject_major_name = None
+    if is_rejected:
+        reject_major_id = None
+        for stage in req.get('stages', {}).values():
+            if stage.get('status') == 'reject' and 'major_id' in stage:
+                reject_major_id = stage['major_id']
+                break
+        if reject_major_id:
+            major_doc = admins.find_one({'user_id': reject_major_id})
+            if major_doc:
+                reject_major_name = major_doc.get('username')
+
+    # Формируем заголовок
     if is_group:
         if is_fallback:
             header = '⚠️ Получен запрос на согласование пуска ГПА, но адресаты временно не доступны\n\n'
@@ -735,18 +750,25 @@ async def send_notify(req_id, gpa_instance, path, is_fallback=False, is_group=Tr
             header = '✅ Запрос на пуск ГПА согласован\n\n'
     else:
         if is_rejected:
-            header = f'🔴 Ваш запрос не согласован по причине:\n<blockquote>{reason}</blockquote>\n\n'
+            if reject_major_name:
+                header = f'🔴 Ваш запрос не согласовал {reject_major_name} по причине:\n<blockquote>{reason}</blockquote>\n\n'
+            else:
+                header = f'🔴 Ваш запрос не согласован по причине:\n<blockquote>{reason}</blockquote>\n\n'
         else:
             header = '🟢 Ваш запрос согласован!\n\n'
+
     # Формируем информацию о стадиях согласования
     stages_text = ''
-    if not is_fallback and not is_rejected:  # Показываем этапы для успешного согласования
+    if not is_fallback and not is_rejected:  # Показываем этапы только при успешном согласовании
         for stage_num in range(1, path['num_stages'] + 1):
             stage_data = req['stages'].get(str(stage_num), {})
             status = stage_data.get('status', 'pending')
-            icon = ('🟢' if status == 'apply' else
-                   '🔴' if status == 'reject' else
-                   '⚫' if status == 'pass' else '⚪')
+            icon = (
+                '🟢' if status == 'apply' else
+                '🔴' if status == 'reject' else
+                '⚫' if status == 'pass' else
+                '⚪'
+            )
             major_name = 'ожидается'
             if 'major_id' in stage_data:
                 try:
@@ -756,7 +778,8 @@ async def send_notify(req_id, gpa_instance, path, is_fallback=False, is_group=Tr
                     major_name = 'недоступен'
             date_str = stage_data.get('datetime', '').astimezone(tz).strftime('%d.%m.%Y %H:%M') if 'datetime' in stage_data else ""
             stages_text += f"{icon} Этап {stage_num} - {major_name}" + (f" ({date_str})" if date_str else "") + "\n"
-    # Формируем основной текст сообщения
+
+    # Формируем основной текст
     request_text = (
         f"{header}"
         f"📅 Дата запроса: {req['datetime'].astimezone(tz).strftime('%d.%m.%Y %H:%M')}\n"
@@ -765,15 +788,14 @@ async def send_notify(req_id, gpa_instance, path, is_fallback=False, is_group=Tr
         f"<u>Информация о ГПА:</u>\n{gpa_info}\n\n"
         f"<b>Текст запроса:</b>\n<blockquote>{req['text']}</blockquote>\n"
     )
-    # Добавляем информацию о стадиях для успешного согласования
+
     if not is_fallback and not is_rejected and stages_text:
         request_text += f"\n<b>Этапы согласования:</b>\n{stages_text}\n"
-    # Отправляем сообщение
+
     try:
         if is_group:
             await bot.send_message(
                 chat_id=EXPLOIT_GROUP_ID,
-                # message_thread_id=REQUEST_THREAD_ID,
                 text=request_text
             )
         else:
@@ -785,6 +807,7 @@ async def send_notify(req_id, gpa_instance, path, is_fallback=False, is_group=Tr
             )
     except Exception as e:
         await report_error(e)
+
 
 
 async def delete_callback_message(callback):
