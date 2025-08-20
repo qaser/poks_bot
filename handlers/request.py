@@ -6,24 +6,25 @@ from aiogram.enums import ChatType
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
-from aiogram_dialog import Dialog, DialogManager, StartMode
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram_dialog import Dialog, DialogManager, StartMode
 from bson import ObjectId
+from pyrogram.types import ChatPermissions
 from pytz import timezone
 
-from dialogs.for_ao.selected import add_admin_to_group, send_chat_links
-from scheduler.scheduler_funcs import send_evening_report, send_morning_report
-from pyrogram.types import ChatPermissions
 import utils.constants as const
 from config.bot_config import bot
+from config.mongo_config import (admins, buffer, emergency_stops, gpa, groups,
+                                 paths, reqs)
 from config.pyrogram_config import app
-from config.mongo_config import buffer, gpa, paths, reqs, emergency_stops, groups, admins
 from config.telegram_config import BOT_ID, MY_TELEGRAM_ID, OTKAZ_GROUP_ID
+from dialogs.for_ao.selected import add_admin_to_group, send_chat_links
 from dialogs.for_request import windows
 from dialogs.for_request.selected import (send_notify, send_request_to_major,
                                           show_req_files)
-from utils.utils import report_error
 from dialogs.for_request.states import Request
+from scheduler.scheduler_funcs import send_evening_report, send_morning_report
+from utils.utils import report_error
 
 router = Router()
 
@@ -80,6 +81,8 @@ dialog =  Dialog(
     windows.select_majors_window(),
     windows.confirm_path_window(),
     windows.complete_path_window(),
+
+    windows.export_requests_window(),
 )
 
 

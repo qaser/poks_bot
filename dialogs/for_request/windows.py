@@ -11,7 +11,6 @@ from dialogs.for_request.states import Request
 
 from . import getters, keyboards, selected
 
-
 ID_SCROLL_PAGER = 'stations_pager'
 MAJOR_SCROLL_PAGER = 'majors_pager'
 REQUEST_SCROLL_PAGER = 'requests_pager'
@@ -75,6 +74,7 @@ PRIORITY_FILE_TEXT = (
     'Выберите файл и нажмите кнопку ➤\n\n'
     '<i>💡 Вы можете отправить несколько файлов одновременно или по одному</i>'
 )
+EXPORT_TEXT = ('Экспорт данных в таблицу')
 
 
 async def exit_click(callback, button, dialog_manager):
@@ -100,6 +100,19 @@ def select_category_window():
         Button(Const(texts.EXIT_BUTTON), on_click=exit_click, id='exit'),
         state=Request.select_category,
         getter=getters.get_users_info
+    )
+
+
+def export_requests_window():
+    return Window(
+        Const(EXPORT_TEXT),
+        Button(
+            Const('Выполнить экспорт'),
+            on_click=selected.on_export_requests,
+            id='export_reqs'
+        ),
+        Button(Const(texts.BACK_BUTTON), on_click=return_main_menu, id='main_menu'),
+        state=Request.export_requests,
     )
 
 

@@ -14,7 +14,7 @@ import utils.constants as const
 from config.bot_config import bot, dp
 from config.mongo_config import admins
 from config.pyrogram_config import app
-from config.telegram_config import MY_TELEGRAM_ID, ADMIN_PASSWORD
+from config.telegram_config import ADMIN_PASSWORD, MY_TELEGRAM_ID
 from handlers import (administrators, ao, archive, copy, edit, groups, iskra,
                       request, service)
 from middlewares.admin_check import AdminCheckMiddleware

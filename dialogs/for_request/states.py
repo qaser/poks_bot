@@ -61,3 +61,6 @@ class Request(StatesGroup):
     select_majors = State()
     path_confirm = State()
     path_complete = State()
+
+    # категория "Экспорт заявок"
+    export_requests =State()

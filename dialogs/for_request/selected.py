@@ -1,21 +1,23 @@
+import asyncio
 import datetime as dt
+import os
 
 import aiohttp
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
-from aiogram.types import PhotoSize
+from aiogram.types import PhotoSize, InputFile, FSInputFile
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram_dialog import DialogManager, ShowMode, StartMode
 from bson import ObjectId
 from pytz import timezone
 
-from scheduler.scheduler_funcs import send_morning_report
 import utils.constants as const
 from config.bot_config import bot
-from config.mongo_config import buffer, gpa, paths, req_counter, reqs, admins
+from config.mongo_config import admins, buffer, gpa, paths, req_counter, reqs
 from config.telegram_config import EXPLOIT_GROUP_ID
 from dialogs.for_request.states import Request
+from scheduler.scheduler_funcs import send_morning_report
+from utils.create_requests_excel import create_report_excel
 from utils.utils import report_error
-
 
 FILE_LABELS = {
     'protocol': '📝 Протокол сдачи защит',
@@ -107,6 +109,30 @@ async def on_select_category(callback, widget, manager: DialogManager):
         await manager.switch_to(Request.select_sorting_requests)
     elif category == 'inwork_requests':
         await manager.switch_to(Request.inwork_requests)
+    elif category == 'export_requests':
+        await manager.switch_to(Request.export_requests)
+
+
+async def on_export_requests(callback, widget, manager: DialogManager):
+    progress_msg = await callback.message.answer("⏳ Формирую отчет...")
+    try:
+        filepath = await asyncio.to_thread(create_report_excel)
+        await progress_msg.edit_text("📤 Отправляю файл...")
+        document = FSInputFile(path=filepath)
+        await callback.message.answer_document(
+            document=document,
+            caption="✅ Отчет готов!"
+        )
+        os.remove(filepath)
+        await progress_msg.delete()
+    except Exception as e:
+        await progress_msg.edit_text("❌ Ошибка при создании отчета")
+        await report_error(e)
+    try:
+        await manager.done()
+        await callback.message.delete()
+    except:
+        pass
 
 
 async def on_select_type_request(callback, widget, manager: DialogManager):

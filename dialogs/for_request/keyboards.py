@@ -29,6 +29,12 @@ def category_buttons():
             when='is_admin',
         ),
         Button(
+            Const('@️ Выгрузка заявок'),
+            id='export_requests',
+            on_click=selected.on_select_category,
+            when='is_admin',
+        ),
+        Button(
             Const('📚 Правила согласования заявок'),
             id='paths',
             on_click=selected.on_select_category,
