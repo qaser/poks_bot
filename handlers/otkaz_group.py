@@ -13,6 +13,26 @@ from utils.utils import report_error
 
 router = Router()
 
+
+# === ФУНКЦИИ НОРМАЛИЗАЦИИ ===
+
+def normalize_chat_id(chat_id: int) -> int:
+    """
+    Приводит chat_id к правильному формату.
+    Telegram API (Pyrogram/Telethon):
+    - супергруппы и каналы должны быть в формате -100XXXXXXXXXX
+    - обычные группы могут быть просто -XXXXXXXX
+    """
+    s = str(chat_id)
+    if s.startswith('-') and not s.startswith('-100'):
+        return int('-100' + s[1:])
+    return int(chat_id)
+
+
+# Перезаписываем chat_id в нормализованном виде
+OTKAZ_GROUP_ID = normalize_chat_id(OTKAZ_GROUP_ID)
+NEW_OTKAZ_GROUP = normalize_chat_id(NEW_OTKAZ_GROUP)
+
 # === НАСТРОЙКИ ===
 USE_PYROGRAM_FOR_INVITES = True   # True = юзер-бот приглашает, False = обычный бот
 
