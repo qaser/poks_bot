@@ -380,7 +380,7 @@ async def get_all_chat_members(chat_id: int):
         return members
 
     except Exception as e:
-        print(f"Ошибка при получении участников: {e}")
+        await report_error(e)
         return []
 
 
