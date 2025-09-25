@@ -94,15 +94,76 @@ async def get_all_chat_members(chat_id: int):
     return members
 
 
-async def save_chat_members_pyrogram(chat_id: int):
-    """Сохраняет всех участников группы через Pyrogram"""
-    members = await get_all_chat_members(chat_id)
+async def collect_chat_users(chat_id: int):
+    """Собирает пользователей из Pyrogram, Aiogram и истории сообщений"""
+    users = {}
     saved_count = 0
-    for member in members:
-        if await save_user_from_pyrogram(member.user):
+
+    # --- 1. Pyrogram (если даст участников) ---
+    try:
+        async for member in app.get_chat_members(chat_id):
+            u = member.user
+            users[u.id] = {
+                "user_id": u.id,
+                "username": u.username,
+                "first_name": u.first_name,
+                "last_name": u.last_name,
+                "is_bot": u.is_bot,
+                "source": "pyrogram"
+            }
+        print(f"👤 Pyrogram нашёл {len(users)} участников")
+    except Exception as e:
+        print(f"⚠️ Pyrogram не смог получить участников: {e}")
+
+    # --- 2. Aiogram (администраторы) ---
+    try:
+        admins = await bot.get_chat_administrators(chat_id)
+        for admin in admins:
+            u = admin.user
+            users[u.id] = {
+                "user_id": u.id,
+                "username": u.username,
+                "first_name": u.first_name,
+                "last_name": u.last_name,
+                "is_bot": u.is_bot,
+                "source": "bot_admin"
+            }
+        print(f"🤖 Aiogram добавил {len(admins)} администраторов")
+    except Exception as e:
+        print(f"⚠️ Aiogram не смог получить админов: {e}")
+
+    # --- 3. История сообщений (по from_user) ---
+    try:
+        messages = list(messages_collection.find())
+        for m in messages:
+            if m.get("user_id"):
+                users[m["user_id"]] = {
+                    "user_id": m["user_id"],
+                    "username": m.get("username"),
+                    "first_name": m.get("first_name"),
+                    "last_name": m.get("last_name"),
+                    "is_bot": False,
+                    "source": "messages"
+                }
+        print(f"💬 Из сообщений добавлено пользователей: {len(users)}")
+    except Exception as e:
+        print(f"⚠️ Не удалось извлечь юзеров из сообщений: {e}")
+
+    # --- Сохраняем всех в MongoDB ---
+    for u in users.values():
+        try:
+            users_collection.update_one(
+                {"user_id": u["user_id"]},
+                {"$set": {**u, "saved_at": dt.datetime.now()}},
+                upsert=True
+            )
             saved_count += 1
-    print(f"💾 Сохранено участников: {saved_count}")
+        except Exception as e:
+            print(f"Ошибка при сохранении {u}: {e}")
+
+    print(f"💾 Сохранено участников в базу: {saved_count}")
     return saved_count
+
 
 
 # ==============================
@@ -255,6 +316,7 @@ async def check_access():
 
 @router.message(Command("migrate"))
 async def complete_migration(message: Message):
+    messages_collection.delete_many({})
     await bot.send_message(MY_TELEGRAM_ID, "🚀 Начинаем миграцию...")
     access_report = await check_access()
 
@@ -271,7 +333,7 @@ async def complete_migration(message: Message):
                 saved_msgs += 1
 
         # 2. Сохраняем участников
-        saved_users = await save_chat_members_pyrogram(OTKAZ_GROUP_ID)
+        saved_users = await collect_chat_users(OTKAZ_GROUP_ID)
 
         # # 3. Переносим сообщения в новую группу
         # migrated, failed_msgs = await migrate_messages_to_new_chat()
