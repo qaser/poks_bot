@@ -242,33 +242,36 @@ async def save_message(message: Message) -> bool:
 async def get_messages_batch(chat_id: int, last_message_id: int = None):
     """Получает пачку сообщений (до 100) используя Pyrogram"""
     try:
-        messages = []
+        messages_list = []
         limit = 100
 
-        # Если указан last_message_id, получаем сообщения после него
+        # Получаем асинхронный генератор
         if last_message_id:
-            messages = await app.get_chat_history(
+            # Получаем сообщения ДО указанного ID (более старые)
+            messages_generator = app.get_chat_history(
                 chat_id=chat_id,
                 limit=limit,
                 offset_id=last_message_id
             )
         else:
             # Первый запрос - получаем последние сообщения
-            messages = await app.get_chat_history(
+            messages_generator = app.get_chat_history(
                 chat_id=chat_id,
                 limit=limit
             )
 
-        # Преобразуем асинхронный генератор в список
-        messages_list = []
-        async for message in messages:
+        # Итерируемся по асинхронному генератору
+        async for message in messages_generator:
             messages_list.append(message)
             if len(messages_list) >= limit:
                 break
+
+        # Отправляем отчет
         await bot.send_message(
             chat_id=MY_TELEGRAM_ID,
             text=f"Получено {len(messages_list)} сообщений из чата {chat_id}"
         )
+
         return messages_list
 
     except Exception as e:
