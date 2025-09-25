@@ -260,7 +260,7 @@ async def save_message(message: Message) -> bool:
 
 
 @router.message(Command('migrate'))
-async def complete_migration():
+async def complete_migration(message: Message):
     """Выполняет полную миграцию"""
     await bot.send_message(
         chat_id=MY_TELEGRAM_ID,
