@@ -8,6 +8,8 @@ from config.bot_config import bot
 from aiogram.filters import Command
 from config.mongo_config import users_collection, messages_collection, migration_status_collection
 from config.telegram_config import MY_TELEGRAM_ID, NEW_OTKAZ_GROUP, OTKAZ_GROUP_ID
+from config.pyrogram_config import app
+from utils.utils import report_error
 
 router = Router()
 
@@ -259,6 +261,194 @@ async def save_message(message: Message) -> bool:
         return False
 
 
+async def get_messages_batch(chat_id: int, last_message_id: int = None):
+    """Получает пачку сообщений (до 100) используя Pyrogram"""
+    try:
+        async with app:
+            messages = []
+            limit = 100
+
+            # Если указан last_message_id, получаем сообщения после него
+            if last_message_id:
+                messages = await app.get_chat_history(
+                    chat_id=chat_id,
+                    limit=limit,
+                    offset_id=last_message_id
+                )
+            else:
+                # Первый запрос - получаем последние сообщения
+                messages = await app.get_chat_history(
+                    chat_id=chat_id,
+                    limit=limit
+                )
+
+            # Преобразуем асинхронный генератор в список
+            messages_list = []
+            async for message in messages:
+                messages_list.append(message)
+                if len(messages_list) >= limit:
+                    break
+
+            print(f"Получено {len(messages_list)} сообщений из чата {chat_id}")
+            return messages_list
+
+    except Exception as e:
+        print(f"Ошибка при получении сообщений через Pyrogram: {e}")
+        return []
+
+async def get_all_chat_messages(chat_id: int):
+    """Получает все сообщения из чата"""
+    all_messages = []
+    last_message_id = None
+    total_messages = 0
+
+    print("🚀 Начинаем получение истории сообщений...")
+
+    async with app:
+        while True:
+            messages_batch = await get_messages_batch(chat_id, last_message_id)
+
+            if not messages_batch:
+                break
+
+            # Добавляем сообщения в общий список
+            for message in messages_batch:
+                all_messages.append(message)
+                last_message_id = message.id
+                total_messages += 1
+
+            print(f"📥 Получено сообщений: {total_messages}")
+
+            # Если получено меньше limit, значит это последняя пачка
+            if len(messages_batch) < 100:
+                break
+
+            # Пауза чтобы не превысить лимиты Telegram API
+            await asyncio.sleep(1)
+
+    print(f"✅ Всего получено сообщений: {total_messages}")
+    return all_messages
+
+
+async def save_pyrogram_message(message) -> bool:
+    """Сохраняет сообщение из Pyrogram в MongoDB"""
+    try:
+        # Пропускаем сообщения без текста
+        if not message.text and not message.caption:
+            return False
+
+        # Извлекаем информацию о пользователе
+        user_id = None
+        username = None
+        first_name = None
+
+        if message.from_user:
+            user_id = message.from_user.id
+            username = message.from_user.username
+            first_name = message.from_user.first_name
+
+        message_data = {
+            "message_id": message.id,
+            "chat_id": message.chat.id,
+            "user_id": user_id,
+            "username": username,
+            "first_name": first_name,
+            "text": message.text or message.caption or "",
+            "date": message.date,
+            "message_type": str(message.service) if message.service else "text",
+            "media_type": str(message.media) if message.media else None,
+            "has_media": bool(message.media),
+            "saved_at": dt.datetime.now()
+        }
+
+        # Сохраняем с обработкой дубликатов
+        result = messages_collection.update_one(
+            {
+                "message_id": message.id,
+                "chat_id": message.chat.id
+            },
+            {"$set": message_data},
+            upsert=True
+        )
+
+        return True
+
+    except Exception as e:
+        print(f"Ошибка при сохранении сообщения {message.id}: {e}")
+        return False
+
+
+async def get_all_chat_members(chat_id: int):
+    """Получает всех участников группы через Pyrogram"""
+    try:
+        async with app:
+            members = []
+            total_members = 0
+
+            print("👥 Начинаем получение списка участников...")
+
+            async for member in app.get_chat_members(chat_id):
+                members.append(member)
+                total_members += 1
+                print(f"Получено участников: {total_members}")
+
+                # Пауза чтобы не превысить лимиты
+                if total_members % 50 == 0:
+                    await asyncio.sleep(1)
+
+            print(f"✅ Всего получено участников: {total_members}")
+            return members
+
+    except Exception as e:
+        print(f"Ошибка при получении участников: {e}")
+        return []
+
+
+async def save_chat_members_pyrogram(chat_id: int):
+    """Сохраняет всех участников группы через Pyrogram"""
+    try:
+        members = await get_all_chat_members(chat_id)
+        saved_count = 0
+
+        for member in members:
+            user = member.user
+            if await save_user_from_pyrogram(user):
+                saved_count += 1
+
+        print(f"💾 Сохранено участников в базу: {saved_count}")
+        return saved_count
+
+    except Exception as e:
+        print(f"Ошибка при сохранении участников: {e}")
+        return 0
+
+
+async def save_user_from_pyrogram(user) -> bool:
+    """Сохраняет пользователя из Pyrogram в MongoDB"""
+    try:
+        user_data = {
+            "user_id": user.id,
+            "username": user.username,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "is_bot": user.is_bot,
+            "is_premium": getattr(user, 'is_premium', False),
+            "language_code": user.language_code,
+            "saved_at": dt.datetime.now()
+        }
+
+        users_collection.update_one(
+            {"user_id": user.id},
+            {"$set": user_data},
+            upsert=True
+        )
+        return True
+
+    except Exception as e:
+        print(f"Ошибка при сохранении пользователя {user.id}: {e}")
+        return False
+
+
 @router.message(Command('migrate'))
 async def complete_migration(message: Message):
     """Выполняет полную миграцию"""
@@ -266,64 +456,41 @@ async def complete_migration(message: Message):
         chat_id=MY_TELEGRAM_ID,
         text="🚀 Начало миграции..."
     )
-    # 1. Сохраняем историю исходной группы
-    await bot.send_message(
-        chat_id=MY_TELEGRAM_ID,
-        text="📥 Сохраняем историю сообщений..."
-    )
-    saved_messages = await save_chat_history(OTKAZ_GROUP_ID)
+    try:
+        # 1. Сохраняем историю сообщений через Pyrogram
+        all_messages = await get_all_chat_messages(OTKAZ_GROUP_ID)
 
-    # 2. Сохраняем участников
-    await bot.send_message(
-        chat_id=MY_TELEGRAM_ID,
-        text="👥 Сохраняем участников..."
-    )
-    saved_users = await save_chat_members(OTKAZ_GROUP_ID)
+        # Сохраняем каждое сообщение
+        saved_count = 0
+        for message in all_messages:
+            if await save_pyrogram_message(message):
+                saved_count += 1
 
-    # # 3. Переносим сообщения
-    # print("📤 Переносим сообщения...")
-    # migrated_messages, failed_messages = await migrate_messages_to_new_chat()
+        # 2. Сохраняем участников через Pyrogram
+        saved_users = await save_chat_members_pyrogram(OTKAZ_GROUP_ID)
 
-    # # 4. Добавляем участников
-    # print("➕ Добавляем участников...")
-    # invited_users, failed_invites = await invite_users_to_new_chat()
+        # 3. Переносим сообщения в новую группу (используем aiogram)
+        # print("📤 Переносим сообщения в новую группу...")
+        # migrated_messages, failed_messages = await migrate_messages_to_new_chat()
 
-    # 5. Формируем отчет
-    await bot.send_message(
-        chat_id=MY_TELEGRAM_ID,
-        text="📊 Формируем отчет..."
-    )
+        # # 4. Добавляем участников
+        # print("➕ Добавляем участников в новую группу...")
+        # invited_users, failed_invites = await invite_users_to_new_chat()
 
-    report = f"""
-        📊 ОТЧЕТ О МИГРАЦИИ
+        # 5. Формируем отчет
+        report = f"""
+            📊 ОТЧЕТ О МИГРАЦИИ (Pyrogram)
 
-        ✅ Успешно:
-        - Сохранено сообщений: {saved_messages}
-        - Сохранено пользователей: {saved_users}
+            ✅ Успешно:
+            - Получено сообщений через Pyrogram: {len(all_messages)}
+            - Сохранено сообщений в базу: {saved_count}
+            - Сохранено пользователей: {saved_users}
+        """
 
-        💡 Рекомендации:
-        - Пользователям, которых не удалось добавить автоматически,
-        нужно отправить пригласительные ссылки вручную
-    """
-    await bot.send_message(
-        chat_id=MY_TELEGRAM_ID,
-        text=report
-    )
+        await bot.send_message(
+            chat_id=MY_TELEGRAM_ID,
+            text=report
+        )
 
-    # Сохраняем отчет
-    migration_status_collection.update_one(
-        {"migration_type": "final_report"},
-        {"$set": {
-            "report": report,
-            "statistics": {
-                "saved_messages": saved_messages,
-                "saved_users": saved_users,
-                # "migrated_messages": migrated_messages,
-                # "invited_users": invited_users,
-                # "failed_messages": len(failed_messages),
-                # "failed_invites": len(failed_invites)
-            },
-            "completed_at": dt.datetime.now()
-        }},
-        upsert=True
-    )
+    except Exception as e:
+        await report_error(e)
