@@ -272,6 +272,7 @@ async def get_messages_batch(chat_id: int, last_message_id: int = None):
         return messages_list
 
     except Exception as e:
+        await report_error(e)
         print(f"Ошибка при получении сообщений через Pyrogram: {e}")
         return []
 
