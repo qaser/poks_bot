@@ -239,15 +239,56 @@ async def save_message(message: Message) -> bool:
         return False
 
 
-async def get_messages_batch(chat_id: int, last_message_id: int = None):
-    """Получает пачку сообщений (до 100) используя Pyrogram"""
+async def ensure_chat_access(chat_id: int):
+    """Проверяет и обеспечивает доступ к чату"""
     try:
+        # Пытаемся получить информацию о чате
+        chat = await app.get_chat(chat_id)
+        print(f"✅ Доступ к чату '{chat.title}' подтвержден")
+        return True
+    except Exception as e:
+        print(f"❌ Нет доступа к чату {chat_id}: {e}")
+        return False
+
+
+async def join_chat_if_needed(chat_id: int):
+    """Вступает в чат если необходимо"""
+    try:
+        # Для публичных чатов - используем join_chat
+        chat = await app.get_chat(chat_id)
+
+        if chat.username:  # Если у чата есть username (публичный)
+            await app.join_chat(chat.username)
+            print(f"✅ Вступили в публичный чат: @{chat.username}")
+        else:
+            # Для приватных чатов нужно быть участником
+            print("ℹ️ Чат приватный - убедитесь, что аккаунт добавлен в чат")
+
+        return True
+    except Exception as e:
+        print(f"❌ Не удалось вступить в чат: {e}")
+        return False
+
+
+async def get_messages_batch(chat_id: int, last_message_id: int = None):
+    """Получает пачку сообщений с проверкой доступа"""
+    try:
+        # Проверяем доступ к чату
+        if not await ensure_chat_access(chat_id):
+            # Пытаемся вступить в чат
+            if not await join_chat_if_needed(chat_id):
+                await bot.send_message(
+                    chat_id=MY_TELEGRAM_ID,
+                    text=f"❌ Нет доступа к чату {chat_id}"
+                )
+                return []
+
         messages_list = []
         limit = 100
 
-        # Получаем асинхронный генератор
+        # Получаем асинхронный генератор с правильными параметрами
         if last_message_id:
-            # Получаем сообщения ДО указанного ID (более старые)
+            # Получаем сообщения, которые старше last_message_id
             messages_generator = app.get_chat_history(
                 chat_id=chat_id,
                 limit=limit,
@@ -261,12 +302,13 @@ async def get_messages_batch(chat_id: int, last_message_id: int = None):
             )
 
         # Итерируемся по асинхронному генератору
+        count = 0
         async for message in messages_generator:
             messages_list.append(message)
-            if len(messages_list) >= limit:
+            count += 1
+            if count >= limit:
                 break
 
-        # Отправляем отчет
         await bot.send_message(
             chat_id=MY_TELEGRAM_ID,
             text=f"Получено {len(messages_list)} сообщений из чата {chat_id}"
@@ -276,7 +318,7 @@ async def get_messages_batch(chat_id: int, last_message_id: int = None):
 
     except Exception as e:
         await report_error(e)
-        print(f"Ошибка при получении сообщений через Pyrogram: {e}")
+        print(f"Ошибка при получении сообщений: {e}")
         return []
 
 
