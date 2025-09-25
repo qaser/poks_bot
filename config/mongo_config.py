@@ -21,6 +21,15 @@ reqs = db['requests']
 req_counter = db['req_counter']
 report_buffer = db['report_buffer']
 
+# Коллекции
+messages_collection = db["migrate_messages"]
+users_collection = db["migrate_users"]
+migration_status_collection = db["migration_status"]
+
+# Создание индексов
+messages_collection.create_index([("message_id", 1), ("chat_id", 1)], unique=True)
+users_collection.create_index("user_id", unique=True)
+
 
 '''
 paths {
