@@ -9,7 +9,7 @@ from aiogram_dialog import Dialog, DialogManager, StartMode
 
 from config.bot_config import bot
 from config.mongo_config import emergency_stops, gpa, otkaz_msgs
-from config.telegram_config import MY_TELEGRAM_ID, OTKAZ_GROUP_ID
+from config.telegram_config import MY_TELEGRAM_ID, NEW_OTKAZ_GROUP
 from dialogs.for_ao import windows
 from dialogs.for_ao.selected import create_group
 from dialogs.for_ao.states import Ao
@@ -46,7 +46,7 @@ async def ao_request(message: Message, dialog_manager: DialogManager):
 @router.message(Command('fix'))
 async def delete_msgs(message: Message):
     await bot.delete_messages(
-        chat_id=OTKAZ_GROUP_ID,
+        chat_id=NEW_OTKAZ_GROUP,
         message_ids=[1432]
     )
 

@@ -5,7 +5,7 @@ from aiogram_dialog import DialogManager, StartMode
 import utils.constants as const
 from config.bot_config import bot
 from config.mongo_config import emergency_stops, gpa, groups
-from config.telegram_config import BOT_ID, MY_TELEGRAM_ID, OTKAZ_GROUP_ID
+from config.telegram_config import BOT_ID, MY_TELEGRAM_ID, NEW_OTKAZ_GROUP
 from dialogs.for_groups.states import Groups
 
 

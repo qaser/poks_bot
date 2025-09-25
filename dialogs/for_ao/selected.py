@@ -10,7 +10,7 @@ from config.bot_config import bot
 from config.mongo_config import (admins, emergency_stops, gpa, groups,
                                  otkaz_msgs)
 from config.pyrogram_config import app
-from config.telegram_config import BOT_ID, MY_TELEGRAM_ID, OTKAZ_GROUP_ID
+from config.telegram_config import BOT_ID, MY_TELEGRAM_ID, NEW_OTKAZ_GROUP
 from dialogs.for_ao.states import Ao
 from utils.utils import report_error
 
@@ -159,7 +159,7 @@ async def create_group(manager, ao_id, mark):
         context.dialog_data.update(group_id=group_id)
         await replace_messages(manager)
     try:
-        msg_link = await bot.send_message(chat_id=OTKAZ_GROUP_ID, text=link.invite_link)
+        msg_link = await bot.send_message(chat_id=NEW_OTKAZ_GROUP, text=link.invite_link)
     except:
         await bot.send_message(MY_TELEGRAM_ID, text='Не отправлена ссылка в группу "Отказы"')
     await bot.send_message(MY_TELEGRAM_ID, text=f'Создана группа {group_name}')
@@ -251,12 +251,12 @@ async def replace_messages(manager):
         pass
     try:
         new_msg = await bot.send_message(
-            chat_id=OTKAZ_GROUP_ID,
+            chat_id=NEW_OTKAZ_GROUP,
             text=msg['text'],
             parse_mode='HTML'
         )
         await bot.delete_message(
-            chat_id=OTKAZ_GROUP_ID,
+            chat_id=NEW_OTKAZ_GROUP,
             message_id=msg['msg_id']
         )
         otkaz_msgs.insert_one(

@@ -35,7 +35,7 @@ OTKAZ_GROUP_ID = normalize_chat_id(OTKAZ_GROUP_ID)
 NEW_OTKAZ_GROUP = normalize_chat_id(NEW_OTKAZ_GROUP)
 
 # === НАСТРОЙКИ ===
-USE_PYROGRAM_FOR_INVITES = True   # True = юзер-бот приглашает, False = обычный бот
+USE_PYROGRAM_FOR_INVITES = False  # True = юзер-бот приглашает, False = обычный бот
 
 
 # ==============================
@@ -352,12 +352,6 @@ async def complete_migration(message: Message):
         # # 3. Переносим сообщения в новую группу
         migrated, failed_msgs = await migrate_messages_to_new_chat()
 
-        # # 4. Добавляем участников
-        # if USE_PYROGRAM_FOR_INVITES:
-        #     invited, failed_invites = await invite_users_with_pyrogram()
-        # else:
-        #     invited, failed_invites = await invite_users_with_bot()
-
         # 5. Отчет
         report = f"""
         📊 ОТЧЕТ О МИГРАЦИИ
@@ -365,7 +359,38 @@ async def complete_migration(message: Message):
         ✅ Сообщений получено: {len(all_messages)}
         💾 Сообщений сохранено: {saved_msgs}
 
+        📤 Сообщений перенесено: {migrated}, ошибок: {len(failed_msgs)}
+
         👥 Пользователей сохранено: {saved_users}
+        """
+
+        await bot.send_message(MY_TELEGRAM_ID, report)
+
+    except Exception as e:
+        await report_error(e)
+
+
+@router.message(Command("invite_users"))
+async def users_invite(message: Message):
+    await bot.send_message(MY_TELEGRAM_ID, "🚀 Начинаем приглашение пользователей")
+    access_report = await check_access()
+
+    # Если нет доступа к старой или новой группе — останавливаемся
+    if "❌" in access_report:
+        await bot.send_message(MY_TELEGRAM_ID, "⚠️ Миграция остановлена: нет доступа к одной из групп.")
+        return
+    try:
+        # 4. Добавляем участников
+        if USE_PYROGRAM_FOR_INVITES:
+            invited, failed_invites = await invite_users_with_pyrogram()
+        else:
+            invited, failed_invites = await invite_users_with_bot()
+
+        # 5. Отчет
+        report = f"""
+        📊 ОТЧЕТ О МИГРАЦИИ
+
+        ➕ Пользователей добавлено: {invited}, ошибок: {len(failed_invites)}
         """
 
         await bot.send_message(MY_TELEGRAM_ID, report)

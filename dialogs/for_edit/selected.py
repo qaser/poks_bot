@@ -5,7 +5,7 @@ from aiogram_dialog import DialogManager
 from config.bot_config import bot
 from config.mongo_config import emergency_stops, groups, otkaz_msgs
 from config.pyrogram_config import app
-from config.telegram_config import OTKAZ_GROUP_ID
+from config.telegram_config import NEW_OTKAZ_GROUP
 from dialogs.for_edit.states import Edit
 from utils.utils import report_error
 
@@ -25,7 +25,7 @@ async def on_confirm(callback, widget, manager: DialogManager):
     msgs = list(otkaz_msgs.find({'group_id': int(group_id)}))
     for msg in msgs:
         try:
-            await bot.delete_message(OTKAZ_GROUP_ID, msg['msg_id'])
+            await bot.delete_message(NEW_OTKAZ_GROUP, msg['msg_id'])
         except:
             pass
     otkaz_msgs.delete_many({'group_id': int(group_id)})

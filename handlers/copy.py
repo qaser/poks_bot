@@ -40,7 +40,7 @@ async def hash_users(message: Message):
         for sec in range(29, 0, -2):
             await msg.edit_text(str(sec))
             sleep(2)
-    except TelegramBadRequest as e:
+    except TelegramBadRequest as err:
         if 'CHAT_NOT_MODIFIED' in str(err):
             await report_error(e)
             msg = await message.answer('30', disable_notification=True)

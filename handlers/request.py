@@ -17,7 +17,7 @@ from config.bot_config import bot
 from config.mongo_config import (admins, buffer, emergency_stops, gpa, groups,
                                  paths, reqs)
 from config.pyrogram_config import app
-from config.telegram_config import BOT_ID, MY_TELEGRAM_ID, OTKAZ_GROUP_ID
+from config.telegram_config import BOT_ID, MY_TELEGRAM_ID, NEW_OTKAZ_GROUP
 from dialogs.for_ao.selected import add_admin_to_group, send_chat_links
 from dialogs.for_request import windows
 from dialogs.for_request.selected import (send_notify, send_request_to_major,
@@ -409,7 +409,7 @@ async def create_group(req_id):
     except Exception as e:
         await report_error(e)
     try:
-        await bot.send_message(chat_id=OTKAZ_GROUP_ID, text=invite_text)
+        await bot.send_message(chat_id=NEW_OTKAZ_GROUP, text=invite_text)
     except Exception as e:
         await report_error(e)
     post = await bot.send_message(chat_id=group_id, text=const.MANUAL)
