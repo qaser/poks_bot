@@ -264,33 +264,32 @@ async def save_message(message: Message) -> bool:
 async def get_messages_batch(chat_id: int, last_message_id: int = None):
     """Получает пачку сообщений (до 100) используя Pyrogram"""
     try:
-        async with app:
-            messages = []
-            limit = 100
+        messages = []
+        limit = 100
 
-            # Если указан last_message_id, получаем сообщения после него
-            if last_message_id:
-                messages = await app.get_chat_history(
-                    chat_id=chat_id,
-                    limit=limit,
-                    offset_id=last_message_id
-                )
-            else:
-                # Первый запрос - получаем последние сообщения
-                messages = await app.get_chat_history(
-                    chat_id=chat_id,
-                    limit=limit
-                )
+        # Если указан last_message_id, получаем сообщения после него
+        if last_message_id:
+            messages = await app.get_chat_history(
+                chat_id=chat_id,
+                limit=limit,
+                offset_id=last_message_id
+            )
+        else:
+            # Первый запрос - получаем последние сообщения
+            messages = await app.get_chat_history(
+                chat_id=chat_id,
+                limit=limit
+            )
 
-            # Преобразуем асинхронный генератор в список
-            messages_list = []
-            async for message in messages:
-                messages_list.append(message)
-                if len(messages_list) >= limit:
-                    break
+        # Преобразуем асинхронный генератор в список
+        messages_list = []
+        async for message in messages:
+            messages_list.append(message)
+            if len(messages_list) >= limit:
+                break
 
-            print(f"Получено {len(messages_list)} сообщений из чата {chat_id}")
-            return messages_list
+        print(f"Получено {len(messages_list)} сообщений из чата {chat_id}")
+        return messages_list
 
     except Exception as e:
         print(f"Ошибка при получении сообщений через Pyrogram: {e}")
@@ -304,27 +303,26 @@ async def get_all_chat_messages(chat_id: int):
 
     print("🚀 Начинаем получение истории сообщений...")
 
-    async with app:
-        while True:
-            messages_batch = await get_messages_batch(chat_id, last_message_id)
+    while True:
+        messages_batch = await get_messages_batch(chat_id, last_message_id)
 
-            if not messages_batch:
-                break
+        if not messages_batch:
+            break
 
-            # Добавляем сообщения в общий список
-            for message in messages_batch:
-                all_messages.append(message)
-                last_message_id = message.id
-                total_messages += 1
+        # Добавляем сообщения в общий список
+        for message in messages_batch:
+            all_messages.append(message)
+            last_message_id = message.id
+            total_messages += 1
 
-            print(f"📥 Получено сообщений: {total_messages}")
+        print(f"📥 Получено сообщений: {total_messages}")
 
-            # Если получено меньше limit, значит это последняя пачка
-            if len(messages_batch) < 100:
-                break
+        # Если получено меньше limit, значит это последняя пачка
+        if len(messages_batch) < 100:
+            break
 
-            # Пауза чтобы не превысить лимиты Telegram API
-            await asyncio.sleep(1)
+        # Пауза чтобы не превысить лимиты Telegram API
+        await asyncio.sleep(1)
 
     print(f"✅ Всего получено сообщений: {total_messages}")
     return all_messages
@@ -381,23 +379,22 @@ async def save_pyrogram_message(message) -> bool:
 async def get_all_chat_members(chat_id: int):
     """Получает всех участников группы через Pyrogram"""
     try:
-        async with app:
-            members = []
-            total_members = 0
+        members = []
+        total_members = 0
 
-            print("👥 Начинаем получение списка участников...")
+        print("👥 Начинаем получение списка участников...")
 
-            async for member in app.get_chat_members(chat_id):
-                members.append(member)
-                total_members += 1
-                print(f"Получено участников: {total_members}")
+        async for member in app.get_chat_members(chat_id):
+            members.append(member)
+            total_members += 1
+            print(f"Получено участников: {total_members}")
 
-                # Пауза чтобы не превысить лимиты
-                if total_members % 50 == 0:
-                    await asyncio.sleep(1)
+            # Пауза чтобы не превысить лимиты
+            if total_members % 50 == 0:
+                await asyncio.sleep(1)
 
-            print(f"✅ Всего получено участников: {total_members}")
-            return members
+        print(f"✅ Всего получено участников: {total_members}")
+        return members
 
     except Exception as e:
         print(f"Ошибка при получении участников: {e}")
