@@ -215,28 +215,6 @@ async def save_chat_history(chat_id: int):
         return 0
 
 
-async def get_messages_batch(chat_id: int, last_message_id = None):
-    """Получает пачку сообщений (до 100)"""
-    try:
-        # Используем get_chat для получения информации о чате
-        chat = await bot.get_chat(chat_id)
-
-        # Для получения истории сообщений нужно использовать forward_from_chat
-        # или другие методы, но бот должен иметь доступ к сообщениям
-
-        # Альтернативный подход: слушать новые сообщения и запрашивать историю
-        # Это более сложно, так как бот не может просто получить всю историю
-
-        # Вместо этого, можно использовать метод get_chat_administrators
-        # и другие доступные методы для получения максимальной информации
-
-        return []
-
-    except Exception as e:
-        print(f"Ошибка при получении сообщений: {e}")
-        return []
-
-
 async def save_message(message: Message) -> bool:
     """Сохраняет одно сообщение в базу данных"""
     try:
@@ -287,13 +265,16 @@ async def get_messages_batch(chat_id: int, last_message_id: int = None):
             messages_list.append(message)
             if len(messages_list) >= limit:
                 break
-
-        print(f"Получено {len(messages_list)} сообщений из чата {chat_id}")
+        await bot.send_message(
+            chat_id=MY_TELEGRAM_ID,
+            text=f"Получено {len(messages_list)} сообщений из чата {chat_id}"
+        )
         return messages_list
 
     except Exception as e:
         print(f"Ошибка при получении сообщений через Pyrogram: {e}")
         return []
+
 
 async def get_all_chat_messages(chat_id: int):
     """Получает все сообщения из чата"""
