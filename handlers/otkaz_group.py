@@ -204,6 +204,31 @@ async def invite_users_with_pyrogram():
     return success, failed
 
 
+async def check_access():
+    """Проверяет доступ к старой и новой группе для бота и юзер-бота"""
+    report_lines = ["🔍 Проверка доступа к чатам:\n"]
+
+    # Проверка доступа ботом
+    for chat_id, label in [(OTKAZ_GROUP_ID, "Старая группа"), (NEW_OTKAZ_GROUP, "Новая группа")]:
+        try:
+            chat = await bot.get_chat(chat_id)
+            report_lines.append(f"🤖 Бот: ✅ доступ к {label} — {chat.title}")
+        except Exception as e:
+            report_lines.append(f"🤖 Бот: ❌ нет доступа к {label} — {e}")
+
+    # Проверка доступа юзер-ботом (Pyrogram)
+    for chat_id, label in [(OTKAZ_GROUP_ID, "Старая группа"), (NEW_OTKAZ_GROUP, "Новая группа")]:
+        try:
+            chat = await app.get_chat(chat_id)
+            report_lines.append(f"👤 Юзер-бот: ✅ доступ к {label} — {chat.title}")
+        except Exception as e:
+            report_lines.append(f"👤 Юзер-бот: ❌ нет доступа к {label} — {e}")
+
+    report_text = "\n".join(report_lines)
+    await bot.send_message(MY_TELEGRAM_ID, report_text)
+    return report_text
+
+
 # ==============================
 # Полная миграция
 # ==============================
@@ -211,7 +236,12 @@ async def invite_users_with_pyrogram():
 @router.message(Command("migrate"))
 async def complete_migration(message: Message):
     await bot.send_message(MY_TELEGRAM_ID, "🚀 Начинаем миграцию...")
+    access_report = await check_access()
 
+    # Если нет доступа к старой или новой группе — останавливаемся
+    if "❌" in access_report:
+        await bot.send_message(MY_TELEGRAM_ID, "⚠️ Миграция остановлена: нет доступа к одной из групп.")
+        return
     try:
         # 1. Сохраняем историю сообщений
         all_messages = await get_all_chat_messages(OTKAZ_GROUP_ID)
