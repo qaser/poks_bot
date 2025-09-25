@@ -368,8 +368,10 @@ async def get_all_chat_members(chat_id: int):
         async for member in app.get_chat_members(chat_id):
             members.append(member)
             total_members += 1
-            print(f"Получено участников: {total_members}")
-
+            await bot.send_message(
+                chat_id=MY_TELEGRAM_ID,
+                text=f"Получено участников: {total_members}"
+            )
             # Пауза чтобы не превысить лимиты
             if total_members % 50 == 0:
                 await asyncio.sleep(1)
