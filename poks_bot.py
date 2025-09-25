@@ -16,7 +16,7 @@ from config.mongo_config import admins
 from config.pyrogram_config import app
 from config.telegram_config import ADMIN_PASSWORD, MY_TELEGRAM_ID
 from handlers import (administrators, ao, archive, copy, edit, groups, iskra,
-                      request, service)
+                      request, service, otkaz_group)
 from middlewares.admin_check import AdminCheckMiddleware
 from scheduler.scheduler_funcs import (clear_msgs, find_overdue_requests,
                                        send_backups, send_evening_report,
@@ -196,6 +196,7 @@ async def main():
         iskra.dialog,
         groups.dialog,
         edit.dialog,
+        otkaz_group.router,
         archive.router,
     )
     await setup_bot_commands(bot)
