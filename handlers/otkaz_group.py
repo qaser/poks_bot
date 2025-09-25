@@ -4,6 +4,7 @@ import asyncio
 from aiogram import Router
 from aiogram.types import Message
 from aiogram.filters import Command
+from aiogram.exceptions import TelegramRetryAfter
 
 from config.bot_config import bot
 from config.mongo_config import users_collection, messages_collection, migration_status_collection
@@ -218,16 +219,28 @@ async def migrate_messages_to_new_chat():
 
     failed = []
     success = 0
+
     for m in messages:
         try:
             text = f"💬 {m['text']}"
             # делим длинные сообщения
             chunks = [text[i:i+4000] for i in range(0, len(text), 4000)]
+
             for chunk in chunks:
-                await bot.send_message(chat_id=NEW_OTKAZ_GROUP, text=chunk)
-                await asyncio.sleep(2)
+                try:
+                    await bot.send_message(chat_id=NEW_OTKAZ_GROUP, text=chunk)
+                    await asyncio.sleep(1)  # базовая задержка
+                except TelegramRetryAfter as e:
+                    # если словили FloodWait — ждём указанное время
+                    wait_time = int(e.retry_after) + 1
+                    print(f"⏳ FloodWait: ждём {wait_time} сек.")
+                    await asyncio.sleep(wait_time)
+                    # повторяем отправку
+                    await bot.send_message(chat_id=NEW_OTKAZ_GROUP, text=chunk)
+
             success += 1
             print(f"Отправлено {success}/{len(messages)}")
+
         except Exception as e:
             failed.append({"message_id": m["message_id"], "error": str(e)})
             await report_error(e)
