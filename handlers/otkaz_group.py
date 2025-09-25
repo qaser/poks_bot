@@ -220,17 +220,17 @@ async def migrate_messages_to_new_chat():
     success = 0
     for m in messages:
         try:
-            text = f"💬 {m['text']}\n\n📅 {m['date'].strftime('%Y-%m-%d %H:%M')}"
+            text = f"💬 {m['text']}"
             # делим длинные сообщения
             chunks = [text[i:i+4000] for i in range(0, len(text), 4000)]
             for chunk in chunks:
                 await bot.send_message(chat_id=NEW_OTKAZ_GROUP, text=chunk)
-                await asyncio.sleep(0.5)
+                await asyncio.sleep(2)
             success += 1
             print(f"Отправлено {success}/{len(messages)}")
         except Exception as e:
             failed.append({"message_id": m["message_id"], "error": str(e)})
-            print(f"Ошибка при отправке {m['message_id']}: {e}")
+            await report_error(e)
 
     print(f"✅ Успешно: {success}, ошибок: {len(failed)}")
     return success, failed
@@ -317,6 +317,7 @@ async def check_access():
 @router.message(Command("migrate"))
 async def complete_migration(message: Message):
     messages_collection.delete_many({})
+    users_collection.delete_many({})
     await bot.send_message(MY_TELEGRAM_ID, "🚀 Начинаем миграцию...")
     access_report = await check_access()
 
