@@ -336,7 +336,7 @@ async def complete_migration(message: Message):
         saved_users = await collect_chat_users(OTKAZ_GROUP_ID)
 
         # # 3. Переносим сообщения в новую группу
-        # migrated, failed_msgs = await migrate_messages_to_new_chat()
+        migrated, failed_msgs = await migrate_messages_to_new_chat()
 
         # # 4. Добавляем участников
         # if USE_PYROGRAM_FOR_INVITES:
