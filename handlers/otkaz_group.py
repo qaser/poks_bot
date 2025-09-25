@@ -447,7 +447,7 @@ async def complete_migration(message: Message):
                 saved_count += 1
 
         # 2. Сохраняем участников через Pyrogram
-        saved_users = await save_chat_members_pyrogram(OTKAZ_GROUP_ID)
+        saved_users = await save_chat_members_pyrogram(NEW_OTKAZ_GROUP)
 
         # 3. Переносим сообщения в новую группу (используем aiogram)
         # print("📤 Переносим сообщения в новую группу...")
