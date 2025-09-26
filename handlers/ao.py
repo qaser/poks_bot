@@ -51,7 +51,7 @@ async def delete_msgs(message: Message):
     )
 
 
-@router.message(F.chat.id == -1001856019654)  # для pusha
+@router.message(F.chat.id == -1003009064092)  # для pusha
 # @router.message(F.chat.id == -1002275406614 and F.message_thread_id == None)
 async def auto_otkaz_detect(message: Message):
     msg_text = escape(message.text)

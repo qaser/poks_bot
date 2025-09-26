@@ -196,7 +196,6 @@ async def main():
         iskra.dialog,
         groups.dialog,
         edit.dialog,
-        otkaz_group.router,
         archive.router,
     )
     await setup_bot_commands(bot)
