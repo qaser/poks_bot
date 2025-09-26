@@ -392,11 +392,11 @@ async def users_invite(message: Message):
     #     await bot.send_message(MY_TELEGRAM_ID, "⚠️ Миграция остановлена: нет доступа к одной из групп.")
         # return
     try:
-        # 4. Добавляем участников
-        if USE_PYROGRAM_FOR_INVITES:
-            invited, failed_invites = await invite_users_with_pyrogram()
-        else:
-            invited, failed_invites = await invite_users_with_bot(True)
+        # # 4. Добавляем участников
+        # if USE_PYROGRAM_FOR_INVITES:
+        #     invited, failed_invites = await invite_users_with_pyrogram()
+        # else:
+        invited, failed_invites = await invite_users_with_bot(True)
 
         # 5. Отчет
         report = f"""
