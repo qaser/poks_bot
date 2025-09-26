@@ -262,7 +262,8 @@ async def invite_users_with_bot(retry_failed):
             {'migration_type': 'user_invites'},
             sort=[('processed_at', -1)]
         )
-        if not last_status or not last_status.get('failed_invates'):
+        # await bot.send_message(MY_TELEGRAM_ID, last_status)
+        if not last_status or not last_status.get('failed_invites'):
             return 0, []
         users = last_status['failed_invites']
         await bot.send_message(MY_TELEGRAM_ID, f"Повторная рассылка ссылок {len(users)} пользователям")
