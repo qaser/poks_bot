@@ -374,12 +374,12 @@ async def complete_migration(message: Message):
 @router.message(Command("invite_users"))
 async def users_invite(message: Message):
     await bot.send_message(MY_TELEGRAM_ID, "🚀 Начинаем приглашение пользователей")
-    access_report = await check_access()
+    # access_report = await check_access()
 
     # Если нет доступа к старой или новой группе — останавливаемся
-    if "❌" in access_report:
-        await bot.send_message(MY_TELEGRAM_ID, "⚠️ Миграция остановлена: нет доступа к одной из групп.")
-        return
+    # if "❌" in access_report:
+    #     await bot.send_message(MY_TELEGRAM_ID, "⚠️ Миграция остановлена: нет доступа к одной из групп.")
+        # return
     try:
         # 4. Добавляем участников
         if USE_PYROGRAM_FOR_INVITES:
