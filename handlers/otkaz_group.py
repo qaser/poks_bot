@@ -35,7 +35,7 @@ OTKAZ_GROUP_ID = normalize_chat_id(OTKAZ_GROUP_ID)
 NEW_OTKAZ_GROUP = normalize_chat_id(NEW_OTKAZ_GROUP)
 
 # === НАСТРОЙКИ ===
-USE_PYROGRAM_FOR_INVITES = False  # True = юзер-бот приглашает, False = обычный бот
+USE_PYROGRAM_FOR_INVITES = True  # True = юзер-бот приглашает, False = обычный бот
 
 
 # ==============================
