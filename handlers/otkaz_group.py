@@ -253,11 +253,22 @@ async def migrate_messages_to_new_chat():
 # Добавление участников
 # ==============================
 
-async def invite_users_with_bot():
+async def invite_users_with_bot(retry_failed = False):
     """Добавляет участников ботом"""
-    users = list(users_collection.find({"is_bot": False}))
     failed = []
     success = 0
+    if retry_failed:
+        last_status = migration_status_collection.find_one(
+            {'migration_type': 'user_invites'},
+            sort=[('processed_at', -1)]
+        )
+        if not last_status or not last_status.get('failed_invates'):
+            return 0, []
+        users = last_status['failed_invites']
+        await bot.send_message(MY_TELEGRAM_ID, f"Повторная рассылка ссылок {len(users)} пользователям")
+    else:
+        users = list(users_collection.find({"is_bot": False}))
+        await bot.send_message(MY_TELEGRAM_ID, f"Первичная рассылка ссылок {len(users)} пользователям")
     for u in users:
         uid = u["user_id"]
         try:
@@ -275,7 +286,7 @@ async def invite_users_with_bot():
         except Exception as e:
             await report_error(e)
             failed.append({"user_id": uid, "username": u.get("username"), "error": str(e)})
-        await asyncio.sleep(1)
+        await asyncio.sleep(4)
     migration_status_collection.update_one(
         {"migration_type": "user_invites"},
         {"$set": {"failed_invites": failed, "success_count": success, "processed_at": dt.datetime.now()}},
@@ -385,7 +396,7 @@ async def users_invite(message: Message):
         if USE_PYROGRAM_FOR_INVITES:
             invited, failed_invites = await invite_users_with_pyrogram()
         else:
-            invited, failed_invites = await invite_users_with_bot()
+            invited, failed_invites = await invite_users_with_bot(retry_failed=True)
 
         # 5. Отчет
         report = f"""
