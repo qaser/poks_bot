@@ -261,9 +261,7 @@ async def invite_users_with_bot():
     for u in users:
         uid = u["user_id"]
         try:
-            link = await bot.create_chat_invite_link(
-                NEW_OTKAZ_GROUP, member_limit=1, creates_join_request=True
-            )
+            link = await bot.create_chat_invite_link(NEW_OTKAZ_GROUP, member_limit=1)
             try:
                 await bot.send_message(
                     chat_id=uid,
