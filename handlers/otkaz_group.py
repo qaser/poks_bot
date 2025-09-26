@@ -35,7 +35,7 @@ OTKAZ_GROUP_ID = normalize_chat_id(OTKAZ_GROUP_ID)
 NEW_OTKAZ_GROUP = normalize_chat_id(NEW_OTKAZ_GROUP)
 
 # === НАСТРОЙКИ ===
-USE_PYROGRAM_FOR_INVITES = True  # True = юзер-бот приглашает, False = обычный бот
+USE_PYROGRAM_FOR_INVITES = False  # True = юзер-бот приглашает, False = обычный бот
 
 
 # ==============================
@@ -267,7 +267,8 @@ async def invite_users_with_bot():
                 # await bot.unban_chat_member(NEW_OTKAZ_GROUP, uid)
                 success += 1
                 print(f"✅ Добавлен {uid}")
-            except Exception:
+            except Exception as e:
+                await report_error(e)
                 link = await bot.create_chat_invite_link(
                     NEW_OTKAZ_GROUP, member_limit=1, creates_join_request=True
                 )
