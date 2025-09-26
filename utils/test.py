@@ -5,13 +5,13 @@ import re
 import pymongo
 
 # # Create the client
-client = pymongo.MongoClient('localhost', 27017)
-db = client['poks_bot_db']
-gpa = db['gpa']
-emergency_stops = db['emergency_stops']
-groups = db['groups']
-reqs = db['requests']
-req_counter = db['req_counter']
+# client = pymongo.MongoClient('localhost', 27017)
+# db = client['poks_bot_db']
+# gpa = db['gpa']
+# emergency_stops = db['emergency_stops']
+# groups = db['groups']
+# reqs = db['requests']
+# req_counter = db['req_counter']
 # msgs = db['msgs']
 
 GROUP_NAMES = [
@@ -51,17 +51,17 @@ MSGS = [
 ]
 
 
-queryset = gpa.find({'engine_type': 'ПС-90 ГП-1'})
-count_1 = 0
-count_2 = 0
-for i in queryset:
-    gpa.update_one({'_id': i['_id']}, {'$set': {'type_gpa': "Судовой привод"}})
-    count_1 += 1
-queryset = gpa.find({'engine_type': 'ПС-90 ГП-2'})
-for i in queryset:
-    gpa.update_one({'_id': i['_id']}, {'$set': {'type_gpa': "Судовой привод"}})
-    count_2 += 1
-print(count_1, count_2)
+# queryset = gpa.find({'engine_type': 'ПС-90 ГП-1'})
+# count_1 = 0
+# count_2 = 0
+# for i in queryset:
+#     gpa.update_one({'_id': i['_id']}, {'$set': {'type_gpa': "Судовой привод"}})
+#     count_1 += 1
+# queryset = gpa.find({'engine_type': 'ПС-90 ГП-2'})
+# for i in queryset:
+#     gpa.update_one({'_id': i['_id']}, {'$set': {'type_gpa': "Судовой привод"}})
+#     count_2 += 1
+# print(count_1, count_2)
 
 # for msg in MSGS:
 #     date_find = re.compile(r'\d\d\.\d\d\.(\d\d\d\d|\d\d)')

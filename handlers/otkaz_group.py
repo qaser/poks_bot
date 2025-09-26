@@ -262,8 +262,9 @@ async def invite_users_with_bot():
         uid = u["user_id"]
         try:
             try:
-                await bot.ban_chat_member(NEW_OTKAZ_GROUP, uid)
-                await bot.unban_chat_member(NEW_OTKAZ_GROUP, uid)
+                await bot.approve_chat_join_request(NEW_OTKAZ_GROUP, uid)
+                # await bot.ban_chat_member(NEW_OTKAZ_GROUP, uid)
+                # await bot.unban_chat_member(NEW_OTKAZ_GROUP, uid)
                 success += 1
                 print(f"✅ Добавлен {uid}")
             except Exception:
@@ -274,7 +275,6 @@ async def invite_users_with_bot():
         except Exception as e:
             failed.append({"user_id": uid, "username": u.get("username"), "error": str(e)})
         await asyncio.sleep(1)
-
     migration_status_collection.update_one(
         {"migration_type": "user_invites"},
         {"$set": {"failed_invites": failed, "success_count": success, "processed_at": dt.datetime.now()}},
