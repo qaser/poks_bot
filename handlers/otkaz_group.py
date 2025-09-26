@@ -275,6 +275,7 @@ async def invite_users_with_bot():
                 await report_error(e)
                 failed.append({"user_id": uid, "username": u.get("username"), "invite_link": link.invite_link})
         except Exception as e:
+            await report_error(e)
             failed.append({"user_id": uid, "username": u.get("username"), "error": str(e)})
         await asyncio.sleep(1)
     migration_status_collection.update_one(
