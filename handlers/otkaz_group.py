@@ -261,17 +261,18 @@ async def invite_users_with_bot():
     for u in users:
         uid = u["user_id"]
         try:
+            link = await bot.create_chat_invite_link(
+                NEW_OTKAZ_GROUP, member_limit=1, creates_join_request=True
+            )
             try:
-                # await bot.approve_chat_join_request(NEW_OTKAZ_GROUP, uid)
-                # await bot.ban_chat_member(NEW_OTKAZ_GROUP, uid)
-                await bot.unban_chat_member(NEW_OTKAZ_GROUP, uid)
+                await bot.send_message(
+                    chat_id=uid,
+                    text=f'Создана новая группа "ОТКАЗЫ ГПА", прошу присоединиться по ссылке:\n{link.invite_link}'
+                )
                 success += 1
-                print(f"✅ Добавлен {uid}")
+                await bot.send_message(MY_TELEGRAM_ID, f"ссылка отправлена пользователю {u.get('username')}")
             except Exception as e:
                 await report_error(e)
-                link = await bot.create_chat_invite_link(
-                    NEW_OTKAZ_GROUP, member_limit=1, creates_join_request=True
-                )
                 failed.append({"user_id": uid, "username": u.get("username"), "invite_link": link.invite_link})
         except Exception as e:
             failed.append({"user_id": uid, "username": u.get("username"), "error": str(e)})
