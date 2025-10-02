@@ -54,16 +54,16 @@ async def help_handler(message: Message):
 async def admin_handler(message: Message, command: CommandObject):
     user = message.from_user
     # Проверка: передан ли пароль
-    if not command.args:
-        await message.answer(
-            "❗ Пожалуйста, укажите пароль: `/admin пароль`",
-            parse_mode="Markdown"
-        )
-        return
-    # Проверка: правильный ли пароль
-    if command.args.strip() != ADMIN_PASSWORD:
-        await message.answer("🚫 Неверный пароль")
-        return
+    # if not command.args:
+    #     await message.answer(
+    #         "❗ Пожалуйста, укажите пароль: `/admin пароль`",
+    #         parse_mode="Markdown"
+    #     )
+    #     return
+    # # Проверка: правильный ли пароль
+    # if command.args.strip() != ADMIN_PASSWORD:
+    #     await message.answer("🚫 Неверный пароль")
+    #     return
     # Регистрация администратора
     admins.update_one(
         {"user_id": user.id},
