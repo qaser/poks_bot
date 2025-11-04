@@ -94,7 +94,7 @@ async def setup_bot_commands(bot):
         BotCommand(command="iskra", description="Просмотр наработки ГПА с СПЧ-1,35"),
         BotCommand(command="admins", description="Просмотр списка администраторов"),
         BotCommand(command="copy", description="Отключение защиты от копирования"),
-        BotCommand(command="edit", description="Удалить ошибочно созданные группы"),
+        # BotCommand(command="edit", description="Удалить ошибочно созданные группы"),
         BotCommand(command="help", description="Просмотр справки по командам"),
         BotCommand(command="reset", description="Отмена текущего действия, сброс ошибок"),
     ]
@@ -190,6 +190,7 @@ async def main():
         edit.router,
         administrators.router,
         request.router,
+        otkaz_group.router,
         administrators.dialog,
         request.dialog,
         ao.dialog,

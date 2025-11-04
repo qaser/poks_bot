@@ -228,7 +228,7 @@ async def migrate_messages_to_new_chat():
 
             for chunk in chunks:
                 try:
-                    await bot.send_message(chat_id=NEW_OTKAZ_GROUP, text=chunk)
+                    await bot.send_message(chat_id=NEW_OTKAZ_GROUP, text=chunk, disable_notification=True)
                     await asyncio.sleep(1)  # базовая задержка
                 except TelegramRetryAfter as e:
                     # если словили FloodWait — ждём указанное время
@@ -236,7 +236,7 @@ async def migrate_messages_to_new_chat():
                     print(f"⏳ FloodWait: ждём {wait_time} сек.")
                     await asyncio.sleep(wait_time)
                     # повторяем отправку
-                    await bot.send_message(chat_id=NEW_OTKAZ_GROUP, text=chunk)
+                    await bot.send_message(chat_id=NEW_OTKAZ_GROUP, text=chunk, disable_notification=True)
 
             success += 1
             print(f"Отправлено {success}/{len(messages)}")
@@ -253,62 +253,62 @@ async def migrate_messages_to_new_chat():
 # Добавление участников
 # ==============================
 
-async def invite_users_with_bot(retry_failed):
-    """Добавляет участников ботом"""
-    failed = []
-    success = 0
-    if retry_failed:
-        last_status = migration_status_collection.find_one(
-            {'migration_type': 'user_invites'},
-            sort=[('processed_at', -1)]
-        )
-        # await bot.send_message(MY_TELEGRAM_ID, last_status)
-        if not last_status or not last_status.get('failed_invites'):
-            return 0, []
-        users = last_status['failed_invites']
-        await bot.send_message(MY_TELEGRAM_ID, f"Повторная рассылка ссылок {len(users)} пользователям")
-    else:
-        users = list(users_collection.find({"is_bot": False}))
-        await bot.send_message(MY_TELEGRAM_ID, f"Первичная рассылка ссылок {len(users)} пользователям")
-    for u in users:
-        uid = u["user_id"]
-        try:
-            link = await bot.create_chat_invite_link(NEW_OTKAZ_GROUP, member_limit=1)
-            try:
-                await bot.send_message(
-                    chat_id=uid,
-                    text=f'Создана новая группа "ОТКАЗЫ ГПА", прошу присоединиться по ссылке:\n{link.invite_link}'
-                )
-                success += 1
-                await bot.send_message(MY_TELEGRAM_ID, f"ссылка отправлена пользователю {u.get('username')}")
-            except Exception as e:
-                await report_error(e)
-                failed.append({"user_id": uid, "username": u.get("username"), "invite_link": link.invite_link})
-        except Exception as e:
-            await report_error(e)
-            failed.append({"user_id": uid, "username": u.get("username"), "error": str(e)})
-        await asyncio.sleep(4)
-    migration_status_collection.update_one(
-        {"migration_type": "user_invites"},
-        {"$set": {"failed_invites": failed, "success_count": success, "processed_at": dt.datetime.now()}},
-        upsert=True
-    )
-    return success, failed
+# async def invite_users_with_bot(retry_failed):
+#     """Добавляет участников ботом"""
+#     failed = []
+#     success = 0
+#     if retry_failed:
+#         last_status = migration_status_collection.find_one(
+#             {'migration_type': 'user_invites'},
+#             sort=[('processed_at', -1)]
+#         )
+#         # await bot.send_message(MY_TELEGRAM_ID, last_status)
+#         if not last_status or not last_status.get('failed_invites'):
+#             return 0, []
+#         users = last_status['failed_invites']
+#         await bot.send_message(MY_TELEGRAM_ID, f"Повторная рассылка ссылок {len(users)} пользователям")
+#     else:
+#         users = list(users_collection.find({"is_bot": False}))
+#         await bot.send_message(MY_TELEGRAM_ID, f"Первичная рассылка ссылок {len(users)} пользователям")
+#     for u in users:
+#         uid = u["user_id"]
+#         try:
+#             link = await bot.create_chat_invite_link(NEW_OTKAZ_GROUP, member_limit=1)
+#             try:
+#                 await bot.send_message(
+#                     chat_id=uid,
+#                     text=f'Создана новая группа "ОТКАЗЫ ГПА", прошу присоединиться по ссылке:\n{link.invite_link}'
+#                 )
+#                 success += 1
+#                 await bot.send_message(MY_TELEGRAM_ID, f"ссылка отправлена пользователю {u.get('username')}")
+#             except Exception as e:
+#                 await report_error(e)
+#                 failed.append({"user_id": uid, "username": u.get("username"), "invite_link": link.invite_link})
+#         except Exception as e:
+#             await report_error(e)
+#             failed.append({"user_id": uid, "username": u.get("username"), "error": str(e)})
+#         await asyncio.sleep(4)
+#     migration_status_collection.update_one(
+#         {"migration_type": "user_invites"},
+#         {"$set": {"failed_invites": failed, "success_count": success, "processed_at": dt.datetime.now()}},
+#         upsert=True
+#     )
+#     return success, failed
 
 
-async def invite_users_with_pyrogram():
-    """Добавляет участников юзер-ботом"""
-    users = list(users_collection.find({"is_bot": False}))
-    failed, success = [], 0
-    for u in users:
-        try:
-            await app.add_chat_members(NEW_OTKAZ_GROUP, [u["user_id"]])
-            success += 1
-            print(f"✅ Добавлен {u['user_id']}")
-        except Exception as e:
-            failed.append({"user_id": u["user_id"], "username": u.get("username"), "error": str(e)})
-        await asyncio.sleep(1)
-    return success, failed
+# async def invite_users_with_pyrogram():
+#     """Добавляет участников юзер-ботом"""
+#     users = list(users_collection.find({"is_bot": False}))
+#     failed, success = [], 0
+#     for u in users:
+#         try:
+#             await app.add_chat_members(NEW_OTKAZ_GROUP, [u["user_id"]])
+#             success += 1
+#             print(f"✅ Добавлен {u['user_id']}")
+#         except Exception as e:
+#             failed.append({"user_id": u["user_id"], "username": u.get("username"), "error": str(e)})
+#         await asyncio.sleep(1)
+#     return success, failed
 
 
 async def check_access():
@@ -340,73 +340,72 @@ async def check_access():
 # Полная миграция
 # ==============================
 
-# @router.message(Command("migrate"))
-# async def complete_migration(message: Message):
-#     messages_collection.delete_many({})
-#     users_collection.delete_many({})
-#     await bot.send_message(MY_TELEGRAM_ID, "🚀 Начинаем миграцию...")
-#     access_report = await check_access()
-
-#     # Если нет доступа к старой или новой группе — останавливаемся
-#     if "❌" in access_report:
-#         await bot.send_message(MY_TELEGRAM_ID, "⚠️ Миграция остановлена: нет доступа к одной из групп.")
-#         return
-#     try:
-#         # 1. Сохраняем историю сообщений
-#         all_messages = await get_all_chat_messages(OTKAZ_GROUP_ID)
-#         saved_msgs = 0
-#         for m in all_messages:
-#             if await save_pyrogram_message(m):
-#                 saved_msgs += 1
-
-#         # 2. Сохраняем участников
-#         saved_users = await collect_chat_users(OTKAZ_GROUP_ID)
-
-#         # # 3. Переносим сообщения в новую группу
-#         migrated, failed_msgs = await migrate_messages_to_new_chat()
-
-#         # 5. Отчет
-#         report = f"""
-#         📊 ОТЧЕТ О МИГРАЦИИ
-
-#         ✅ Сообщений получено: {len(all_messages)}
-#         💾 Сообщений сохранено: {saved_msgs}
-
-#         📤 Сообщений перенесено: {migrated}, ошибок: {len(failed_msgs)}
-
-#         👥 Пользователей сохранено: {saved_users}
-#         """
-
-#         await bot.send_message(MY_TELEGRAM_ID, report)
-
-#     except Exception as e:
-#         await report_error(e)
-
-
-@router.message(Command("invite_users"))
-async def users_invite(message: Message):
-    await bot.send_message(MY_TELEGRAM_ID, "🚀 Начинаем приглашение пользователей")
-    # access_report = await check_access()
+@router.message(Command("migrate"))
+async def complete_migration(message: Message):
+    messages_collection.delete_many({})
+    # users_collection.delete_many({})
+    await bot.send_message(MY_TELEGRAM_ID, "🚀 Начинаем миграцию...")
+    access_report = await check_access()
 
     # Если нет доступа к старой или новой группе — останавливаемся
-    # if "❌" in access_report:
-    #     await bot.send_message(MY_TELEGRAM_ID, "⚠️ Миграция остановлена: нет доступа к одной из групп.")
-        # return
+    if "❌" in access_report:
+        await bot.send_message(MY_TELEGRAM_ID, "⚠️ Миграция остановлена: нет доступа к одной из групп.")
+        return
     try:
-        # # 4. Добавляем участников
-        # if USE_PYROGRAM_FOR_INVITES:
-        #     invited, failed_invites = await invite_users_with_pyrogram()
-        # else:
-        invited, failed_invites = await invite_users_with_bot(True)
+        # 1. Сохраняем историю сообщений
+        all_messages = await get_all_chat_messages(OTKAZ_GROUP_ID)
+        saved_msgs = 0
+        for m in all_messages:
+            if await save_pyrogram_message(m):
+                saved_msgs += 1
+
+        # 2. Сохраняем участников
+        # saved_users = await collect_chat_users(OTKAZ_GROUP_ID)
+
+        # # 3. Переносим сообщения в новую группу
+        migrated, failed_msgs = await migrate_messages_to_new_chat()
 
         # 5. Отчет
         report = f"""
         📊 ОТЧЕТ О МИГРАЦИИ
 
-        ➕ Пользователей добавлено: {invited}, ошибок: {len(failed_invites)}
+        ✅ Сообщений получено: {len(all_messages)}
+        💾 Сообщений сохранено: {saved_msgs}
+
+        📤 Сообщений перенесено: {migrated}, ошибок: {len(failed_msgs)}
+
         """
 
         await bot.send_message(MY_TELEGRAM_ID, report)
 
     except Exception as e:
         await report_error(e)
+
+
+# @router.message(Command("invite_users"))
+# async def users_invite(message: Message):
+#     await bot.send_message(MY_TELEGRAM_ID, "🚀 Начинаем приглашение пользователей")
+#     # access_report = await check_access()
+
+#     # Если нет доступа к старой или новой группе — останавливаемся
+#     # if "❌" in access_report:
+#     #     await bot.send_message(MY_TELEGRAM_ID, "⚠️ Миграция остановлена: нет доступа к одной из групп.")
+#         # return
+#     try:
+#         # # 4. Добавляем участников
+#         # if USE_PYROGRAM_FOR_INVITES:
+#         #     invited, failed_invites = await invite_users_with_pyrogram()
+#         # else:
+#         invited, failed_invites = await invite_users_with_bot(True)
+
+#         # 5. Отчет
+#         report = f"""
+#         📊 ОТЧЕТ О МИГРАЦИИ
+
+#         ➕ Пользователей добавлено: {invited}, ошибок: {len(failed_invites)}
+#         """
+
+#         await bot.send_message(MY_TELEGRAM_ID, report)
+
+#     except Exception as e:
+#         await report_error(e)
