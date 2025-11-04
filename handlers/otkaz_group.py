@@ -342,7 +342,7 @@ async def check_access():
 
 @router.message(Command("migrate"))
 async def complete_migration(message: Message):
-    messages_collection.delete_many({})
+    # messages_collection.delete_many({})
     # users_collection.delete_many({})
     await bot.send_message(MY_TELEGRAM_ID, "🚀 Начинаем миграцию...")
     # access_report = await check_access()
@@ -353,11 +353,11 @@ async def complete_migration(message: Message):
     #     return
     try:
         # 1. Сохраняем историю сообщений
-        # all_messages = await get_all_chat_messages(OTKAZ_GROUP_ID)
-        # saved_msgs = 0
-        # for m in all_messages:
-        #     if await save_pyrogram_message(m):
-        #         saved_msgs += 1
+        all_messages = await get_all_chat_messages(OTKAZ_GROUP_ID)
+        saved_msgs = 0
+        for m in all_messages:
+            if await save_pyrogram_message(m):
+                saved_msgs += 1
 
         # 2. Сохраняем участников
         # saved_users = await collect_chat_users(OTKAZ_GROUP_ID)
@@ -368,6 +368,9 @@ async def complete_migration(message: Message):
         # 5. Отчет
         report = f"""
         📊 ОТЧЕТ О МИГРАЦИИ
+
+        ✅ Сообщений получено: {len(all_messages)}
+        💾 Сообщений сохранено: {saved_msgs}
 
         📤 Сообщений перенесено: {migrated}, ошибок: {len(failed_msgs)}
 
