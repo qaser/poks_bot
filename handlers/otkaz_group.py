@@ -345,12 +345,12 @@ async def complete_migration(message: Message):
     messages_collection.delete_many({})
     # users_collection.delete_many({})
     await bot.send_message(MY_TELEGRAM_ID, "🚀 Начинаем миграцию...")
-    access_report = await check_access()
+    # access_report = await check_access()
 
     # Если нет доступа к старой или новой группе — останавливаемся
-    if "❌" in access_report:
-        await bot.send_message(MY_TELEGRAM_ID, "⚠️ Миграция остановлена: нет доступа к одной из групп.")
-        return
+    # if "❌" in access_report:
+    #     await bot.send_message(MY_TELEGRAM_ID, "⚠️ Миграция остановлена: нет доступа к одной из групп.")
+    #     return
     try:
         # 1. Сохраняем историю сообщений
         # all_messages = await get_all_chat_messages(OTKAZ_GROUP_ID)
