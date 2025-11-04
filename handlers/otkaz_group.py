@@ -7,10 +7,11 @@ from aiogram.filters import Command
 from aiogram.exceptions import TelegramRetryAfter
 
 from config.bot_config import bot
-from config.mongo_config import users_collection, messages_collection, migration_status_collection
+from config.mongo_config import users_collection, messages_collection, migration_status_collection, otkaz_msgs
 from config.telegram_config import MY_TELEGRAM_ID, NEW_OTKAZ_GROUP, OTKAZ_GROUP_ID
 from config.pyrogram_config import app
 from utils.utils import report_error
+from utils.constants import MSG_IDS
 
 router = Router()
 
@@ -340,7 +341,7 @@ async def check_access():
 # Полная миграция
 # ==============================
 
-@router.message(Command("migrate"))
+# @router.message(Command("migrate"))
 async def complete_migration(message: Message):
     # messages_collection.delete_many({})
     # users_collection.delete_many({})
@@ -377,6 +378,34 @@ async def complete_migration(message: Message):
 
     except Exception as e:
         await report_error(e)
+
+
+@router.message(Command("qwerty"))
+async def new_msgs_migration(message: Message):
+    success = 0
+    for msg_id in MSG_IDS:
+        try:
+            msg = otkaz_msgs.find_one({'msg_id': msg_id})
+            try:
+                await bot.send_message(
+                    chat_id=NEW_OTKAZ_GROUP,
+                    text=msg.text,
+                    disable_notification=True
+                )
+                await asyncio.sleep(1)
+            except TelegramRetryAfter as e:
+                wait_time = int(e.retry_after) + 1
+                await asyncio.sleep(wait_time)
+                await bot.send_message(
+                    chat_id=NEW_OTKAZ_GROUP,
+                    text=msg.text,
+                    disable_notification=True
+                )
+            success += 1
+        except Exception as e:
+            await report_error(e)
+    await bot.send_message(MY_TELEGRAM_ID, f'Отправлено {success}')
+
 
 
 # @router.message(Command("invite_users"))
