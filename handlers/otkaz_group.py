@@ -384,13 +384,14 @@ async def complete_migration(message: Message):
 async def new_msgs_migration(message: Message):
     success = 0
     for msg_id in MSG_IDS:
+        dn = False if msg_id == 2222 else True
         try:
             msg = otkaz_msgs.find_one({'msg_id': msg_id})
             try:
                 await bot.send_message(
                     chat_id=NEW_OTKAZ_GROUP,
                     text=msg.text,
-                    disable_notification=True
+                    disable_notification=dn
                 )
                 await asyncio.sleep(1)
             except TelegramRetryAfter as e:
@@ -399,7 +400,7 @@ async def new_msgs_migration(message: Message):
                 await bot.send_message(
                     chat_id=NEW_OTKAZ_GROUP,
                     text=msg.text,
-                    disable_notification=True
+                    disable_notification=dn
                 )
             success += 1
         except Exception as e:
