@@ -390,7 +390,7 @@ async def new_msgs_migration(message: Message):
             try:
                 await bot.send_message(
                     chat_id=NEW_OTKAZ_GROUP,
-                    text=msg.text,
+                    text=msg['text'],
                     disable_notification=dn
                 )
                 await asyncio.sleep(1)
@@ -399,7 +399,7 @@ async def new_msgs_migration(message: Message):
                 await asyncio.sleep(wait_time)
                 await bot.send_message(
                     chat_id=NEW_OTKAZ_GROUP,
-                    text=msg.text,
+                    text=msg['text'],
                     disable_notification=dn
                 )
             success += 1
