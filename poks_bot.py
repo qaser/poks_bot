@@ -94,7 +94,7 @@ async def setup_bot_commands(bot):
         BotCommand(command="iskra", description="Просмотр наработки ГПА с СПЧ-1,35"),
         BotCommand(command="admins", description="Просмотр списка администраторов"),
         BotCommand(command="copy", description="Отключение защиты от копирования"),
-        # BotCommand(command="edit", description="Удалить ошибочно созданные группы"),
+        BotCommand(command="edit", description="Удалить ошибочно созданные группы"),
         BotCommand(command="help", description="Просмотр справки по командам"),
         BotCommand(command="reset", description="Отмена текущего действия, сброс ошибок"),
     ]
@@ -125,30 +125,30 @@ async def delete_service_pinned_message(message: Message):
 async def main():
     dp.message.middleware(AdminCheckMiddleware())
     scheduler = AsyncIOScheduler()
-    # scheduler.add_job(
-    #     send_remainder,
-    #     'cron',
-    #     day_of_week='mon-sun',
-    #     hour=18,
-    #     minute=0,
-    #     timezone=const.TIME_ZONE
-    # )
-    # scheduler.add_job(
-    #     clear_msgs,
-    #     'cron',
-    #     day_of_week='mon-sun',
-    #     hour=17,
-    #     minute=55,
-    #     timezone=const.TIME_ZONE
-    # )
-    # scheduler.add_job(
-    #     send_work_time_reminder,
-    #     'cron',
-    #     day='1',
-    #     hour=8,
-    #     minute=0,
-    #     timezone=const.TIME_ZONE
-    # )
+    scheduler.add_job(
+        send_remainder,
+        'cron',
+        day_of_week='mon-sun',
+        hour=18,
+        minute=0,
+        timezone=const.TIME_ZONE
+    )
+    scheduler.add_job(
+        clear_msgs,
+        'cron',
+        day_of_week='mon-sun',
+        hour=17,
+        minute=55,
+        timezone=const.TIME_ZONE
+    )
+    scheduler.add_job(
+        send_work_time_reminder,
+        'cron',
+        day='1',
+        hour=8,
+        minute=0,
+        timezone=const.TIME_ZONE
+    )
     scheduler.add_job(
         send_backups,
         'cron',
@@ -157,22 +157,22 @@ async def main():
         minute=30,
         timezone=const.TIME_ZONE
     )
-    # scheduler.add_job(
-    #     send_morning_report,
-    #     'cron',
-    #     day_of_week='mon-fri',
-    #     hour=8,
-    #     minute=30,
-    #     timezone=const.TIME_ZONE
-    # )
-    # scheduler.add_job(
-    #     send_evening_report,
-    #     'cron',
-    #     day_of_week='mon-sun',
-    #     hour=17,
-    #     minute=30,
-    #     timezone=const.TIME_ZONE
-    # )
+    scheduler.add_job(
+        send_morning_report,
+        'cron',
+        day_of_week='mon-fri',
+        hour=8,
+        minute=30,
+        timezone=const.TIME_ZONE
+    )
+    scheduler.add_job(
+        send_evening_report,
+        'cron',
+        day_of_week='mon-sun',
+        hour=17,
+        minute=30,
+        timezone=const.TIME_ZONE
+    )
     # задача, которая будет выполняться каждый час
     scheduler.add_job(
         find_overdue_requests,
