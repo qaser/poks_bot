@@ -209,6 +209,7 @@ async def main():
 
 
 if __name__ == '__main__':
+    logging.getLogger("pyrogram").setLevel(logging.INFO)
     logging.basicConfig(
         filename='logs_bot.log',
         level=logging.INFO,
