@@ -46,6 +46,7 @@ async def on_stats_chosen(callback, widget, manager: DialogManager):
 
 
 async def on_confirm(callback, widget, manager: DialogManager):
+    await callback.message.edit_text("⏳ Обработка запроса...",  reply_markup=None)
     context = manager.current_context()
     station = context.dialog_data['station']
     gpa_num = context.dialog_data['gpa']
