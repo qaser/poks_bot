@@ -111,7 +111,8 @@ async def create_group(manager, ao_id, mark):
         )
     )
     try:
-        link = await app.create_chat_invite_link(group_id)
+        # link = await app.create_chat_invite_link(group_id)
+        link = await bot.export_chat_invite_link(group_id)
     except:
         await bot.send_message(
             MY_TELEGRAM_ID,
@@ -130,7 +131,7 @@ async def create_group(manager, ao_id, mark):
             {"user_id": {"$ne": int(MY_TELEGRAM_ID)}}
         ]
     }))
-    invite_text = f'Вас приглашают в чат для расследования АО(ВНО): {link.invite_link}'
+    invite_text = f'Вас приглашают в чат для расследования АО(ВНО): {link}'
     users_in_group = []
     users_with_link = []
     for admin in admin_users:
@@ -151,19 +152,19 @@ async def create_group(manager, ao_id, mark):
     with_link_text = ', '.join(users_with_link) if len(users_with_link) > 0 else 'отсутствуют'
     resume_text=(f'Добавлены в группу:\n{in_group_text}\n\n'
                  f'Получили ссылки:\n{with_link_text}')
-    try:
-        await app.leave_chat(group_id)
-    except:
-        await bot.send_message(
-            MY_TELEGRAM_ID,
-            text=f'Почему-то я не покинул группу {group_name}'
-        )
+    # try:
+    #     await app.leave_chat(group_id)
+    # except:
+    #     await bot.send_message(
+    #         MY_TELEGRAM_ID,
+    #         text=f'Почему-то я не покинул группу {group_name}'
+    #     )
     if mark == 'dialog':
         context = manager.current_context()
         context.dialog_data.update(group_id=group_id)
         await replace_messages(manager)
     try:
-        msg_link = await bot.send_message(chat_id=NEW_OTKAZ_GROUP, text=link.invite_link)
+        msg_link = await bot.send_message(chat_id=NEW_OTKAZ_GROUP, text=link)
     except:
         await bot.send_message(MY_TELEGRAM_ID, text='Не отправлена ссылка в группу "Отказы"')
     await bot.send_message(MY_TELEGRAM_ID, text=f'Создана группа {group_name}')
@@ -185,7 +186,7 @@ async def create_group(manager, ao_id, mark):
         otkaz_msgs.insert_one(
             {
                 'msg_id': msg_link.message_id,
-                'text': link.invite_link,
+                'text': link,
                 'group_id': int(group_id)
             }
         )
