@@ -62,11 +62,11 @@ async def hash_users(message: Message):
         await msg.delete()
     except:
         pass
-    try:
-        await app.leave_chat(message.chat.id)
-        await bot.send_message(MY_TELEGRAM_ID, text='Я покинул группу')
-    except Exception as e:
-        await report_error(e)
+    # try:
+    #     await app.leave_chat(message.chat.id)
+    #     await bot.send_message(MY_TELEGRAM_ID, text='Я покинул группу')
+    # except Exception as e:
+    #     await report_error(e)
     try:
         await bot.send_message(MY_TELEGRAM_ID, 'нажата кнопка /copy')
     except:
