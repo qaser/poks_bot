@@ -111,19 +111,19 @@ async def create_group(manager, ao_id, mark):
         )
     )
     try:
+        await add_admin_to_group(BOT_ID, group_id)
+    except:
+        await bot.send_message(
+            MY_TELEGRAM_ID,
+            text=f'Бот не смог войти в группу {group_name}'
+        )
+    try:
         # link = await app.create_chat_invite_link(group_id)
         link = await bot.export_chat_invite_link(group_id)
     except:
         await bot.send_message(
             MY_TELEGRAM_ID,
             text=f'Ссылка для группы "{group_name}" не создана'
-        )
-    try:
-        await add_admin_to_group(BOT_ID, group_id)
-    except:
-        await bot.send_message(
-            MY_TELEGRAM_ID,
-            text=f'Бот не смог войти в группу {group_name}'
         )
     admin_users = list(admins.find({
         "$and": [
